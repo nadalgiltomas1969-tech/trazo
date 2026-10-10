@@ -151,7 +151,7 @@ button.sw[aria-pressed="true"]{outline:3px solid var(--acc);outline-offset:2px}
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button></div>
+  <div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -1381,10 +1381,10 @@ svg.onpointerdown=e=>{
         items.forEach(r=>{if(r.t!=='room'||r.f!==it0.f||r.id===it0.id)return;const v=hd==='w'||hd==='e';if(v){if(!ov(r.y,r.y+r.h,it0.y,it0.y+it0.h))return;if(Math.abs(r.x+r.w-pos)<E)drag.nb.push([r.id,'e']);else if(Math.abs(r.x-pos)<E)drag.nb.push([r.id,'w'])}else{if(!ov(r.x,r.x+r.w,it0.x,it0.x+it0.w))return;if(Math.abs(r.y+r.h-pos)<E)drag.nb.push([r.id,'s']);else if(Math.abs(r.y-pos)<E)drag.nb.push([r.id,'n'])}});
         drag.lastNb=JSON.stringify(drag.nb.map(([id])=>items.find(i=>i.id===id)))}
       return}
+    if(g&&+g.dataset.id!==sel){drag={k:'p',sx:e.clientX,sy:e.clientY,ox:view.ox,oy:view.oy,pick:+g.dataset.id,moved:false};return}
     if(g){sel=+g.dataset.id;push();drag={k:'m',sx:p.x,sy:p.y,o:JSON.parse(JSON.stringify(cur())),last:JSON.stringify(cur())};if(cur().t==='balc'){undo.pop();drag=null}panel();render();return}
     if(rg){sel=rg.dataset.r;panel();render();return}
-    if(sel!==null){sel=null;panel()}
-    drag={k:'p',sx:e.clientX,sy:e.clientY,ox:view.ox,oy:view.oy};render();return;
+    drag={k:'p',sx:e.clientX,sy:e.clientY,ox:view.ox,oy:view.oy,moved:false,desel:true};render();return;
   }
   if(sel!==null){sel=null;panel()}
   if(fl===-2||INST.includes(tool)){subDown(p,sp);return}
@@ -1430,10 +1430,10 @@ svg.onpointerdown=e=>{
 };
 svg.onpointermove=e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()],r=svg.getBoundingClientRect(),d=Math.hypot(a.x-b.x,a.y-b.y),ns=Math.min(300,Math.max(15,pinch.s*d/pinch.d)),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;view.s=ns;view.ox=mx-pinch.wx*ns;view.oy=my-pinch.wy*ns;render();return}
+  if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()],r=svg.getBoundingClientRect(),d=Math.hypot(a.x-b.x,a.y-b.y),ns=Math.min(300,Math.max(1.5,pinch.s*d/pinch.d)),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;view.s=ns;view.ox=mx-pinch.wx*ns;view.oy=my-pinch.wy*ns;render();return}
   if(tool==='pasillo'&&pas&&!drag){const p2=world(e),L=pas.pts[pas.pts.length-1];pas.hov=pasCorner(L,{x:snap(p2.x),y:snap(p2.y)});render();return}
   if(!drag)return;const p=world(e);
-  if(drag.k==='p'){view.ox=drag.ox+e.clientX-drag.sx;view.oy=drag.oy+e.clientY-drag.sy}
+  if(drag.k==='p'){if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>6)drag.moved=true;if(drag.moved){view.ox=drag.ox+e.clientX-drag.sx;view.oy=drag.oy+e.clientY-drag.sy}}
   else if(drag.k==='n'&&draft){
     if(draft.t==='room'||draft.t==='cont'){let x=snap(p.x),y=snap(p.y);if(draft.t==='room'&&!e.shiftKey)[x,y]=snapPtEdges(x,y,draft.f);draft.x=Math.min(x,drag.sx);draft.y=Math.min(y,drag.sy);draft.w=Math.abs(x-drag.sx);draft.h=Math.abs(y-drag.sy)}
     else{const q=endPt(draft.x1,draft.y1,p);draft.x2=q.x;draft.y2=q.y;if(draft.t==='wall'&&!e.shiftKey){const z=snapPtEdges(draft.x2,draft.y2,draft.f);draft.x2=z[0];draft.y2=z[1]}}
@@ -1458,6 +1458,7 @@ svg.onpointermove=e=>{
 svg.onpointerup=svg.onpointercancel=e=>{SG=[];
   ptrs.delete(e.pointerId);
   if(pinch){if(ptrs.size<2)pinch=null;if(!ptrs.size)drag=null;done();return}
+  if(drag&&drag.k==='p'&&!drag.moved){if(drag.pick){sel=drag.pick;note=''}else if(drag.desel&&sel!==null)sel=null;drag=null;panel();render();return}
   if(drag&&drag.k==='n'&&draft&&draft.t==='medir'){const L=Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1);if(L>=.1){push();items.push({id:nid++,t:'cota',f:fl,x1:r2(draft.x1),y1:r2(draft.y1),x2:r2(draft.x2),y2:r2(draft.y2)});note='Medición de '+fmt(L)+' m guardada. Para borrarla: Editar, tócala y Eliminar'}meas=null;draft=null;drag=null;done();return}
   if(drag&&drag.k==='n'&&draft){
     const ok=(draft.t==='room'||draft.t==='cont')?(draft.w>=.3&&draft.h>=.3):Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=.3;
@@ -1466,10 +1467,11 @@ svg.onpointerup=svg.onpointercancel=e=>{SG=[];
   }
   drag=null;done();
 };
-function zoom(fac,cx,cy){const ns=Math.min(300,Math.max(15,view.s*fac)),r=ns/view.s;view.ox=cx-(cx-view.ox)*r;view.oy=cy-(cy-view.oy)*r;view.s=ns;render()}
+function zoom(fac,cx,cy){const ns=Math.min(300,Math.max(1.5,view.s*fac)),r=ns/view.s;view.ox=cx-(cx-view.ox)*r;view.oy=cy-(cy-view.oy)*r;view.s=ns;render()}
 svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoom(e.deltaY<0?1.12:1/1.12,e.clientX-r.left,e.clientY-r.top)},{passive:false});
 $('#zin').onclick=()=>{const r=svg.getBoundingClientRect();zoom(1.25,r.width/2,r.height/2)};
 $('#zout').onclick=()=>{const r=svg.getBoundingClientRect();zoom(.8,r.width/2,r.height/2)};
+$('#zfit').onclick=()=>{fitView();render()};
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
   tool=b.dataset.tool;note='';tdraft=null;if(tool!=='medir')meas=null;if(tool!=='pasillo'&&pas){pas=null}if(tool!=='select'){sel=null;panel()}
   if((fl===-1||(fl===-2&&!SUBT.includes(tool)&&!INST.includes(tool)&&tool!=='label'))&&tool!=='select'&&tool!=='caseta'){fl=Math.max(0,topF());tabs()}
@@ -1744,7 +1746,7 @@ function migrate(){for(const f of [...Array(F()).keys(),...UGL().map((_,i)=>-10-
   const x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h));
   items.push({id:nid++,t:'cont',f,x:r2(x0-.3),y:r2(y0-.3),w:r2(x1-x0+.6),h:r2(y1-y0+.6)})}}
 function fitView(){const k=contOf(fl<=-10?fl:Math.max(0,fl));if(!k)return;const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
-  const sc=Math.max(15,Math.min(120,Math.min((r.width-40)/k.w,(r.height-40)/k.h)));view.s=sc;view.ox=(r.width-k.w*sc)/2-k.x*sc;view.oy=(r.height-k.h*sc)/2-k.y*sc}
+  const sc=Math.max(1.5,Math.min(120,Math.min((r.width-40)/k.w,(r.height-40)/k.h)));view.s=sc;view.ox=(r.width-k.w*sc)/2-k.x*sc;view.oy=(r.height-k.h*sc)/2-k.y*sc}
 
 /* ---------- proyectos ---------- */
 function loadProj(id){save();PJ.cur=id;const d=PJ.p[id].data;
@@ -1817,7 +1819,7 @@ async function exportPDF(){if(pdfBusy)return;
   try{sel=null;const nm=(PJ.p[PJ.cur]||{}).name||'Plano';
     const order=[];if(items.some(i=>i.f===-2))order.push(-2);for(let u=UGL().length-1;u>=0;u--)order.push(-10-u);for(let i=0;i<F();i++)order.push(i);if(items.some(i=>i.t==='room'))order.push(-1);
     for(const f of order){fl=f;const k=(f===-1||f===-2)?null:contOf(f);if(fv(f)&&!k&&!items.some(i=>i.f===f))continue;
-      if(f===-1){const rs=items.filter(i=>i.t==='room'),x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h)),r=svg.getBoundingClientRect(),sc=Math.max(15,Math.min(120,Math.min((r.width-60)/(x1-x0+2),(r.height-60)/(y1-y0+2))));view.s=sc;view.ox=(r.width-(x1-x0)*sc)/2-x0*sc;view.oy=(r.height-(y1-y0)*sc)/2-y0*sc}
+      if(f===-1){const rs=items.filter(i=>i.t==='room'),x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h)),r=svg.getBoundingClientRect(),sc=Math.max(1.5,Math.min(120,Math.min((r.width-60)/(x1-x0+2),(r.height-60)/(y1-y0+2))));view.s=sc;view.ox=(r.width-(x1-x0)*sc)/2-x0*sc;view.oy=(r.height-(y1-y0)*sc)/2-y0*sc}
       else fitView();
       render();const r=svg.getBoundingClientRect();
       const o=await svgToJpg(svg,Math.round(r.width),Math.round(r.height));pages.push({...o,title:nm+' · '+(f===-1?'Tejado':fname(f))})}
@@ -1847,7 +1849,7 @@ const csv=rows=>'﻿'+rows.map(r=>r.map(v=>{const t=typeof v==='number'?String(M
 const SUBN={aljibe:'Aljibe',pneg:'Pozo negro',pozo:'Pozo de agua',tub:'Tubería o cable',elec:'Punto eléctrico',plaza:'Plaza de aparcamiento',rampa:'Rampa',pilar:'Pilar',tonel:'Tonel',esc:'Escalera',chim:'Chimenea',baj:'Bajante',farol:'Farol',balc:'Balcón',label:'Texto',pas:'Pasillo'};
 function itemName(it){if(it.t==='obj')return (CATK[it.ok]||['Pieza'])[0];if(it.t==='deco')return DECOL[it.dk]||'Decoración';if(it.t==='elec')return ELK[it.kd]||'Punto eléctrico';if(it.t==='tub')return TPN[it.tp]||'Tubería';if(it.t==='esc')return 'Escalera ('+(it.ty||'recta')+')';if(it.t==='label')return 'Texto: '+(it.text||'');return SUBN[it.t]||it.t}
 function fincaName(i){const m={marca:()=>(MK[i.k]||['Edificio'])[0],ani:()=>(ANIM[i.k]||['Animal'])[0],arb:()=>(ARBOL[i.k]||['Árbol'])[0],plant:()=>'Plantación de '+((ARBOL[i.k]||['árboles'])[0]).toLowerCase(),zona:()=>(ZT[i.zt]||['Zona'])[0],jard:()=>(JARD[i.k]||['Jardín'])[0],linde:()=>(LT[i.lt]||['Linde'])[0],barr:()=>(BT[i.bt]||['Barrera'])[0],acq:()=>(AQ[i.sz]||['Acequia'])[0],gate:()=>(GT[i.gt]||['Compuerta'])[0],cam:()=>i.st==='grava'?'Sendero de grava':'Camino',via:()=>'Vía del tren',torr:()=>'Torrente',est:()=>'Estanque',ent:()=>'Entrada principal',pinf:()=>'Paso inferior para el ganado',pn:()=>'Paso a nivel',hill:()=>'Colina o monte',cont:()=>'Contorno de la finca'};return (m[i.t]||(()=>i.t))()}
-function fitRoof(){const rs=items.filter(i=>i.t==='room'),x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h)),r=svg.getBoundingClientRect(),sc=Math.max(15,Math.min(120,Math.min((r.width-60)/(x1-x0+2),(r.height-60)/(y1-y0+2))));view.s=sc;view.ox=(r.width-(x1-x0)*sc)/2-x0*sc;view.oy=(r.height-(y1-y0)*sc)/2-y0*sc}
+function fitRoof(){const rs=items.filter(i=>i.t==='room'),x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h)),r=svg.getBoundingClientRect(),sc=Math.max(1.5,Math.min(120,Math.min((r.width-60)/(x1-x0+2),(r.height-60)/(y1-y0+2))));view.s=sc;view.ox=(r.width-(x1-x0)*sc)/2-x0*sc;view.oy=(r.height-(y1-y0)*sc)/2-y0*sc}
 async function exportVideo(){if(pdfBusy)return;const dl=await getDL();if(!dl){note='Este visor no permite guardar archivos';return render()}
   pdfBusy=true;const b=$('#expBtn'),t0=b.textContent;b.textContent='Preparando…';
   const sv={fl,view:{...view},sel,tool,fac:JSON.stringify(st.fac||null),fh:$('#fac').hidden,fin:$('#fin').hidden,fv:{s:fm.s,ox:fm.ox,oy:fm.oy},fsel:fm.sel},files=[],enc=new TextEncoder(),add=(n,d)=>files.push({name:n,data:typeof d==='string'?enc.encode(d):d});
@@ -2180,6 +2182,7 @@ fsv.onpointerdown=e=>{fsv.setPointerCapture(e.pointerId);fm.ptrs.set(e.pointerId
   if(fm.ptrs.size>2)return;const w=fwld(e),hv=e.target.closest&&e.target.closest('[data-hv]'),g=e.target.closest&&e.target.closest('[data-i]');
   if(fm.tool==='select'&&hv&&fit(fm.sel)){fpush();fm.drag={k:'v',i:+hv.dataset.hv,moved:false};return}
   if(fm.tool==='select'&&e.target.closest&&e.target.closest('[data-rot]')&&fit(fm.sel)){fpush();fm.drag={k:'rot',moved:false};return}
+  if(fm.tool==='select'&&g){const o0=fit(+g.dataset.i);if(o0&&fm.sel!==o0.id){fm.drag={k:'p',sx:e.clientX,sy:e.clientY,ox:fm.ox,oy:fm.oy,moved:false,pick:o0.id};return}}
   if(fm.tool==='select'&&g){const o=fit(+g.dataset.i);if(o){const ch=fm.sel!==o.id;fm.sel=o.id;fpush();fm.drag={k:'m',sx:w.x,sy:w.y,o:JSON.parse(JSON.stringify(o)),moved:false};if(ch){fpanel();frender()}return}}
   fm.drag={k:'p',sx:e.clientX,sy:e.clientY,ox:fm.ox,oy:fm.oy,moved:false}};
 let _raf=0;const fr=()=>{if(!_raf)_raf=requestAnimationFrame(()=>{_raf=0;frender()})};
@@ -2195,7 +2198,7 @@ fsv.onpointermove=e=>{if(fm.ptrs.has(e.pointerId))fm.ptrs.set(e.pointerId,{x:e.c
   if(o.pts)o.pts=d.o.pts.map(p=>[p[0]+dx,p[1]+dy]);else{o.x=d.o.x+dx;o.y=d.o.y+dy}fr()};
 fsv.onpointerup=fsv.onpointercancel=e=>{fm.ptrs.delete(e.pointerId);if(fm.pinch){if(fm.ptrs.size<2)fm.pinch=null;if(!fm.ptrs.size)fm.drag=null;return}
   const d=fm.drag;fm.drag=null;if(!d)return;
-  if(d.k==='p'){if(!d.moved)ftap(fwld(e));return}
+  if(d.k==='p'){if(!d.moved){if(d.pick){fm.sel=d.pick;fm.msg='';fpanel();frender()}else ftap(fwld(e))}return}
   if(!d.moved){fm.und.pop();fpanel();frender();return}
   save();fpanel();frender()};
 fsv.addEventListener('wheel',e=>{e.preventDefault();const r=fsv.getBoundingClientRect();fzoom(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top)},{passive:false});
