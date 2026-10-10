@@ -401,6 +401,11 @@ function bancSection(o){const W=1600,H=560,m=70,z=o.z,nb=Math.max(1,o.nb),D=o.D,
   const nm=z.name||(ZT[z.zt]||['Tanca'])[0].split(' (')[0];
   g+=`<text x="${m}" y="${m-30}" font-size="22" font-weight="600" fill="#1b2733">Corte · ${esc(nm)}${o.nb?` en ${o.nb} bancales`:''}</text><text x="${m}" y="${m-10}" font-size="14" fill="#66737e">${fmt(Math.round(D))} m de fondo · de ${fmt(Math.round(o.A*10)/10)} a ${fmt(Math.round(lo*10)/10)} m${o.nb?` · marges de ${fmt(Math.round(o.drop/nb*100)/100)} m · bancales de ${fmt(Math.round(D/nb))} m`:''}</text>`;
   return{W,H,str:`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="sans-serif">${g}</svg>`}}
+/* ---------- altura de cada planta y murete de ses golfes ---------- */
+function floorHHTML(f){if(f<0)return'';const v=floorH(f),g=isGolf(f);let x='';
+  if(g){const t=topF(),rs=roofs().filter(r=>r.type==='teja'),ri=rs.length?Math.max(...rs.map(r=>rise(r,getRP(r.id)))):0;x=`<p class="hint">Ses golfes: en los lados miden lo que el murete (<b>${fmt(v)} m</b>) y en el centro, bajo la cumbrera, <b>${fmt(Math.round((v+ri)*100)/100)} m</b>. La altura del centro depende de la inclinación del tejado: cámbiala en la pestaña Tejado. Con murete 0, el tejado arranca del suelo de ses golfes.</p>`}
+  return `<h2>${g?'Murete de ses golfes':'Altura de '+fname(f).toLowerCase()}</h2><label>${g?'Altura del murete de fachada (m)':'Altura de suelo a suelo (m)'}<input class="flH" data-f="${f}" type="number" step="0.1" min="0" inputmode="decimal" value="${v}"></label>${x}`}
+document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('flH'))return;const f=+t.dataset.f,n=parseFloat(String(t.value).replace(',','.'));if(isNaN(n)||n<0||(n<1.8&&!isGolf(f)))return;push();st.fhs={...(st.fhs||{}),[f]:n};note=isGolf(f)?'Murete de ses golfes: '+fmt(n)+' m':fname(f)+': '+fmt(n)+' m de altura';setTimeout(done,0)});
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
 const arcW=i=>r2((i.n||3)*(i.luz||2)+((i.n||3)+1)*(i.pil||.5));
@@ -501,8 +506,11 @@ function facadeSide(h){
   if(inY){o.push(['left',Math.abs(mx-c.x)]);o.push(['right',Math.abs(mx-(c.x+c.w))])}
   o.sort((a,b)=>a[1]-b[1]);return o.length&&o[0][1]<=T?o[0][0]:null;
 }
+const isGolf=f=>!!st.golfas&&f===st.n;
+function floorH(f){if(st.fhs&&st.fhs[f]!=null)return st.fhs[f];if(isGolf(f))return .9;return (st.fac&&st.fac.fh)||3}
+function floorZ(f){let z=0;for(let k=0;k<f;k++)z+=floorH(k);return z}
 function pathGeom(it){
-  const tr=.28,fh=(st.fac&&st.fac.fh)||3,need=Math.ceil(fh/.18)-1,w0=it.w||1,segs=it.seg||[];
+  const tr=.28,fh=floorH(it.f>=0?it.f:0),need=Math.ceil(fh/.18)-1,w0=it.w||1,segs=it.seg||[];
   let x=0,y=0,th=0,w=w0,ss=0;const C=[{x,y,th,w,st:true,s:0}];
   segs.forEach(sg=>{const w1=sg.w||w;let len,dth=0;
     if(sg.k==='c'){const rad=Math.max(.3,sg.rad||1),ang=(sg.ang??90)*Math.PI/180;len=Math.max(.05,Math.abs(ang)*rad);dth=ang}else len=Math.max(.05,sg.len||1);
@@ -530,7 +538,7 @@ function wireSeg(it){const b=$('#sp');
   b.querySelectorAll('[data-add]').forEach(el=>el.onclick=()=>{push();const k=el.dataset.add,w=(it.seg[it.seg.length-1]||{}).w??it.w;it.seg.push(k==='c'?{k:'c',ang:90,rad:1.2,w}:{k,len:k==='l'?1:2,w});if(viol(it)){it.seg.pop();undo.pop();note=lastWhy}done()});
   b.querySelectorAll('[data-fit]').forEach(el=>el.onclick=()=>{let i=-1;it.seg.forEach((s,j)=>{if(s.k==='r')i=j});if(i<0){note='Añade un tramo recto con escalones para poder ajustar';return render()}
     const gp=pathGeom(it),bk=JSON.stringify(it);push();it.seg[i].len=Math.max(.2,r2(it.seg[i].len+(gp.need*.28+.001-gp.sTotal)));if(viol(it)){Object.assign(it,JSON.parse(bk));undo.pop();note=lastWhy}done()})}
-function escGeom(it){const fh=(st.fac&&st.fac.fh)||3,n=Math.ceil(fh/.18),w=it.w||1,tr=.28,ty=it.ty||'recta';
+function escGeom(it){const fh=floorH(it.f>=0?it.f:0),n=Math.ceil(fh/.18),w=it.w||1,tr=.28,ty=it.ty||'recta';
   if(ty==='U'){const n1=Math.ceil(n/2);return{n,n1,W:(n1-1)*tr+w,H:2*w+.1}}
   if(ty==='L'){const n1=Math.ceil(n/2),n2=n-n1;return{n,n1,n2,W:(n1-1)*tr+w,H:n2*tr+w}}
   if(ty==='caracol'){const R=w+.35;return{n,R,W:2*R,H:2*R}}
@@ -1316,7 +1324,7 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
   if(it.t==='esc'){const g=escGeom(it);h=`<p class="hint">Escalera de ${fname(it.f).toLowerCase()}: sube a la planta de arriba. ${g.n} escalones (contrahuella 18 cm, huella 28 cm). Ocupa ${fmt(g.W)} × ${fmt(g.H)} m. Arrástrala para moverla.</p>${escFields(it)}${opt('ty','Tipo',it.ty||'recta',[['recta','Recta (se puede ensanchar o estrechar)'],['L','En L, con descansillo'],['U','En U, dos tramos'],['caracol','De caracol'],['eliptica','Elíptica (largo y ancho distintos)'],['tramos','Por tramos: rectos, curvos y rellanos']])}${it.ty==='tramos'?escSegUI(it):''}`}
   else if(it.t==='farol')h=`<p class="hint">Farol de ${fname(it.f).toLowerCase()}. Arrástralo para moverlo; se ve en la fachada más cercana.</p>${f('h','Altura (m)',it.h)}${opt('ty','Tipo',it.ty||'pared',[['pared','Farol de pared con brazo de hierro'],['colgante','Farol colgante'],['poste','Poste con farol']])}`;
   else if(it.t==='balc'){const hs=items.find(i=>i.id===it.host);h=`<p class="hint">Balcón apoyado en ${hs&&hs.t==='door'?'una puerta':'una ventana'} de ${fname(it.f).toLowerCase()}. Sobresale del contorno hacia fuera.</p><div class="g2">${f('d','Saliente (m)',it.d)}${f('ex','Ancho extra a cada lado (m)',it.ex)}</div>${opt('rail','Barandilla',it.rail||'hierro',[['hierro','Barandilla de hierro forjado'],['balaustrada','Balaustrada de piedra'],['none','Sin barandilla']])}`}
-  else if(it.t==='cont')h=alasHTML()+opt('muro','Muro exterior',it.muro?'1':'',[['','Solo contorno (los muros los ponen las habitaciones)'],['1','Muro exterior continuo en todo el contorno']])+`<p class="hint">Contorno exterior de ${fname(it.f).toLowerCase()}. Las habitaciones no pueden salirse de él.</p><div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Largo (m)',r2(it.h))}</div><p class="hint">Superficie: ${fmt(it.w*it.h)} m²</p>`;
+  else if(it.t==='cont')h=floorHHTML(it.f)+alasHTML()+opt('muro','Muro exterior',it.muro?'1':'',[['','Solo contorno (los muros los ponen las habitaciones)'],['1','Muro exterior continuo en todo el contorno']])+`<p class="hint">Contorno exterior de ${fname(it.f).toLowerCase()}. Las habitaciones no pueden salirse de él.</p><div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Largo (m)',r2(it.h))}</div><p class="hint">Superficie: ${fmt(it.w*it.h)} m²</p>`;
   else if(it.t==='cota'){const L=Math.hypot(it.x2-it.x1,it.y2-it.y1),n=items.filter(i=>i.t==='cota'&&i.f===it.f).length;h=`<p class="hint">Medición de ${fmt(L)} m. Arrastra los puntos azules para cambiarla.</p><div class="row"><button id="cotaAll" class="dng">Borrar las ${n} mediciones de ${fname(it.f).toLowerCase()}</button></div>`}
   else if(it.t==='arco'){const g=arcG(it);h=`<p class="hint">Arcada de ${g.n} arcos, ${fmt(it.w)} m de largo. Ponla sobre el muro exterior: en planta baja abre un porche y en las plantas altas una galería.</p><div class="g2">${f('n','Número de arcos',g.n)}${f('luz','Luz de cada arco (m)',g.luz)}</div><div class="g2">${f('pil','Ancho de pilar (m)',g.pil)}${f('ia','Altura de arranque (m)',r2(g.ia))}</div>`+opt('at','Forma del arco',g.at,ARC)+opt('sop','Apoyos',it.sop||'pilar',[['pilar','Pilares de marés'],['columna','Columnas de piedra con capitel']])+opt('bar','Barandilla',it.bar||'',[['','Sin barandilla (porche)'],['balaustrada','Balaustrada de piedra (galería)'],['hierro','Barandilla de hierro forjado']])+`<p class="hint">La clave queda a ${fmt(g.ia+g.rise)} m del suelo de la planta.</p>`}
   else if(it.t==='porche'){const o=porSides(it),out=porOut(it);h=`<p class="hint">Porche cubierto para bajar del caballo o del carruaje a cubierto y guardar los coches. ${out?'Sale de la casa por la fachada '+({bottom:'de abajo',top:'de arriba',left:'izquierda',right:'derecha'})[out]+' y se verá en ella.':'Está dentro de la casa: abre el muro con una Arcada para que entren los carruajes.'} Los lados pegados al muro no llevan apoyos.</p>`+f('name','Nombre',it.name||'Porche de carruajes','text')+`<div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Fondo (m)',r2(it.h))}</div><div class="g2">${f('al','Altura hasta el alero (m)',it.al||4.2)}${f('luz','Luz entre apoyos (m)',it.luz||3)}</div>`+opt('sop','Apoyos',it.sop||'arcos',[['arcos','Arcos sobre pilares'],['pilares','Pilares con vigas'],['columnas','Arcos sobre columnas']])+(it.sop==='pilares'?'':opt('at','Forma del arco',it.at||'medio',ARC))+f('pil','Ancho de pilar (m)',it.pil||.5)+opt('cub','Cubierta',it.cub||'teja',PCUB)+opt('sue','Suelo',it.sue||'empedrado',PSUE)+`<p class="hint">Un carruaje con caballo necesita unos 3 m de luz y 3,5 m de altura libre. La tartana mide 3,5 × 1,6 m.</p>`}
@@ -1623,13 +1631,13 @@ function facade(){const k=FC().side;if(!PSIDES[k])return facade0();const P=patio
     if(k==='p_left')return Math.abs(q.x+q.w-P.x)<T&&ox(q.y,q.y+q.h,P.y,P.y+P.h);return Math.abs(q.x-(P.x+P.w))<T&&ox(q.y,q.y+q.h,P.y,P.y+P.h)};
   try{facade0()}finally{PV=null;PSIDE=null}}
 function facade0(){
-  const c=FC(),v=$('#fsv'),rc=v.getBoundingClientRect(),W=Math.max(240,rc.width),H=Math.max(240,rc.height),side=PSIDE||c.side,horiz=side==='top'||side==='bottom',fh=c.fh,nF=F();
+  const c=FC(),v=$('#fsv'),rc=v.getBoundingClientRect(),W=Math.max(240,rc.width),H=Math.max(240,rc.height),side=PSIDE||c.side,horiz=side==='top'||side==='bottom',fh=c.fh,nF=F(),Z=floorZ,HF=floorH;
   let L=0;const conts=[];for(let f=0;f<nF;f++){const k=contOf(f);if(k){conts.push(k);L=f+1}}
   if(!conts.length){v.innerHTML=`<text class="nm" x="16" y="34">Dibuja primero el contorno de alguna planta.</text>`;return}
   const lo=Math.min(...conts.map(k=>horiz?k.x:k.y)),hi=Math.max(...conts.map(k=>horiz?k.x+k.w:k.y+k.h));
   const U=a=>(side==='bottom'||side==='left')?a-lo:hi-a,rg=(a,b)=>{let p=U(a),q=U(b);if(PV){p=Math.max(-.4,Math.min(hi-lo+.4,p));q=Math.max(-.4,Math.min(hi-lo+.4,q))}return[Math.min(p,q),Math.max(p,q)]};
   const rf=(topF()>=0?roofs():[]).filter(q=>!PV||window._pvRoof(q)),inRf=i=>rf.some(q=>i.x>=q.x-.3&&i.x<=q.x+q.w+.3&&i.y>=q.y-.3&&i.y<=q.y+q.h+.3);let rh=.5;rf.forEach(q=>{if(q.type==='teja')rh=Math.max(rh,rise(q,getRP(q.id)))});
-  const chs=items.filter(i=>i.t==='chim'&&(!PV||inRf(i))),total=hi-lo,cz=Math.max(0,...items.filter(q=>q.t==='caseta'&&(!PV||inRf(q))).map(q=>.5+(q.al||2.4)+.6)),Hm=L*fh+Math.max(rh+(chs.length?.9:0),cz)+.3;
+  const chs=items.filter(i=>i.t==='chim'&&(!PV||inRf(i))),total=hi-lo,cz=Math.max(0,...items.filter(q=>q.t==='caseta'&&(!PV||inRf(q))).map(q=>.5+(q.al||2.4)+.6)),Hm=Z(L)+Math.max(rh+(chs.length?.9:0),cz)+.3;
   const mar=34,s=Math.min((W-2*mar)/(total+1.2),(H-2*mar-26)/Hm),ox=(W-total*s)/2,gy=H-mar-10,X=u=>ox+u*s,Y=m=>gy-m*s;
   const Rc=(u0,u1,m0,m1,ex)=>`<rect x="${X(u0)}" y="${Y(m1)}" width="${(u1-u0)*s}" height="${(m1-m0)*s}" ${ex}/>`;
   const winCornice=(a,b,m1,ov,wt)=>{const[cf,cs]=MATC[c.km||'piedra'],s1=`fill="${cf}" stroke="${cs}" stroke-width="1.2"`,cx=(a+b)/2;
@@ -1669,27 +1677,27 @@ function facade0(){
   const defs=`<defs><pattern id="p-piedra" width="${s}" height="${.6*s}" patternUnits="userSpaceOnUse"><g transform="scale(${s/100})">${STONE}</g></pattern><pattern id="p-mares" width="${s}" height="${.5*s}" patternUnits="userSpaceOnUse"><g transform="scale(${s/100})">${MARES}</g></pattern><pattern id="p-encalado" width="${s}" height="${s}" patternUnits="userSpaceOnUse"><g transform="scale(${s/100})">${CAL}</g></pattern><pattern id="p-teja" width="${.3*s}" height="${.22*s}" patternUnits="userSpaceOnUse"><rect width="${.3*s}" height="${.22*s}" fill="#c0693a"/><path d="M0 ${.22*s}H${.3*s}M${.15*s} 0V${.22*s}" stroke="rgba(58,29,12,.45)" stroke-width="1"/></pattern></defs>`;
   let h='',topAB=null;
   for(let f=0;f<L;f++){const k=contOf(f);if(!k)continue;const[a,b]=rg(horiz?k.x:k.y,horiz?k.x+k.w:k.y+k.h);
-    h+=Rc(a,b,f*fh,(f+1)*fh,`fill="url(#p-${c.ff[f]||c.mat})" stroke="#4a3f33" stroke-width="1.5"`);
+    h+=Rc(a,b,Z(f),Z(f+1),`fill="url(#p-${c.ff[f]||c.mat})" stroke="#4a3f33" stroke-width="1.5"`);
     if(f===0&&c.zm)h+=Rc(a,b,0,c.zh,`fill="url(#p-${c.zm})" stroke="#4a3f33" stroke-width="1.5"`);
     else if(f===0&&(c.ff[0]||c.mat)==='encalado')h+=Rc(a,b,0,.8,`fill="#d3c9b0" opacity=".85"`);
-    if(c.cm){const[cf,cs]=MATC[c.cm];for(let t=f*fh,j=0;t<(f+1)*fh-.01;t+=.35,j++){const w=j%2?.35:.55,t1=Math.min(t+.35,(f+1)*fh);h+=Rc(a,a+w,t,t1,`fill="${cf}" stroke="${cs}" stroke-width="1"`)+Rc(b-w,b,t,t1,`fill="${cf}" stroke="${cs}" stroke-width="1"`)}}
-    if(f>0)h+=Rc(a-.05,b+.05,f*fh-.06,f*fh+.06,`fill="#7d6f5a" opacity=".55"`);
+    if(c.cm){const[cf,cs]=MATC[c.cm];for(let t=Z(f),j=0;t<Z(f+1)-.01;t+=.35,j++){const w=j%2?.35:.55,t1=Math.min(t+.35,Z(f+1));h+=Rc(a,a+w,t,t1,`fill="${cf}" stroke="${cs}" stroke-width="1"`)+Rc(b-w,b,t,t1,`fill="${cf}" stroke="${cs}" stroke-width="1"`)}}
+    if(f>0)h+=Rc(a-.05,b+.05,Z(f)-.06,Z(f)+.06,`fill="#7d6f5a" opacity=".55"`);
     if(f===L-1)topAB=[a,b];
   }
-  chs.forEach(k=>{const m=horiz?k.x:k.y,[a,b]=rg(m-.45,m+.45),base=L*fh,top=base+rh+.9;
+  chs.forEach(k=>{const m=horiz?k.x:k.y,[a,b]=rg(m-.45,m+.45),base=Z(L),top=base+rh+.9;
     h+=Rc(a,b,base,top,`fill="#b5533c" stroke="#4a2a20" stroke-width="1.5"`)+Rc(a-.06,b+.06,top-.1,top+.08,`fill="#8f3f2c" stroke="#4a2a20" stroke-width="1"`)});
-  [...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=L*fh;
+  [...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
     if(along)h+=Rc(a,b,base,base+rs,`fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2"`);
     else h+=`<path d="M${X(a)} ${Y(base)}L${X((a+b)/2)} ${Y(base+rs)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;
   });
-  if(L>0&&topF()>=0)items.filter(i=>i.t==='caseta'&&(!PV||inRf(i))).forEach(i=>{const[a,b]=horiz?rg(i.x,i.x+i.w):rg(i.y,i.y+i.h),base=L*fh+.5,al=i.al||2.4;
+  if(L>0&&topF()>=0)items.filter(i=>i.t==='caseta'&&(!PV||inRf(i))).forEach(i=>{const[a,b]=horiz?rg(i.x,i.x+i.w):rg(i.y,i.y+i.h),base=Z(L)+.5,al=i.al||2.4;
     h+=Rc(a,b,base,base+al,`fill="url(#p-${c.mat})" stroke="#4a3f33" stroke-width="1.5"`);
     if(i.cub==='plana')h+=Rc(a-.05,b+.05,base+al,base+al+.35,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.2"`);
     else h+=`<path d="M${X(a-.15)} ${Y(base+al)}L${X(b+.15)} ${Y(base+al)}L${X(b+.15)} ${Y(base+al+.5)}L${X(a-.15)} ${Y(base+al+.2)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="1.5"/>`;
     if((i.pt||'bottom')===side){const m=(a+b)/2;h+=Rc(m-.45,m+.45,base,base+Math.min(2,al-.15),`fill="#7a4a2a" stroke="#2a190d" stroke-width="1.5"`)}});
-  if(topAB){const base=L*fh;h+=cornice(topAB[0],topAB[1],base);
+  if(topAB){const base=Z(L);h+=cornice(topAB[0],topAB[1],base);
     rf.forEach(q=>{const e=getRP(q.id).e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e);
       if(q.type!=='teja')return;
       if(c.al==='teja')h+=Rc(a-.12,b+.12,base-.2,base-.14,`fill="#000" opacity=".18"`)+Rc(a-.12,b+.12,base-.14,base-.02,`fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="1.5"`)+Rc(a-.06,b+.06,base-.02,base+.14,`fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="1.5"`);
@@ -1697,8 +1705,8 @@ function facade0(){
     })}
   let nOp=0;
   items.filter(i=>(i.t==='door'||i.t==='window')&&i.f<L&&facadeSide(i)===side).forEach(i=>{
-    nOp++;const r=i.r*Math.PI/180,e0=horiz?i.x:i.y,e1=horiz?i.x+i.w*Math.cos(r):i.y+i.w*Math.sin(r),[a,b]=rg(Math.min(e0,e1),Math.max(e0,e1)),base=i.f*fh,w=b-a;
-    const hasB=items.some(q=>q.t==='balc'&&q.host===i.id),wA=i.ant??SD().ant,wD=i.din??SD().din,m0=i.t==='door'?base:base+Math.min(wA,fh-.4),m1=i.t==='door'?base+Math.min(DTH[i.dt||'una'],fh-.2):Math.max(m0+.2,base+Math.min(wD,fh-.2));
+    nOp++;const r=i.r*Math.PI/180,e0=horiz?i.x:i.y,e1=horiz?i.x+i.w*Math.cos(r):i.y+i.w*Math.sin(r),[a,b]=rg(Math.min(e0,e1),Math.max(e0,e1)),base=Z(i.f),w=b-a;
+    const hasB=items.some(q=>q.t==='balc'&&q.host===i.id),wA=i.ant??SD().ant,wD=i.din??SD().din,gw=isGolf(i.f)&&i.t==='window'&&HF(i.f)<2,m0=i.t==='door'?base:gw?base+Math.min(.25,HF(i.f)*.2):base+Math.min(wA,Math.max(.1,HF(i.f)-.4)),m1=i.t==='door'?base+Math.min(DTH[i.dt||'una'],HF(i.f)-.2):gw?base+Math.max(.3,HF(i.f)-.12):Math.max(m0+.2,base+Math.min(wD,HF(i.f)-.15));
     if(c.shut&&(i.t==='window'||hasB)){const lw=w/2;
       [[a-lw,a],[b,b+lw]].forEach(([p,q])=>{h+=Rc(p,q,m0,m1,`fill="${c.shut}" stroke="rgba(0,0,0,.45)" stroke-width="1"`);
         for(let t=m0+.1;t<m1;t+=.1)h+=`<path d="M${X(p)} ${Y(t)}H${X(q)}" stroke="rgba(0,0,0,.28)" stroke-width="1"/>`})}
@@ -1706,21 +1714,21 @@ function facade0(){
     if(i.t==='door')h+=doorFac(i.dt||'una',a,b,m0,m1);
     else h+=(c.km?Rc(a-.14,b+.14,m0-.14,m1+.14,`fill="${MATC[c.km][0]}" stroke="${MATC[c.km][1]}" stroke-width="1.2"`)+Rc(a-.2,b+.2,m0-.14,m0-.04,`fill="${MATC[c.km][0]}" stroke="${MATC[c.km][1]}" stroke-width="1.2"`):Rc(a-.08,b+.08,m0-.08,m1+.08,`fill="#e8e1d0" stroke="#4a3f33" stroke-width="1"`))+Rc(a,b,m0,m1,`fill="#2c3f52" stroke="#2a190d" stroke-width="1.5"`)+(i.t==='window'&&i.cort?(()=>{const col=i.cort==='fina'?'#8a2a3a':'#cbbf98',lw=(b-a)*.32,hh=m1-m0;return `<path d="M${X(a)} ${Y(m1)}H${X(a+lw)}Q${X(a+lw*.35)} ${Y(m0+hh*.55)} ${X(a+lw*.55)} ${Y(m0+hh*.1)}H${X(a)}Z" fill="${col}" opacity=".92"/><path d="M${X(b)} ${Y(m1)}H${X(b-lw)}Q${X(b-lw*.35)} ${Y(m0+hh*.55)} ${X(b-lw*.55)} ${Y(m0+hh*.1)}H${X(b)}Z" fill="${col}" opacity=".92"/>`+(i.cort==='fina'?`<path d="M${X(a)} ${Y(m1-.06)}H${X(b)}" stroke="#c8a040" stroke-width="3"/>`:'')})():'')+`<path d="M${X((a+b)/2)} ${Y(m0)}V${Y(m1)}M${X(a)} ${Y((m0+m1)/2)}H${X(b)}" stroke="#d8dee3" stroke-width="2"/>`;
   });
-  items.filter(i=>i.t==='arco'&&i.f<L&&facadeSide(i)===side).forEach(i=>{nOp++;const g=arcG(i),r=(i.r||0)*Math.PI/180,e0=horiz?i.x:i.y,e1=horiz?i.x+i.w*Math.cos(r):i.y+i.w*Math.sin(r),[a,b]=rg(Math.min(e0,e1),Math.max(e0,e1)),base=i.f*fh,k0=(b-a)/i.w;
-    for(let k=0;k<g.n;k++){const u0=a+(g.pil+k*(g.luz+g.pil))*k0,u1=u0+g.luz*k0,sp=base+Math.min(g.ia,fh-.3),top=Math.min(sp+g.rise,base+fh-.15),rr=Math.max(0,top-sp);
+  items.filter(i=>i.t==='arco'&&i.f<L&&facadeSide(i)===side).forEach(i=>{nOp++;const g=arcG(i),r=(i.r||0)*Math.PI/180,e0=horiz?i.x:i.y,e1=horiz?i.x+i.w*Math.cos(r):i.y+i.w*Math.sin(r),[a,b]=rg(Math.min(e0,e1),Math.max(e0,e1)),base=Z(i.f),k0=(b-a)/i.w;
+    for(let k=0;k<g.n;k++){const u0=a+(g.pil+k*(g.luz+g.pil))*k0,u1=u0+g.luz*k0,sp=base+Math.min(g.ia,HF(i.f)-.3),top=Math.min(sp+g.rise,base+HF(i.f)-.15),rr=Math.max(0,top-sp);
       h+=`<path d="${arcPath(g.at,X(u0-.16),X(u1+.16),Y(base),Y(sp),(rr+.16)*s)}" fill="#e8e1d0" stroke="#4a3f33" stroke-width="1.2"/>`;
       h+=`<path d="${arcPath(g.at,X(u0),X(u1),Y(base),Y(sp),rr*s)}" fill="#3e352b" stroke="#2a190d" stroke-width="1.5"/>`;
       if(g.at!=='dintel'&&rr>.3){const cx=(u0+u1)/2;h+=Rc(cx-.12,cx+.12,top-.05,top+.2,`fill="#d8cfbb" stroke="#4a3f33" stroke-width="1"`)}
       if(i.bar==='balaustrada'){h+=Rc(u0,u1,base,base+.12,`fill="#d8cfbb" stroke="#4a3f33" stroke-width="1"`)+Rc(u0,u1,base+.82,base+.95,`fill="#d8cfbb" stroke="#4a3f33" stroke-width="1"`);for(let u=u0+.1;u<u1-.08;u+=.2)h+=`<ellipse cx="${X(u+.05)}" cy="${Y(base+.47)}" rx="${Math.max(1.5,.06*s)}" ry="${.33*s}" fill="#e8e1d0" stroke="#4a3f33" stroke-width="1"/>`}
       else if(i.bar==='hierro'){for(let u=u0+.06;u<u1;u+=.13)h+=`<path d="M${X(u)} ${Y(base)}V${Y(base+1)}" stroke="#1c1c1c" stroke-width="${Math.max(1,.025*s)}"/>`;h+=Rc(u0,u1,base+.96,base+1,`fill="#1c1c1c"`)}}
-    if(i.sop==='columna')for(let k=0;k<=g.n;k++){const uc=a+(g.pil/2+k*(g.luz+g.pil))*k0,sp=base+Math.min(g.ia,fh-.3),cw=g.pil*.5;
+    if(i.sop==='columna')for(let k=0;k<=g.n;k++){const uc=a+(g.pil/2+k*(g.luz+g.pil))*k0,sp=base+Math.min(g.ia,HF(i.f)-.3),cw=g.pil*.5;
       h+=Rc(uc-g.pil*.42,uc+g.pil*.42,base,base+.18,`fill="#d8cfbb" stroke="#4a3f33" stroke-width="1"`)+Rc(uc-cw/2,uc+cw/2,base+.18,sp-.22,`fill="#efe7d4" stroke="#4a3f33" stroke-width="1"`)+Rc(uc-g.pil*.48,uc+g.pil*.48,sp-.22,sp,`fill="#d8cfbb" stroke="#4a3f33" stroke-width="1"`)}
   });
   items.filter(i=>!PV&&i.t==='pujador'&&i.f===0).forEach(i=>{const c0=contOf(0);if(!c0)return;const cx=i.x+i.w/2,cy=i.y+i.h/2,T=1.6,sd=cy>c0.y+c0.h&&cy<c0.y+c0.h+T?'bottom':cy<c0.y&&cy>c0.y-T?'top':cx<c0.x&&cx>c0.x-T?'left':cx>c0.x+c0.w&&cx<c0.x+c0.w+T?'right':null;if(sd!==side)return;
     const vert=(i.r||0)%180!==0,ww=vert?i.h:i.w,[a,b]=horiz?rg(cx-ww/2,cx+ww/2):rg(cy-ww/2,cy+ww/2),n=Math.max(1,Math.round(i.n||3)),al=i.alt||.9,[cf,cs]=PMATC[i.mat||'mares'];
     h+=Rc(a,b,0,al,`fill="${cf}" stroke="${cs}" stroke-width="1.5"`);for(let k=1;k<n;k++)h+=`<path d="M${X(a)} ${Y(al*k/n)}H${X(b)}" stroke="${cs}" stroke-width="1.2"/>`;
     if(i.ani!=='no')h+=`<circle cx="${X((a+b)/2)}" cy="${Y(al+.45)}" r="${Math.max(3,.08*s)}" fill="none" stroke="#222" stroke-width="2"/>`});
-  items.filter(i=>!PV&&i.t==='porche'&&i.f===0&&porOut(i)===side).forEach(i=>{const[a,b]=horiz?rg(i.x,i.x+i.w):rg(i.y,i.y+i.h),al=Math.min(i.al||4.2,L*fh),n=porN(b-a,i),pil=i.pil||.5,stp=(b-a-pil)/n,luz=stp-pil,[cf,cs]=['#e6dcc4','#4a3f33'];
+  items.filter(i=>!PV&&i.t==='porche'&&i.f===0&&porOut(i)===side).forEach(i=>{const[a,b]=horiz?rg(i.x,i.x+i.w):rg(i.y,i.y+i.h),al=Math.min(i.al||4.2,Z(L)),n=porN(b-a,i),pil=i.pil||.5,stp=(b-a-pil)/n,luz=stp-pil,[cf,cs]=['#e6dcc4','#4a3f33'];
     h+=Rc(a,b,0,al,`fill="url(#p-${c.ff[0]||c.mat})" stroke="${cs}" stroke-width="1.5"`);
     for(let k=0;k<n;k++){const u0=a+pil+k*stp,u1=u0+luz,at=i.sop==='pilares'?'dintel':(i.at||'medio'),rise=at==='medio'?luz/2:at==='rebajado'?luz/4:at==='carpanel'?luz/3:at==='escarzano'?luz/5:at==='apuntado'?luz*.866:0,sp=Math.max(1.5,al-.4-rise),rr=Math.max(0,Math.min(rise,al-.25-sp));
       h+=`<path d="${arcPath(at,X(u0-.14),X(u1+.14),Y(0),Y(sp),(rr+.14)*s)}" fill="${cf}" stroke="${cs}" stroke-width="1.2"/><path d="${arcPath(at,X(u0),X(u1),Y(0),Y(sp),rr*s)}" fill="#3e352b" stroke="#2a190d" stroke-width="1.5"/>`}
@@ -1729,23 +1737,23 @@ function facade0(){
     else if(i.cub==='terrado')h+=Rc(a-.05,b+.05,al,al+.45,`fill="#e4ddcc" stroke="${cs}" stroke-width="1.5"`);
     else h+=Rc(a-.2,b+.2,al,al+.12,`fill="#2a2a2a"`)+Rc(a-.2,b+.2,al+.12,al+.3,`fill="#bcd6e2" opacity=".75" stroke="#2a2a2a" stroke-width="1"`);
   });
-  items.filter(q=>!PV&&q.t==='balc'&&q.side===side&&q.f<L).forEach(q=>{const t=balcRect(q);if(!t)return;const[a,b]=rg(horiz?t.x:t.y,horiz?t.x+t.w:t.y+t.h),base=q.f*fh,rl=q.rail||'hierro';
+  items.filter(q=>!PV&&q.t==='balc'&&q.side===side&&q.f<L).forEach(q=>{const t=balcRect(q);if(!t)return;const[a,b]=rg(horiz?t.x:t.y,horiz?t.x+t.w:t.y+t.h),base=Z(q.f),rl=q.rail||'hierro';
     h+=Rc(a,b,base-.2,base,`fill="#cfc6b3" stroke="#4a3f33" stroke-width="1.5"`);
     if(rl==='hierro'){for(let u=a+.06;u<b;u+=.13)h+=`<path d="M${X(u)} ${Y(base)}V${Y(base+1)}" stroke="#1c1c1c" stroke-width="${Math.max(1,.025*s)}"/>`;h+=Rc(a,b,base+.96,base+1,`fill="#1c1c1c"`)+`<path d="M${X(a)} ${Y(base+.1)}H${X(b)}" stroke="#1c1c1c" stroke-width="${Math.max(1.5,.03*s)}"/>`}
     else if(rl==='balaustrada'){h+=Rc(a,b,base,base+.08,`fill="#c9bfa9" stroke="#8a8070" stroke-width="1"`)+Rc(a-.04,b+.04,base+.88,base+1,`fill="#d6ccb7" stroke="#8a8070" stroke-width="1"`);for(let u=a+.1;u<b-.05;u+=.17)h+=Rc(u-.04,u+.04,base+.08,base+.88,`fill="#d6ccb7" stroke="#8a8070" stroke-width="1" rx="2"`)}
   });
-  if(c.cn&&topAB){const[a,b]=topAB,base=L*fh,[cf,cs]=MATC[c.rcm];
+  if(c.cn&&topAB){const[a,b]=topAB,base=Z(L),[cf,cs]=MATC[c.rcm];
     if(c.cn==='piedra'){h+=Rc(a-.14,b+.14,base+.12,base+.17,`fill="#4a3f33"`);[a,b].forEach(u=>{h+=Rc(u-.1,u+.1,base-.28,base-.12,`fill="${cf}" stroke="${cs}" stroke-width="1.2"`)+`<path d="M${X(u)} ${Y(base-.28)}v${.12*s}" stroke="#4a3f33" stroke-width="2"/>`})}
     else{h+=Rc(a-.06,b+.06,base-.12,base+.02,`fill="#b86a3a" stroke="#6b3a1c" stroke-width="1.3"`);[a+.1,b-.1].forEach(u=>{h+=Rc(u-.06,u+.06,.25,base-.12,`fill="#b86a3a" stroke="#6b3a1c" stroke-width="1.2"`);for(let m=.5;m<base-.2;m+=.6)h+=Rc(u-.08,u+.08,m,m+.05,`fill="#8f4f27"`)})}
   }
   const lamp=(u,m)=>`<circle cx="${X(u)}" cy="${Y(m)}" r="${.38*s}" fill="rgba(242,210,122,.22)"/>`+Rc(u-.11,u+.11,m-.17,m+.17,`fill="#f2d27a" stroke="#1c1c1c" stroke-width="1.5"`)+Rc(u-.13,u+.13,m+.17,m+.21,`fill="#1c1c1c"`)+Rc(u-.13,u+.13,m-.21,m-.17,`fill="#1c1c1c"`)+`<path d="M${X(u-.14)} ${Y(m+.21)}L${X(u)} ${Y(m+.38)}L${X(u+.14)} ${Y(m+.21)}Z" fill="#1c1c1c"/><path d="M${X(u)} ${Y(m-.17)}V${Y(m+.17)}" stroke="#1c1c1c" stroke-width="1"/>`;
   items.filter(q=>q.t==='farol'&&q.f<L&&nearSide(q.x,q.y,q.f,1.6)===side).forEach(q=>{
-    const[a]=rg(horiz?q.x:q.y,horiz?q.x:q.y),ty=q.ty||'pared',base=q.f*fh;
+    const[a]=rg(horiz?q.x:q.y,horiz?q.x:q.y),ty=q.ty||'pared',base=Z(q.f);
     if(ty==='poste'){const m=q.h;h+=Rc(a-.04,a+.04,.3,m-.21,`fill="#1c1c1c"`)+Rc(a-.15,a+.15,0,.3,`fill="${MATC.piedra[0]}" stroke="${MATC.piedra[1]}" stroke-width="1.2"`)+lamp(a,m)}
     else if(ty==='colgante'){const m=base+q.h;h+=`<path d="M${X(a)} ${Y(m+.38)}V${Y(m+.8)}" stroke="#1c1c1c" stroke-width="1.5"/><circle cx="${X(a)}" cy="${Y(m+.82)}" r="${Math.max(2,.05*s)}" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>`+lamp(a,m)}
     else{const m=base+q.h;h+=`<path d="M${X(a)} ${Y(m-.21)}V${Y(m-.5)}" stroke="#1c1c1c" stroke-width="2"/><circle cx="${X(a+.06)}" cy="${Y(m-.5)}" r="${Math.max(2,.06*s)}" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>`+lamp(a,m)}
   });
-  h+=`<path d="M0 ${gy}H${W}" stroke="#4a3f33" stroke-width="2"/><text class="nm" x="16" y="26">${PV?'Fachada interior de la clastra · '+PNAME.replace('Clastra · ',''):'Fachada '+SIDES[side].toLowerCase()} · ${MATS[c.mat].toLowerCase()}</text><text class="dm" x="${W/2}" y="${H-12}" text-anchor="middle">${fmt(total)} m de ancho · ${L} planta${L>1?'s':''} · ${fmt(L*fh)} m hasta el alero${nOp?'':' · sin puertas ni ventanas en esta fachada'}</text>`;
+  h+=`<path d="M0 ${gy}H${W}" stroke="#4a3f33" stroke-width="2"/><text class="nm" x="16" y="26">${PV?'Fachada interior de la clastra · '+PNAME.replace('Clastra · ',''):'Fachada '+SIDES[side].toLowerCase()} · ${MATS[c.mat].toLowerCase()}</text><text class="dm" x="${W/2}" y="${H-12}" text-anchor="middle">${fmt(total)} m de ancho · ${L} planta${L>1?'s':''} · ${fmt(Z(L))} m hasta el alero${nOp?'':' · sin puertas ni ventanas en esta fachada'}</text>`;
   v.innerHTML=defs+h;
 }
 function migrate(){for(const f of [...Array(F()).keys(),...UGL().map((_,i)=>-10-i)]){if(contOf(f))continue;const rs=items.filter(i=>i.f===f&&i.t==='room');if(!rs.length)continue;
