@@ -1238,7 +1238,7 @@ function outlet(c,rs){
   const ok=rs.some(r=>{const e=getRP(r.id).e;return c.x>=r.x-e&&c.x<=r.x+r.w+e&&c.y>=r.y-e&&c.y<=r.y+r.h+e});if(!ok)warn++;
   return `<g data-id="${c.id}"${c.id===sel?' class="sel"':''}><rect x="${x-s/2}" y="${y-s/2}" width="${s}" height="${s}" fill="var(--brick)" stroke="${ok?'var(--wall)':'var(--dng)'}" stroke-width="${ok?2:3}"/><circle cx="${x+s*.5}" cy="${y-s*.7}" r="${s*.22}" fill="var(--ink)" opacity=".3"/><circle cx="${x+s*.8}" cy="${y-s*1.1}" r="${s*.3}" fill="var(--ink)" opacity=".2"/></g>`}
 function handles(it){const S=view.s,c=(x,y,k)=>`<circle data-h="${k}" cx="${x*S}" cy="${y*S}" r="10" fill="var(--acc)" stroke="var(--panel)" stroke-width="2"/>`;
-  if(it.t==='room'||it.t==='cont')return c(it.x+it.w,it.y+it.h,'br');
+  if(it.t==='room'||it.t==='cont'){const q=(x,y,k)=>`<rect data-h="${k}" x="${x*S-8}" y="${y*S-8}" width="16" height="16" rx="3" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"/>`;return q(it.x,it.y+it.h/2,'w')+q(it.x+it.w,it.y+it.h/2,'e')+q(it.x+it.w/2,it.y,'n')+q(it.x+it.w/2,it.y+it.h,'s')+c(it.x+it.w,it.y+it.h,'br')}
   if(it.t==='wall'||it.t==='cota')return c(it.x1,it.y1,'a')+c(it.x2,it.y2,'b');
   if(it.t==='tub')return it.pts.map(([x,y],i)=>c(x,y,'v'+i)).join('');
   if(it.t==='aljibe'&&it.fm!=='round')return c(it.x+(it.w||2),it.y+(it.h||2),'br');
@@ -1376,7 +1376,11 @@ svg.onpointerdown=e=>{
   const p=world(e),sp={x:snap(p.x),y:snap(p.y)},hd=e.target.dataset&&e.target.dataset.h,g=e.target.closest&&e.target.closest('[data-id]'),rg=e.target.closest&&e.target.closest('[data-r]');
   if(tool==='caseta'&&fl===-1&&!g){const it={id:nid,t:'caseta',f:-1,w:2.6,h:3.2,x:snap(p.x-1.3),y:snap(p.y-1.6),pt:'bottom',cub:'teja',al:2.4};if(viol(it)){note=lastWhy;render();return}push();nid++;items.push(it);sel=it.id;tool='select';toolsUI();done();return}
   if(tool==='select'||fl===-1){
-    if(fl!==-1&&hd){push();drag={k:'h',h:hd,last:JSON.stringify(cur())};return}
+    if(fl!==-1&&hd){push();const it0=cur();drag={k:'h',h:hd,last:JSON.stringify(it0),nb:[]};
+      if(it0&&it0.t==='room'&&'nsew'.includes(hd)&&!e.shiftKey){const E=1e-3,ov=(a0,a1,b0,b1)=>Math.min(a1,b1)-Math.max(a0,b0)>.05,pos=hd==='w'?it0.x:hd==='e'?it0.x+it0.w:hd==='n'?it0.y:it0.y+it0.h;
+        items.forEach(r=>{if(r.t!=='room'||r.f!==it0.f||r.id===it0.id)return;const v=hd==='w'||hd==='e';if(v){if(!ov(r.y,r.y+r.h,it0.y,it0.y+it0.h))return;if(Math.abs(r.x+r.w-pos)<E)drag.nb.push([r.id,'e']);else if(Math.abs(r.x-pos)<E)drag.nb.push([r.id,'w'])}else{if(!ov(r.x,r.x+r.w,it0.x,it0.x+it0.w))return;if(Math.abs(r.y+r.h-pos)<E)drag.nb.push([r.id,'s']);else if(Math.abs(r.y-pos)<E)drag.nb.push([r.id,'n'])}});
+        drag.lastNb=JSON.stringify(drag.nb.map(([id])=>items.find(i=>i.id===id)))}
+      return}
     if(g){sel=+g.dataset.id;push();drag={k:'m',sx:p.x,sy:p.y,o:JSON.parse(JSON.stringify(cur())),last:JSON.stringify(cur())};if(cur().t==='balc'){undo.pop();drag=null}panel();render();return}
     if(rg){sel=rg.dataset.r;panel();render();return}
     if(sel!==null){sel=null;panel()}
@@ -1438,6 +1442,12 @@ svg.onpointermove=e=>{
     if(drag.k==='m'){const o=drag.o,dx=snap(p.x-drag.sx),dy=snap(p.y-drag.sy);
       if(it.t==='tub'||it.t==='pas')it.pts=o.pts.map(([a,b])=>[r2(a+dx),r2(b+dy)]);else if(it.t==='wall'||it.t==='cota'){it.x1=o.x1+dx;it.x2=o.x2+dx;it.y1=o.y1+dy;it.y2=o.y2+dy;if(it.t==='wall'&&!e.shiftKey)snapWall(it)}else{it.x=r2(o.x+dx);it.y=r2(o.y+dy);if(!e.shiftKey){if(it.t==='room'||it.t==='porche')snapRoomMove(it);else if(['obj','esc','plaza','rampa','tonel','aljibe','pujador'].includes(it.t))snapBox(it)}}}
     else if(/^v\d+$/.test(drag.h)){const q=snapPt(p,it.id);it.pts[+drag.h.slice(1)]=[q.x,q.y]}
+    else if('nsew'.includes(drag.h)&&drag.h.length===1){const v=drag.h==='w'||drag.h==='e';let val=v?snap(p.x):snap(p.y);
+      if(!e.shiftKey){const{xs,ys}=edgeC(it.id,it.f),ex=new Set(drag.nb.map(n=>n[0])),cs=(v?xs:ys);const others=[];items.forEach(r=>{if(r.id===it.id||ex.has(r.id)||r.f!==it.f)return});const b=near([val],cs.filter(c=>!drag.nb.some(([id])=>{const r=items.find(i=>i.id===id);return r&&(v?(Math.abs(r.x-c)<1e-3||Math.abs(r.x+r.w-c)<1e-3):(Math.abs(r.y-c)<1e-3||Math.abs(r.y+r.h-c)<1e-3))})));SG=[];if(b){val=b.c;SG.push(v?{x:val}:{y:val})}}
+      const setE=(o,sd)=>{if(sd==='w'){const r=o.x+o.w;o.x=r2(Math.min(val,r-.3));o.w=r2(r-o.x)}else if(sd==='e'){o.w=r2(Math.max(.3,val-o.x))}else if(sd==='n'){const b2=o.y+o.h;o.y=r2(Math.min(val,b2-.3));o.h=r2(b2-o.y)}else{o.h=r2(Math.max(.3,val-o.y))}};
+      setE(it,drag.h);let bad=false;(drag.nb||[]).forEach(([id,sd])=>{const o=items.find(i=>i.id===id);if(o){setE(o,sd);if(viol(o))bad=true}});
+      if(bad||viol(it)){const L=JSON.parse(drag.lastNb||'[]');L.forEach(q=>{const o=items.find(i=>i.id===q.id);if(o)Object.assign(o,q)});Object.assign(it,JSON.parse(drag.last));note=lastWhy||'No cabe';render();return}
+      drag.last=JSON.stringify(it);drag.lastNb=JSON.stringify((drag.nb||[]).map(([id])=>items.find(i=>i.id===id)));note=drag.nb&&drag.nb.length?'Moviendo la pared compartida con '+drag.nb.length+' habitación'+(drag.nb.length>1?'es':''):'';render();return}
     else if(drag.h==='br'){it.w=Math.max(.3,snap(p.x)-it.x);it.h=Math.max(.3,snap(p.y)-it.y);if(it.t==='room'&&!e.shiftKey)snapRoomBR(it)}
     else if(drag.h==='a'){const q=endPt(it.x2,it.y2,p);it.x1=q.x;it.y1=q.y;if(it.t==='wall'&&!e.shiftKey)snapEnd(it,1)}
     else{const q=endPt(it.x1,it.y1,p);it.x2=q.x;it.y2=q.y;if(it.t==='wall'&&!e.shiftKey)snapEnd(it,2)}
