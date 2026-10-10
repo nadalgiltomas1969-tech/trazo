@@ -447,6 +447,25 @@ function makePaso(p,kind){const W=items.find(r=>r.t==='room'&&r.f===fl&&!r.patio
   else{const side=sd.inn||sd.out||'bottom';items.push(arcAlong(Rm,side,{luz:3,pil:.6,at:'medio',sop:'pilar',bar:fl>0?'balaustrada':''}));
     note='Galería: porche bajo la planta de arriba, abierto con arcos hacia '+(sd.inn?'la clastra':'la fachada')+'. Estira la habitación y vuelve a ajustar la arcada si la quieres más larga'}
   sel=Rm.id;tool='select';toolsUI();done()}
+/* ---------- medidor automático a las paredes ---------- */
+const DIST_T=['obj','esc','plaza','rampa','tonel','pilar','aljibe','pneg','pozo','pujador','label','farol','chim','baj','deco','door','window','arco'];
+function hostRoom(cx,cy,f,ex){let best=null;items.forEach(r=>{if(r.t!=='room'||r.f!==f||r.id===ex)return;if(cx>=r.x&&cx<=r.x+r.w&&cy>=r.y&&cy<=r.y+r.h&&(!best||r.w*r.h<best.w*best.h))best=r});if(best)return best;const c=contOf(f);return c&&cx>=c.x&&cx<=c.x+c.w&&cy>=c.y&&cy<=c.y+c.h?{...c,th:c.muro?SD().ext:.3,_c:1}:null}
+function inner(R0){const c=contOf(R0.f),ext=SD().ext||.6,o=(v,cv)=>(c&&c.muro&&Math.abs(v-cv)<.02)?Math.max(ext/2,(R0.th??.3)/2):(R0.th??.3)/2;
+  return{x0:R0.x+o(R0.x,c?c.x:-1e9),x1:R0.x+R0.w-o(R0.x+R0.w,c?c.x+c.w:-1e9),y0:R0.y+o(R0.y,c?c.y:-1e9),y1:R0.y+R0.h-o(R0.y+R0.h,c?c.y+c.h:-1e9)}}
+function distInfo(it){if(!it||!DIST_T.includes(it.t))return null;let b;
+  if(['door','window','arco'].includes(it.t)){const r=((it.r||0)%360+360)%360,w=it.w||1;if(r===0)b={x:it.x,y:it.y,w,h:0,ax:'x'};else if(r===180)b={x:it.x-w,y:it.y,w,h:0,ax:'x'};else if(r===90)b={x:it.x,y:it.y,w:0,h:w,ax:'y'};else if(r===270)b={x:it.x,y:it.y-w,w:0,h:w,ax:'y'};else return null}
+  else{const q=typeof bboxOf==='function'?bboxOf(it):null;if(q)b={...q};else if(typeof it.x==='number')b={x:it.x,y:it.y,w:it.w||0,h:it.h||0};else return null}
+  const cx=b.x+b.w/2,cy=b.y+b.h/2;let R0;const pk=(A,B)=>A&&!A._c?A:B&&!B._c?B:(A||B);if(b.ax==='x'){R0=pk(hostRoom(cx,cy-.2,it.f,null),hostRoom(cx,cy+.2,it.f,null))}else if(b.ax==='y'){R0=pk(hostRoom(cx-.2,cy,it.f,null),hostRoom(cx+.2,cy,it.f,null))}else R0=hostRoom(cx,cy,it.f,null);if(!R0)return null;
+  const I=inner(R0),d={b,I,R0};if(b.ax!=='y'){d.l=b.x-I.x0;d.r=I.x1-(b.x+b.w)}if(b.ax!=='x'){d.t=b.y-I.y0;d.d=I.y1-(b.y+b.h)}return d}
+function distSVG(it){const D=distInfo(it);if(!D)return'';const S=view.s,b=D.b,I=D.I,cx=(b.x+b.w/2)*S,cy=(b.y+b.h/2)*S,col='#d35400';let h='';
+  const seg=(x1,y1,x2,y2,v,tx,ty)=>{if(Math.abs(v)<.005)return'';h+=`<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 3" pointer-events="none"/><path d="M${x1-3} ${y1-3}L${x1+3} ${y1+3}M${x2-3} ${y2-3}L${x2+3} ${y2+3}" stroke="${col}" stroke-width="1.5" pointer-events="none"/><text x="${tx}" y="${ty}" text-anchor="middle" style="font:700 12px sans-serif;fill:${col};paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none">${fmt(Math.round(v*100)/100)} m</text>`};
+  if(D.l!=null)seg(I.x0*S,cy,b.x*S,cy,D.l,(I.x0*S+b.x*S)/2,cy-6);if(D.r!=null)seg((b.x+b.w)*S,cy,I.x1*S,cy,D.r,((b.x+b.w)*S+I.x1*S)/2,cy-6);
+  if(D.t!=null)seg(cx,I.y0*S,cx,b.y*S,D.t,cx+22,(I.y0*S+b.y*S)/2+4);if(D.d!=null)seg(cx,(b.y+b.h)*S,cx,I.y1*S,D.d,cx+22,((b.y+b.h)*S+I.y1*S)/2+4);return h}
+function distHTML(it){const D=distInfo(it);if(!D)return'';const I=(k,l,v)=>v==null?'':`<label>${l}<input class="dstI" data-d="${k}" type="number" step="0.01" min="0" inputmode="decimal" value="${Math.round(v*100)/100}"></label>`;
+  return `<h2 style="margin-top:10px">Distancia a las paredes${D.R0._c?'':' de '+esc(D.R0.name||'la habitación')}</h2><div class="g2">${I('l','Izquierda (m)',D.l)}${I('r','Derecha (m)',D.r)}${I('t','Arriba (m)',D.t)}${I('d','Abajo (m)',D.d)}</div><p class="hint">Se mide desde la cara interior del muro. Escribe una distancia y la pieza se coloca ahí.</p>`}
+document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('dstI'))return;const it=cur(),D=distInfo(it);if(!D)return;const v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v)||v<0)return;const k=t.dataset.d;let dx=0,dy=0;
+  if(k==='l')dx=v-D.l;else if(k==='r')dx=D.r-v;else if(k==='t')dy=v-D.t;else dy=D.d-v;push();const bk=JSON.stringify(it);
+  if(it.t==='wall'){it.x1+=dx;it.x2+=dx;it.y1+=dy;it.y2+=dy}else{it.x=r2(it.x+dx);it.y=r2(it.y+dy)}if(viol(it)){Object.assign(it,JSON.parse(bk));undo.pop();note=lastWhy}setTimeout(done,0)});
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
 const arcW=i=>r2((i.n||3)*(i.luz||2)+((i.n||3)+1)*(i.pil||.5));
@@ -1320,7 +1339,7 @@ function render(){
   if(pas&&tool==='pasillo')h+=drawPas({...pas,pts:pas.hov?pas.pts.concat([pas.hov]):pas.pts,ws:pas.hov?pas.ws.concat([pasW]):pas.ws,ths:pas.hov?pas.ths.concat([pasT]):pas.ths,w:pasW,th:pasT,id:-3},1,true);
   if(meas&&tool==='medir'&&!draft&&fl>=0)h+=draw({...meas,t:'medir'},1);
   if(drag&&SG.length){const S=view.s,B=1e4;SG.forEach(g=>{h+=g.x!==undefined?`<line x1="${g.x*S}" y1="${-B}" x2="${g.x*S}" y2="${B}" stroke="#e0218a" stroke-width="1.2" stroke-dasharray="6 4" pointer-events="none"/>`:`<line x1="${-B}" y1="${g.y*S}" x2="${B}" y2="${g.y*S}" stroke="#e0218a" stroke-width="1.2" stroke-dasharray="6 4" pointer-events="none"/>`})}
-  const it=cur();if(it&&tool==='select'&&fl!==-1)h+=handles(it);
+  const it=cur();if(it&&tool==='select'&&fl!==-1)h+=handles(it)+distSVG(it);
   svg.innerHTML=h+'</g>';if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest('#alasDock'))alasDock();
   const a=items.filter(i=>i.t==='room'&&i.f===fl&&!i.patio).reduce((s,i)=>s+i.w*i.h,0);
   $('#tot').textContent=a?`Superficie: ${fmt(a)} m²`:'';
@@ -1383,6 +1402,7 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
   else if(it.t==='label')h=f('text','Texto',it.text,'text');
   else if(isV(it))h=`<p class="hint">${fname(it.f)}. ${it.t==='chim'?'El tiro sube hasta el tejado.':'La bajante baja hasta la planta baja.'} Su espacio queda reservado.</p>`;
   else h=f('w','Ancho (m)',it.w)+(it.t==='window'?opt('cort','Cortinas',it.cort||'',[['','Sin cortinas'],['fina','Finas: terciopelo y encaje (planta noble)'],['basta','Bastas: lienzo o tela basta (otras dependencias)']])+'<div class="row"><button id="cortAll">Poner estas cortinas en toda la planta</button></div>'+f('ant','Antepecho: altura del alféizar (m)',it.ant??SD().ant)+f('din','Dintel: altura superior del hueco (m)',it.din??SD().din):'')+((it.t==='window'||it.dt==='vidriera')?f('cw','Cornisa: sobresale a cada lado (cm)',it.cw??SD().cw)+opt('ct','Cornisa de esta ventana',it.ct||'',[['','Según el ajuste general'],['none','Sin cornisa'],['moldura','Moldura sencilla'],['fronton','Frontón triangular']]):'')+(it.t==='door'?opt('dt','Tipo de puerta',it.dt||'una',DT)+`<p class="hint">Al cambiar el tipo, el ancho se ajusta al habitual de ese tipo.</p>`:'');
+  h+=distHTML(it);
   h+='<div class="row">'+(it.t==='door'||it.t==='window'||it.t==='arco'||it.t==='pujador'||it.t==='esc'||it.t==='obj'?'<button id="rot">Girar 90°</button>':'')+(it.t==='cont'||it.t==='balc'?'':'<button id="dup">Duplicar</button>')+'<button id="del" class="dng">Eliminar</button></div>';
   b.innerHTML=h;wire();if(it.t==='esc'&&it.ty==='tramos')wireSeg(it);if(it.t==='pas')wirePas(it);
   if($('#cortAll'))$('#cortAll').onclick=()=>{push();let n=0;items.forEach(i=>{if(i.t==='window'&&i.f===it.f){i.cort=it.cort||'';n++}});note=n+' ventanas de '+fname(it.f).toLowerCase()+(it.cort?' con cortinas '+(it.cort==='fina'?'finas':'bastas'):' sin cortinas');done()};
