@@ -406,6 +406,24 @@ function floorHHTML(f){if(f<0)return'';const v=floorH(f),g=isGolf(f);let x='';
   if(g){const t=topF(),rs=roofs().filter(r=>r.type==='teja'),ri=rs.length?Math.max(...rs.map(r=>rise(r,getRP(r.id)))):0;x=`<p class="hint">Ses golfes: en los lados miden lo que el murete (<b>${fmt(v)} m</b>) y en el centro, bajo la cumbrera, <b>${fmt(Math.round((v+ri)*100)/100)} m</b>. La altura del centro depende de la inclinación del tejado: cámbiala en la pestaña Tejado. Con murete 0, el tejado arranca del suelo de ses golfes.</p>`}
   return `<h2>${g?'Murete de ses golfes':'Altura de '+fname(f).toLowerCase()}</h2><label>${g?'Altura del murete de fachada (m)':'Altura de suelo a suelo (m)'}<input class="flH" data-f="${f}" type="number" step="0.1" min="0" inputmode="decimal" value="${v}"></label>${x}`}
 document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('flH'))return;const f=+t.dataset.f,n=parseFloat(String(t.value).replace(',','.'));if(isNaN(n)||n<0||(n<1.8&&!isGolf(f)))return;push();st.fhs={...(st.fhs||{}),[f]:n};note=isGolf(f)?'Murete de ses golfes: '+fmt(n)+' m':fname(f)+': '+fmt(n)+' m de altura';setTimeout(done,0)});
+/* ---------- tejado continuo alrededor de la clastra (limatesas y limahoyas) ---------- */
+function ringGeom(){if(st.junta!=='limas'||st.mode!=='ind')return null;const t=topF();if(t<0)return null;const c=contOf(t)||contOf(0),P=items.find(i=>i.t==='room'&&i.patio&&i.f===t)||patioR();if(!c||!P)return null;
+  const rs=roofs().filter(r=>r.type==='teja');if(rs.length<2)return null;const e=getRP(rs[0].id).e,a=getRP(rs[0].id).a,tn=Math.tan(a*Math.PI/180);
+  const O=[c.x-e,c.y-e,c.x+c.w+e,c.y+c.h+e],I=[P.x+e,P.y+e,P.x+P.w-e,P.y+P.h-e],Rr=[(c.x+P.x)/2,(c.y+P.y)/2,(c.x+c.w+P.x+P.w)/2,(c.y+c.h+P.y+P.h)/2];
+  const wN=P.y-c.y,wS=c.y+c.h-P.y-P.h,wO=P.x-c.x,wE=c.x+c.w-P.x-P.w,rise=Math.max(wN,wS,wO,wE)/2*tn+e*tn;
+  const near=(x,y)=>rs.find(r=>x>=r.x-.01&&x<=r.x+r.w+.01&&y>=r.y-.01&&y<=r.y+r.h+.01);
+  return{O,I,Rr,rise,tn,e,rs,ids:{n:(near((c.x+c.w)/2,(c.y+P.y)/2)||rs[0]).id,s:(near((c.x+c.w)/2,(c.y+c.h+P.y+P.h)/2)||rs[0]).id,o:(near((c.x+P.x)/2,(c.y+c.h)/2)||rs[0]).id,e:(near((c.x+c.w+P.x+P.w)/2,(c.y+c.h)/2)||rs[0]).id}}}
+function drawRing(G){const S=view.s,[x0,y0,x1,y1]=G.O.map(v=>v*S),[ix0,iy0,ix1,iy1]=G.I.map(v=>v*S),[rx0,ry0,rx1,ry1]=G.Rr.map(v=>v*S);
+  const F=[['n',[[x0,y0],[x1,y0],[rx1,ry0],[rx0,ry0]],'var(--tB)','v'],['n',[[rx0,ry0],[rx1,ry0],[ix1,iy0],[ix0,iy0]],'var(--tA)','v'],['s',[[x0,y1],[x1,y1],[rx1,ry1],[rx0,ry1]],'var(--tA)','v'],['s',[[rx0,ry1],[rx1,ry1],[ix1,iy1],[ix0,iy1]],'var(--tB)','v'],
+    ['o',[[x0,y0],[rx0,ry0],[rx0,ry1],[x0,y1]],'var(--tB)','h'],['o',[[rx0,ry0],[ix0,iy0],[ix0,iy1],[rx0,ry1]],'var(--tA)','h'],['e',[[x1,y0],[rx1,ry0],[rx1,ry1],[x1,y1]],'var(--tA)','h'],['e',[[rx1,ry0],[ix1,iy0],[ix1,iy1],[rx1,ry1]],'var(--tB)','h']];
+  const step=Math.max(5,.22*S);let h='';F.forEach(([k,pts,col,dir],n)=>{const id='rg'+n,pp='M'+pts.map(q=>q.join(' ')).join('L')+'Z',xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);let ln='';
+    if(dir==='v')for(let x=Math.min(...xs);x<Math.max(...xs);x+=step)ln+=`M${x} ${Math.min(...ys)}V${Math.max(...ys)}`;else for(let y=Math.min(...ys);y<Math.max(...ys);y+=step)ln+=`M${Math.min(...xs)} ${y}H${Math.max(...xs)}`;
+    h+=`<g data-r="${G.ids[k]}"${G.ids[k]===sel?' class="sel"':''}><clipPath id="${id}"><path d="${pp}"/></clipPath><path d="${pp}" fill="${col}"/><path d="${ln}" stroke="#3a1d0c" stroke-opacity=".28" clip-path="url(#${id})"/><path d="${pp}" fill="none" stroke="#3a1d0c" stroke-width="1"/></g>`});
+  h+=`<path d="M${rx0} ${ry0}H${rx1}V${ry1}H${rx0}Z" fill="none" stroke="#3a1d0c" stroke-width="3" pointer-events="none"/>`;
+  [[x0,y0,rx0,ry0],[x1,y0,rx1,ry0],[x1,y1,rx1,ry1],[x0,y1,rx0,ry1]].forEach(([a,b,c,d])=>h+=`<path d="M${a} ${b}L${c} ${d}" stroke="#3a1d0c" stroke-width="3" pointer-events="none"/>`);
+  [[ix0,iy0,rx0,ry0],[ix1,iy0,rx1,ry0],[ix1,iy1,rx1,ry1],[ix0,iy1,rx0,ry1]].forEach(([a,b,c,d])=>h+=`<path d="M${a} ${b}L${c} ${d}" stroke="#1f4a6a" stroke-width="3" stroke-dasharray="7 4" pointer-events="none"/>`);
+  h+=`<text class="rt" x="${(x0+x1)/2}" y="${(y0+ry0)/2+4}" text-anchor="middle">Tejado continuo · cumbrera +${fmt(Math.round(G.rise*100)/100)} m</text><text class="rt" x="${(x0+rx0)/2+6}" y="${(y0+ry0)/2+4}" text-anchor="start" style="font-size:11px">limatesa</text><text class="rt" x="${(ix0+rx0)/2+6}" y="${(iy0+ry0)/2+16}" text-anchor="start" style="font-size:11px">limahoya</text>`;
+  return h}
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
 const arcW=i=>r2((i.n||3)*(i.luz||2)+((i.n||3)+1)*(i.pil||.5));
@@ -1271,7 +1289,7 @@ function render(){
     }else{
       const t=topF(),rs=roofs();
       h+=`<g opacity=".35" pointer-events="none">${items.filter(i=>i.f===t&&(i.t==='room'||i.t==='wall')).map(i=>draw(i,1)).join('')}</g>`;
-      rs.forEach(r=>h+=drawRoof(r));items.filter(i=>i.t==='caseta').forEach(i=>h+=draw(i,0));
+      {const G=ringGeom();if(G){rs.filter(r=>r.type!=='teja').forEach(r=>h+=drawRoof(r));h+=drawRing(G)}else rs.forEach(r=>h+=drawRoof(r))}items.filter(i=>i.t==='caseta').forEach(i=>h+=draw(i,0));
       items.filter(i=>i.t==='chim').forEach(c=>h+=outlet(c,rs));
     }
   }
@@ -1304,6 +1322,7 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
       h+=sg?`<p class="hint">Tramo ${ix+1} de ${st.rseg.length}: ${fmt(r.w)} × ${fmt(r.h)} m.</p>`+(ix<st.rseg.length-1?f('sl','Largo de este tramo (m)',r2(dx?r.w:r.h)):'<p class="hint">El último tramo ocupa lo que queda.</p>')+opt('rdir','Dividir',st.rdir||'',[['','A lo largo de la casa (automático)'],['x','En horizontal del plano'],['y','En vertical del plano']])+'<div class="row"><button id="rsAdd">Añadir otro tramo</button><button id="rsDel">Quitar divisiones</button></div>'
         :'<div class="row"><button id="rsAdd">Dividir en tramos: tejas y terrado</button></div><p class="hint">Parte la cubierta: unos tramos con tejas y otros de terrado, donde puede ir la caseta de la escalera.</p>'}
     if(r.type==='teja')h+=`<div class="g2">${f('e','Alero (m)',p.e)}${f('a','Inclinación (°)',p.a)}</div>`+opt('o','Cumbrera',p.o,[['auto','Automática'],['h','Horizontal'],['v','Vertical']])+`<p class="hint">Cumbrera a +${fmt(rise(r,p))} m sobre la cornisa</p>`;
+    if(st.mode==='ind'&&patioR())h+=opt('junta','Unión de los tejados en las esquinas',st.junta||'',[['','Cada ala con su tejado y su hastial'],['limas','Tejado continuo: limatesas fuera y limahoyas hacia la clastra']]);
     h+=`<div class="row"><button id="md">${st.mode==='uno'?'Separar en tejados independientes':'Unir en un solo tejado'}</button></div>`;
     b.innerHTML=h;wire();$('#md').onclick=()=>{push();st.mode=st.mode==='uno'?'ind':'uno';sel=null;done()};
     if($('#rsAdd'))$('#rsAdd').onclick=()=>{push();const A=roofAll(),Lt=roofDX(A)?A.w:A.h;
@@ -1357,6 +1376,7 @@ function setRoof(k,v){
   if(k==='type'){if(id==='all')st.mat=v;else if(/^s\d+$/.test(id)&&st.rseg)st.rseg[+id.slice(1)].type=v;else{const rm=items.find(x=>'r'+x.id===id);if(rm)rm.rt=v}}
   else if(k==='sl'){if(/^s\d+$/.test(id)&&st.rseg&&n>0)st.rseg[+id.slice(1)].l=n}
   else if(k==='rdir')st.rdir=v;
+  else if(k==='junta')st.junta=v;
   else if(k==='o')rp[id]={...rp[id],o:v};
   else if(!isNaN(n)&&n>=0)rp[id]={...rp[id],[k]:n};
   done();
@@ -1686,7 +1706,9 @@ function facade0(){
   }
   chs.forEach(k=>{const m=horiz?k.x:k.y,[a,b]=rg(m-.45,m+.45),base=Z(L),top=base+rh+.9;
     h+=Rc(a,b,base,top,`fill="#b5533c" stroke="#4a2a20" stroke-width="1.5"`)+Rc(a-.06,b+.06,top-.1,top+.08,`fill="#8f3f2c" stroke="#4a2a20" stroke-width="1"`)});
-  [...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
+  const RG=PV?null:ringGeom();if(RG){const base=Z(L),[p0,p1]=horiz?rg(RG.O[0],RG.O[2]):rg(RG.O[1],RG.O[3]),[r0,r1]=horiz?rg(RG.Rr[0],RG.Rr[2]):rg(RG.Rr[1],RG.Rr[3]),top=base+RG.rise;
+    h+=`<path d="M${X(p0)} ${Y(base)}L${X(r0)} ${Y(top)}L${X(r1)} ${Y(top)}L${X(p1)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;rf.filter(q=>q.type!=='teja').forEach(q=>{const[a,b]=horiz?rg(q.x,q.x+q.w):rg(q.y,q.y+q.h);h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`)})}
+  if(!RG)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
     if(along)h+=Rc(a,b,base,base+rs,`fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2"`);
