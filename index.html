@@ -263,7 +263,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const F=()=>st.n+(st.golfas?1:0),fname=i=>i===-2?'Subsuelo':i<=-10?ugName(i):i<st.n?(i?'Planta '+i:'Planta baja'):'Golfas';
 const cur=()=>typeof sel==='number'?items.find(i=>i.id===sel):null;
 const push=()=>{undo.push(JSON.stringify({st,items,rp}));if(undo.length>60)undo.shift()};
-const ord={obj:1.5,deco:4,pas:0,tub:4.5,elec:4.6,plaza:1.2,rampa:1.2,pilar:1.3,tonel:1.2,aljibe:.6,pneg:.6,pozo:.6,cont:-1,balc:0,esc:.5,farol:4,room:0,wall:1,window:2,door:3,arco:3,caseta:4,porche:-.5,pujador:1.6,chim:4,baj:4,label:5};
+const ord={cota:5.5,obj:1.5,deco:4,pas:0,tub:4.5,elec:4.6,plaza:1.2,rampa:1.2,pilar:1.3,tonel:1.2,aljibe:.6,pneg:.6,pozo:.6,cont:-1,balc:0,esc:.5,farol:4,room:0,wall:1,window:2,door:3,arco:3,caseta:4,porche:-.5,pujador:1.6,chim:4,baj:4,label:5};
 
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
@@ -477,6 +477,8 @@ ${it.rail==='none'?'':railSvg(it.side,x,y,w,h,S,it.rail)}<text class="dm" x="${x
 <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="transparent" stroke-width="22" pointer-events="stroke"/>
 <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="var(--wall)" stroke-width="${sw}" stroke-dasharray="${sw*2.2} ${sw*.8}" pointer-events="none"/>
 <text class="dm" x="${x+8}" y="${y+18}">Contorno · ${fmt(it.w)} × ${fmt(it.h)} m · ${fmt(it.w*it.h)} m²</text></g>`}
+  if(it.t==='cota'){const x1=it.x1*S,y1=it.y1*S,x2=it.x2*S,y2=it.y2*S,L=Math.hypot(it.x2-it.x1,it.y2-it.y1),px=Math.hypot(x2-x1,y2-y1)||1,nx=-(y2-y1)/px*7,ny=(x2-x1)/px*7,col='#c0562b';
+    return `<g${d}${sc}><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="22"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2"/><path d="M${x1-nx} ${y1-ny}L${x1+nx} ${y1+ny}M${x2-nx} ${y2-ny}L${x2+nx} ${y2+ny}M${x1-nx*.6+ny*.0} ${y1-ny*.6}L${x1+nx*.6} ${y1+ny*.6}" stroke="${col}" stroke-width="2"/><text class="nm" x="${(x1+x2)/2+nx*1.6}" y="${(y1+y2)/2+ny*1.6+4}" text-anchor="middle" style="fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(L)} m</text></g>`}
   if(it.t==='medir'){const x1=it.x1*S,y1=it.y1*S,x2=it.x2*S,y2=it.y2*S,L=Math.hypot(it.x2-it.x1,it.y2-it.y1);
     return `<g pointer-events="none"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#c0562b" stroke-width="2.5" stroke-dasharray="8 5"/><circle cx="${x1}" cy="${y1}" r="5" fill="#c0562b"/><circle cx="${x2}" cy="${y2}" r="5" fill="#c0562b"/><text class="nm" x="${(x1+x2)/2}" y="${(y1+y2)/2-10}" text-anchor="middle" style="fill:#c0562b;paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(L)} m</text></g>`}
   if(it.t==='arco'){const g=arcG(it),w=it.w*S,T=Math.max(6,(SD().ext||.6)*S),P=g.pil*S,Lz=g.luz*S;let ps='',ar='';
@@ -1106,7 +1108,7 @@ function outlet(c,rs){
   return `<g data-id="${c.id}"${c.id===sel?' class="sel"':''}><rect x="${x-s/2}" y="${y-s/2}" width="${s}" height="${s}" fill="var(--brick)" stroke="${ok?'var(--wall)':'var(--dng)'}" stroke-width="${ok?2:3}"/><circle cx="${x+s*.5}" cy="${y-s*.7}" r="${s*.22}" fill="var(--ink)" opacity=".3"/><circle cx="${x+s*.8}" cy="${y-s*1.1}" r="${s*.3}" fill="var(--ink)" opacity=".2"/></g>`}
 function handles(it){const S=view.s,c=(x,y,k)=>`<circle data-h="${k}" cx="${x*S}" cy="${y*S}" r="10" fill="var(--acc)" stroke="var(--panel)" stroke-width="2"/>`;
   if(it.t==='room'||it.t==='cont')return c(it.x+it.w,it.y+it.h,'br');
-  if(it.t==='wall')return c(it.x1,it.y1,'a')+c(it.x2,it.y2,'b');
+  if(it.t==='wall'||it.t==='cota')return c(it.x1,it.y1,'a')+c(it.x2,it.y2,'b');
   if(it.t==='tub')return it.pts.map(([x,y],i)=>c(x,y,'v'+i)).join('');
   if(it.t==='aljibe'&&it.fm!=='round')return c(it.x+(it.w||2),it.y+(it.h||2),'br');
   if(UGT.includes(it.t)||it.t==='porche')return c(it.x+(it.w||1),it.y+(it.h||1),'br');
@@ -1169,11 +1171,15 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
   if(tdraft)return tdPanel();
   if(it&&SUBI.includes(it.t))return subPanel(it);
   if(!it&&tool==='cat')return catChooser();
+  if(!it&&tool==='medir'){const n=items.filter(i=>i.t==='cota'&&i.f===fl).length,N=items.filter(i=>i.t==='cota').length;b.innerHTML=`<p class="hint">Arrastra para medir. Cada medición se queda en el plano hasta que la borres. Para borrar una sola: Editar, tócala y Eliminar.</p><p class="hint">${n} mediciones en ${fname(fl).toLowerCase()} · ${N} en todo el proyecto.</p><div class="row"><button id="cotaFl" class="dng"${n?'':' disabled'}>Borrar las de esta planta</button><button id="cotaAllP" class="dng"${N?'':' disabled'}>Borrar todas</button></div>`;
+    $('#cotaFl').onclick=()=>{push();items=items.filter(i=>!(i.t==='cota'&&i.f===fl));note='Mediciones de esta planta borradas';done()};
+    $('#cotaAllP').onclick=()=>{push();items=items.filter(i=>i.t!=='cota');note='Todas las mediciones borradas';done()};return}
   if(!it){b.innerHTML='<p class="hint">Elige «Editar» y toca un elemento para cambiar sus medidas.</p>';return}
   if(it.t==='esc'){const g=escGeom(it);h=`<p class="hint">Escalera de ${fname(it.f).toLowerCase()}: sube a la planta de arriba. ${g.n} escalones (contrahuella 18 cm, huella 28 cm). Ocupa ${fmt(g.W)} × ${fmt(g.H)} m. Arrástrala para moverla.</p>${escFields(it)}${opt('ty','Tipo',it.ty||'recta',[['recta','Recta (se puede ensanchar o estrechar)'],['L','En L, con descansillo'],['U','En U, dos tramos'],['caracol','De caracol'],['eliptica','Elíptica (largo y ancho distintos)'],['tramos','Por tramos: rectos, curvos y rellanos']])}${it.ty==='tramos'?escSegUI(it):''}`}
   else if(it.t==='farol')h=`<p class="hint">Farol de ${fname(it.f).toLowerCase()}. Arrástralo para moverlo; se ve en la fachada más cercana.</p>${f('h','Altura (m)',it.h)}${opt('ty','Tipo',it.ty||'pared',[['pared','Farol de pared con brazo de hierro'],['colgante','Farol colgante'],['poste','Poste con farol']])}`;
   else if(it.t==='balc'){const hs=items.find(i=>i.id===it.host);h=`<p class="hint">Balcón apoyado en ${hs&&hs.t==='door'?'una puerta':'una ventana'} de ${fname(it.f).toLowerCase()}. Sobresale del contorno hacia fuera.</p><div class="g2">${f('d','Saliente (m)',it.d)}${f('ex','Ancho extra a cada lado (m)',it.ex)}</div>${opt('rail','Barandilla',it.rail||'hierro',[['hierro','Barandilla de hierro forjado'],['balaustrada','Balaustrada de piedra'],['none','Sin barandilla']])}`}
   else if(it.t==='cont')h=`<p class="hint">Contorno exterior de ${fname(it.f).toLowerCase()}. Las habitaciones no pueden salirse de él.</p><div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Largo (m)',r2(it.h))}</div><p class="hint">Superficie: ${fmt(it.w*it.h)} m²</p>`;
+  else if(it.t==='cota'){const L=Math.hypot(it.x2-it.x1,it.y2-it.y1),n=items.filter(i=>i.t==='cota'&&i.f===it.f).length;h=`<p class="hint">Medición de ${fmt(L)} m. Arrastra los puntos azules para cambiarla.</p><div class="row"><button id="cotaAll" class="dng">Borrar las ${n} mediciones de ${fname(it.f).toLowerCase()}</button></div>`}
   else if(it.t==='arco'){const g=arcG(it);h=`<p class="hint">Arcada de ${g.n} arcos, ${fmt(it.w)} m de largo. Ponla sobre el muro exterior: en planta baja abre un porche y en las plantas altas una galería.</p><div class="g2">${f('n','Número de arcos',g.n)}${f('luz','Luz de cada arco (m)',g.luz)}</div><div class="g2">${f('pil','Ancho de pilar (m)',g.pil)}${f('ia','Altura de arranque (m)',r2(g.ia))}</div>`+opt('at','Forma del arco',g.at,ARC)+opt('sop','Apoyos',it.sop||'pilar',[['pilar','Pilares de marés'],['columna','Columnas de piedra con capitel']])+opt('bar','Barandilla',it.bar||'',[['','Sin barandilla (porche)'],['balaustrada','Balaustrada de piedra (galería)'],['hierro','Barandilla de hierro forjado']])+`<p class="hint">La clave queda a ${fmt(g.ia+g.rise)} m del suelo de la planta.</p>`}
   else if(it.t==='porche'){const o=porSides(it),out=porOut(it);h=`<p class="hint">Porche cubierto para bajar del caballo o del carruaje a cubierto y guardar los coches. ${out?'Sale de la casa por la fachada '+({bottom:'de abajo',top:'de arriba',left:'izquierda',right:'derecha'})[out]+' y se verá en ella.':'Está dentro de la casa: abre el muro con una Arcada para que entren los carruajes.'} Los lados pegados al muro no llevan apoyos.</p>`+f('name','Nombre',it.name||'Porche de carruajes','text')+`<div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Fondo (m)',r2(it.h))}</div><div class="g2">${f('al','Altura hasta el alero (m)',it.al||4.2)}${f('luz','Luz entre apoyos (m)',it.luz||3)}</div>`+opt('sop','Apoyos',it.sop||'arcos',[['arcos','Arcos sobre pilares'],['pilares','Pilares con vigas'],['columnas','Arcos sobre columnas']])+(it.sop==='pilares'?'':opt('at','Forma del arco',it.at||'medio',ARC))+f('pil','Ancho de pilar (m)',it.pil||.5)+opt('cub','Cubierta',it.cub||'teja',PCUB)+opt('sue','Suelo',it.sue||'empedrado',PSUE)+`<p class="hint">Un carruaje con caballo necesita unos 3 m de luz y 3,5 m de altura libre. La tartana mide 3,5 × 1,6 m.</p>`}
   else if(it.t==='pujador'){const n=Math.max(1,Math.round(it.n||3));h=`<p class="hint">Pujador de piedra para montar a caballo o subir al carruaje. ${n} escalones de ${fmt((it.alt||.9)/n*100)} cm. La flecha marca hacia dónde se sube; usa «Girar 90°» para orientarlo.</p><div class="g2">${f('w','Ancho (m)',it.w)}${f('h','Fondo (m)',it.h)}</div><div class="g2">${f('alt','Altura total (m)',it.alt||.9)}${f('n','Escalones',n)}</div>`+opt('mat','Material',it.mat||'mares',PMAT)+opt('ani','Argolla para atar',it.ani||'si',[['si','Con argolla de hierro en la pared'],['no','Sin argolla']])}
@@ -1298,7 +1304,7 @@ svg.onpointermove=e=>{
   }else if(drag.k==='m'||drag.k==='h'){
     const it=cur();
     if(drag.k==='m'){const o=drag.o,dx=snap(p.x-drag.sx),dy=snap(p.y-drag.sy);
-      if(it.t==='tub'||it.t==='pas')it.pts=o.pts.map(([a,b])=>[r2(a+dx),r2(b+dy)]);else if(it.t==='wall'){it.x1=o.x1+dx;it.x2=o.x2+dx;it.y1=o.y1+dy;it.y2=o.y2+dy}else{it.x=r2(o.x+dx);it.y=r2(o.y+dy)}}
+      if(it.t==='tub'||it.t==='pas')it.pts=o.pts.map(([a,b])=>[r2(a+dx),r2(b+dy)]);else if(it.t==='wall'||it.t==='cota'){it.x1=o.x1+dx;it.x2=o.x2+dx;it.y1=o.y1+dy;it.y2=o.y2+dy}else{it.x=r2(o.x+dx);it.y=r2(o.y+dy)}}
     else if(/^v\d+$/.test(drag.h)){const q=snapPt(p,it.id);it.pts[+drag.h.slice(1)]=[q.x,q.y]}
     else if(drag.h==='br'){it.w=Math.max(.3,snap(p.x)-it.x);it.h=Math.max(.3,snap(p.y)-it.y)}
     else if(drag.h==='a'){const q=endPt(it.x2,it.y2,p);it.x1=q.x;it.y1=q.y}
@@ -1310,7 +1316,7 @@ svg.onpointermove=e=>{
 svg.onpointerup=svg.onpointercancel=e=>{
   ptrs.delete(e.pointerId);
   if(pinch){if(ptrs.size<2)pinch=null;if(!ptrs.size)drag=null;done();return}
-  if(drag&&drag.k==='n'&&draft&&draft.t==='medir'){meas={x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2};draft=null;drag=null;render();return}
+  if(drag&&drag.k==='n'&&draft&&draft.t==='medir'){const L=Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1);if(L>=.1){push();items.push({id:nid++,t:'cota',f:fl,x1:r2(draft.x1),y1:r2(draft.y1),x2:r2(draft.x2),y2:r2(draft.y2)});note='Medición de '+fmt(L)+' m guardada. Para borrarla: Editar, tócala y Eliminar'}meas=null;draft=null;drag=null;done();return}
   if(drag&&drag.k==='n'&&draft){
     const ok=(draft.t==='room'||draft.t==='cont')?(draft.w>=.3&&draft.h>=.3):Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=.3;
     if(ok){const it={...draft,id:nid};if(viol(it))note=lastWhy;else{push();nid++;items.push(it);sel=it.id;if(it.t==='cont'){tool='room';sel=null;toolsUI()}}}
@@ -1326,6 +1332,7 @@ document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
   tool=b.dataset.tool;note='';tdraft=null;if(tool!=='medir')meas=null;if(tool!=='pasillo'&&pas){pas=null}if(tool!=='select'){sel=null;panel()}
   if((fl===-1||(fl===-2&&!SUBT.includes(tool)&&!INST.includes(tool)&&tool!=='label'))&&tool!=='select'&&tool!=='caseta'){fl=Math.max(0,topF());tabs()}
   if(tool==='caseta'&&fl!==-1){fl=-1;tabs();note='La caseta va en el Tejado, encima de un tramo de terrado'}
+  if(tool==='medir')setTimeout(panel,0);
   if(SUBT.includes(tool)&&fl!==-2){fl=-2;tabs();note='Aljibes y pozos van en el Subsuelo: te he llevado allí'}
   toolsUI();render();
 });
@@ -1348,6 +1355,7 @@ function delFloor(k){push();const g=st.golfas?st.n:-99,ff={...(st.fac&&st.fac.ff
   const ids=new Set(items.map(i=>i.id));Object.keys(rp).forEach(x=>{if(!ids.has(+x)&&!ids.has(x))delete rp[x]});
   sel=null;tdraft=null;note=msg;tabs();done()}
 $('#delFl').onclick=function(){const b=this;if(!b._arm){b._arm=1;b.textContent='¿Seguro? Toca otra vez';setTimeout(()=>{b._arm=0;delLbl()},3000);return}b._arm=0;closeMenus();delFloor(fl);delLbl()};
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='cotaAll'){const it=cur();if(!it)return;push();items=items.filter(i=>!(i.t==='cota'&&i.f===it.f));sel=null;note='Mediciones borradas';done()}});
 function bovFull(){const it=cur();if(!it||it.t!=='room')return;const c=contOf(it.f);if(!c){note='Primero dibuja el contorno';return render()}
   const ax=it.beje||(it.w>=it.h?'x':'y');push();if(ax==='x'){it.y=c.y;it.h=c.h}else{it.x=c.x;it.w=c.w}
   if(!it.bov)it.bov='canon';note='La sala atraviesa ahora toda el ala ('+fmt(ax==='x'?c.h:c.w)+' m de luz)';done()}
@@ -1705,7 +1713,7 @@ async function exportVideo(){if(pdfBusy)return;const dl=await getDL();if(!dl){no
     add('datos/porches_y_pujadors.csv',csv([['Elemento','Nombre / material','Ancho (m)','Fondo (m)','Altura (m)','Apoyos o escalones','Arco','Cubierta','Suelo','X (m)','Y (m)']].concat(items.filter(i=>i.t==='porche').map(i=>['Porche',i.name||'Porche de carruajes',i.w,i.h,i.al||4.2,i.sop||'arcos',i.sop==='pilares'?'':ARCN[i.at||'medio'],(PCUB.find(q=>q[0]===(i.cub||'teja'))||['',''])[1],(PSUE.find(q=>q[0]===(i.sue||'empedrado'))||['',''])[1],i.x,i.y])).concat(items.filter(i=>i.t==='pujador').map(i=>['Pujador',(PMAT.find(q=>q[0]===(i.mat||'mares'))||['',''])[1],i.w,i.h,i.alt||.9,Math.round(i.n||3)+' escalones','',i.ani==='no'?'':'Con argolla','',i.x,i.y]))));
     add('datos/cubierta.csv',csv([['Elemento','Tipo','Ancho (m)','Largo (m)','X (m)','Y (m)','Altura (m)']].concat(roofs().map((r,k)=>['Tramo '+(k+1),r.type==='azotea'?'Terrado (azotea)':'Tejas',r.w,r.h,r.x,r.y,''])).concat(items.filter(i=>i.t==='caseta').map(i=>['Caseta de escalera',i.cub==='plana'?'Plana con pretil':'Tejas a una vertiente',i.w,i.h,i.x,i.y,i.al||2.4]))));
     add('datos/muros_y_pasillos.csv',csv([['Planta','Tipo','Longitud (m)','Grosor (m)','Ancho (m)']].concat(items.filter(i=>i.t==='wall').map(i=>[fn2(i.f),'Muro',Math.hypot(i.x2-i.x1,i.y2-i.y1),i.th,''])).concat(items.filter(i=>i.t==='pas').map(i=>[fn2(i.f),'Pasillo',(()=>{let L=0;for(let k=1;k<i.pts.length;k++)L+=Math.hypot(i.pts[k][0]-i.pts[k-1][0],i.pts[k][1]-i.pts[k-1][1]);return L})(),i.th||'',i.w||'']))));
-    add('datos/piezas_y_muebles.csv',csv([['Planta','Pieza','Grupo','X (m)','Y (m)','Largo (m)','Ancho (m)','Giro (°)','Capacidad (litros)']].concat(items.filter(i=>!['room','cont','wall','door','window','pas','arco','caseta','porche','pujador'].includes(i.t)).map(i=>[fn2(i.f),itemName(i),i.t==='obj'?((CATK[i.ok]||[])[3]||''):'',i.x??(i.pts?i.pts[0][0]:''),i.y??(i.pts?i.pts[0][1]:''),i.w??'',i.h??'',i.r||0,i.t==='obj'?(objCap(i)||''):'']))));
+    add('datos/piezas_y_muebles.csv',csv([['Planta','Pieza','Grupo','X (m)','Y (m)','Largo (m)','Ancho (m)','Giro (°)','Capacidad (litros)']].concat(items.filter(i=>!['room','cont','wall','door','window','pas','arco','caseta','porche','pujador','cota'].includes(i.t)).map(i=>[fn2(i.f),itemName(i),i.t==='obj'?((CATK[i.ok]||[])[3]||''):'',i.x??(i.pts?i.pts[0][0]:''),i.y??(i.pts?i.pts[0][1]:''),i.w??'',i.h??'',i.r||0,i.t==='obj'?(objCap(i)||''):'']))));
     /* finca */
     if(PJ.fn&&PJ.fn.it.length){const FF=PJ.fn;$('#fin').hidden=false;fm.sel=null;fitMap();frender();const fs=$('#fsv2'),r=fs.getBoundingClientRect(),W=Math.round(r.width),H=Math.round(r.height),str=svgStr(fs,W,H);add('finca/mapa_finca.svg',str);add('finca/mapa_finca.png',await svgToPng(str,W,H,3));nImg++;
       const cu={},tr={},an={};FF.it.forEach(i=>{if(i.t==='zona'){const k=(ZT[i.zt]||['Zona'])[0];cu[k]=cu[k]||[0,RIEGO(i.zt)?RIEGO(i.zt).split(':')[0]:''];cu[k][0]+=zA(i)}if(i.t==='plant'){const k='Plantación de '+((ARBOL[i.k]||['?'])[0]).toLowerCase();cu[k]=cu[k]||[0,''];cu[k][0]+=zA(i);const e=(ARBOL[i.k]||['?'])[0],sp=i.sp||SPC[i.k]||8;tr[e]=(tr[e]||0)+Math.round(zA(i)/(sp*sp))}if(i.t==='arb'){const e=(ARBOL[i.k]||['?'])[0];tr[e]=(tr[e]||0)+1}if(i.t==='ani'){const e=(ANIM[i.k]||['?'])[0];an[e]=(an[e]||0)+(i.n||1)}});
