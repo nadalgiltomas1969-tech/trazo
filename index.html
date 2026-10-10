@@ -497,6 +497,9 @@ const DEST={entrada:['Entrada (estudi)',['mb_consola','mb_reloj','mb_perchero','
  bodega:['Bodega (celler)','@bodega'],almazara:['Almazara (tafona)','@almazara'],cuadra:['Cuadra de los caballos','@cuadra'],cochera:['Cochera','@cochera'],
  granero:['Porxo y granero','@granero'],lavadero:['Lavadero',['lv_rentador','lv_cossi','ck_pica','ck_cantaros']],matanza:['Matanza','@matanza'],
  carpinteria:['Carpintería','@carpinteria'],forja:['Forja','@forja'],aperos:['Casa de aperos',['@aperos','@herramientas']],
+ ninos:['Habitación de los niños',['ni_cama','mb_cuna','ni_caballito','ni_juguetes','ni_pupitre','ni_munecas','ni_pizarra','mb_armario','mb_baulpeq','mb_palanganero','mb_alfombra','lu_palmatoria']],
+ costura:['Sala de costura',['co_maquina','co_bastidor','co_cesto','co_maniqui','co_mesa','co_armario','co_plancha','mb_sillon','mb_silla','lu_quinque','lu_aplique']],
+ biblioteca:['Biblioteca',['bi_estante','bi_escalera','bi_mesa','bi_butaca','bi_globo','bi_atril','bi_mapas','mb_escritorio','mb_libreria','mb_chimenea','mb_reloj','mb_alfombra','lu_quinque','lu_candelabro','lu_lampara']],
  pasillo:['Pasillo o distribuidor',['lu_aplique','lu_farol','mb_macetero','mb_consola']],otro:['Otro',[]]};
 function destItems(k){const d=DEST[k];if(!d)return[];let L=[];[].concat(d[1]).forEach(x=>{if(typeof x==='string'&&x[0]==='@'){const g=CAT[x.slice(1)];if(g)L=L.concat(Object.keys(g[1]))}else L.push(x)});return L.filter(k2=>CATK[k2])}
 function destBox(it){const chips=Object.entries(DEST).map(([k,v])=>`<button class="destB" data-k="${k}" aria-pressed="${it.dest===k}" style="padding:6px 9px;font-size:13px">${v[0]}</button>`).join('');
@@ -1209,7 +1212,11 @@ const LUZ={lu_candil:["Candil de aceite (llum d'oli)",.3,.3],lu_quinque:['Quinqu
 const GRA={gr_trigo:['Montón de trigo',3,2.5],gr_cebada:['Montón de cebada',3,2.5],gr_avena:['Montón de avena',3,2.5],gr_harina:['Sacos de harina',1.5,.6],gr_garbillo:['Garbillo y cribas',.8,.8],gr_medidas:['Medidas de grano (barcella y cuartera)',.8,.5],gr_romana:['Romana de pesar',1.2,.4],gr_ristras:['Ristras de pimientos, tomates y cebollas',2.5,.4],gr_almendra:['Almendras tendidas',3,2],gr_algarroba:['Algarrobas tendidas',3,2],gr_higos:['Higos secos en cañizos',2,1.2]};
 const MATZ={ma_banco:['Banco de matar el cerdo',2,.8],ma_llibrell:['Lebrillo para la sangre (llibrell)',.7,.7],ma_caldero:['Caldero de cocer los botifarrons',.9,.9],ma_pastera:['Artesa de amasar la sobrasada (pastera)',1.6,.7],ma_picar:['Máquina de picar y embutir',.6,.4],ma_mesa:['Mesa de despiece',2,.9],ma_perxa:['Percha para colgar embutidos',3,.5],ma_sobrasada:['Sobrasadas colgadas',2,.4],ma_botifarro:['Botifarrons colgados',2,.4],ma_camaiot:['Camaiots colgados',1.5,.4],ma_llonganissa:['Longanizas colgadas',2,.3],ma_cuixot:['Jamones (cuixots) colgados',2,.5],ma_llard:['Ollas de manteca (llard)',1,.5],ma_xulla:['Tocino salado (xulla) en salazón',1.2,.8]};
 CAT.era=['Era de trillar',ERA];CAT.molvent=['Molino de viento',MVI];CAT.sinia=['Sínia (noria de sangre)',SIN];CAT.capilla=['Capilla y oratorio',CAPI];CAT.luz=['Iluminación de época',LUZ];CAT.granero=['Porxo y granero',GRA];CAT.matanza=['Matanza del cerdo',MATZ];
-const EXTRA={...ERA,...MVI,...SIN,...CAPI,...LUZ,...GRA,...MATZ};
+const CASA2={ni_cama:['Cama pequeña de niño',1.6,.8],ni_caballito:['Caballito de madera',.9,.35],ni_juguetes:['Baúl de juguetes',.8,.45],ni_pupitre:['Pupitre de estudio',.9,.6],ni_munecas:['Casa de muñecas',.8,.4],ni_pizarra:['Pizarra con caballete',1,.4],
+ co_maquina:['Máquina de coser de pedal',1,.5],co_bastidor:['Bastidor de bordar',.8,.6],co_cesto:['Cesto de costura',.45,.45],co_maniqui:['Maniquí',.5,.5],co_mesa:['Mesa de cortar telas',2,1],co_armario:['Armario de telas',1.4,.5],co_plancha:['Mesa de planchar con planchas de hierro',1.2,.4],
+ bi_estante:['Estantería alta de libros',2,.4],bi_escalera:['Escalera de biblioteca',.6,.9],bi_mesa:['Mesa de lectura',1.8,.9],bi_globo:['Globo terráqueo',.5,.5],bi_atril:['Atril',.5,.4],bi_butaca:['Butaca de lectura',.8,.8],bi_mapas:['Mapero (cajonera de mapas)',1.2,.8]};
+CAT.casa2=['Niños, costura y biblioteca',CASA2];
+const EXTRA={...ERA,...MVI,...SIN,...CAPI,...LUZ,...GRA,...MATZ,...CASA2};
 LOWO.push('er_era','si_andador','gr_almendra','gr_algarroba');
 function extraSvg(k,x,y,w,h){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2,C=(a,b,r,f,st,ex)=>`<circle cx="${a}" cy="${b}" r="${r}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`,Rt=(a,b,c,d,f,st,ex)=>`<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`,E=(a,b,rx,ry,f,st)=>`<ellipse cx="${a}" cy="${b}" rx="${rx}" ry="${ry}" fill="${f}" stroke="${st}" stroke-width="1.2"/>`,L=(a,b,c,d,st,sw)=>`<path d="M${a} ${b}L${c} ${d}" stroke="${st}" stroke-width="${sw||1.5}"/>`,wd='#8a6b3c',dk='#3a2514',st='#9a917f',sd='#5d574c';
   const heap=(f,dot)=>{let o=E(cx,cy,w/2,h/2,f,'#6b5a3a');for(let i=0;i<22;i++){const q=i*2.4,r=.15+.75*((i*37)%10)/10;o+=`<circle cx="${cx+Math.cos(q)*w/2*r}" cy="${cy+Math.sin(q)*h/2*r}" r="${Math.max(1.2,Math.min(w,h)*.025)}" fill="${dot}"/>`}return o};
@@ -1275,6 +1282,26 @@ function extraSvg(k,x,y,w,h){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2,C=(a,b,r,
   case 'ma_cuixot':return hang(3,'#9a5a3a','#4a2a1a',w/9,h*.3);
   case 'ma_llard':return [0,1].map(i=>C(x+w*(i+.5)/2,cy,Math.min(w/4,h/2)*.9,'#b5653a','#5a2a1a')+C(x+w*(i+.5)/2,cy,Math.min(w/4,h/2)*.6,'#f6f0e0','#bba')).join('');
   case 'ma_xulla':{let o=Rt(x,y,w,h,'#a07a4a',dk,'rx="3"')+Rt(x+w*.06,y+h*.08,w*.88,h*.84,'#f4f2ec','#aaa');for(let i=0;i<3;i++)o+=Rt(x+w*(.12+i*.27),y+h*.25,w*.22,h*.5,'#f0d8c8','#a07a6a','rx="3"');return o}
+  case 'ni_cama':return Rt(x,y,w,h,'#a07a4a',dk,'rx="3"')+Rt(x+w*.04,y+h*.1,w*.92,h*.8,'#f1ead8','#8a7a5c','rx="3"')+Rt(x+w*.05,y+h*.2,w*.18,h*.6,'#fff','#bba','rx="4"')+Rt(x+w*.3,y+h*.08,w*.66,h*.84,'#c8d8e8','#6b7a8a','rx="3"');
+  case 'ni_caballito':return `<path d="M${x} ${y+h*.85}Q${cx} ${y+h*1.1} ${x+w} ${y+h*.85}" stroke="${wd}" stroke-width="3" fill="none"/>`+E(cx,cy,w*.3,h*.3,'#e8d0a0',dk)+E(x+w*.82,y+h*.3,w*.12,h*.2,'#e8d0a0',dk)+L(x+w*.15,cy,x+w*.05,y+h*.2,'#5a3a1a',3);
+  case 'ni_juguetes':return Rt(x,y,w,h,'#c0502a',dk,'rx="3"')+Rt(x,y,w,h*.25,'#a0401f',dk)+C(cx,cy+h*.1,h*.12,'#e0b040',dk);
+  case 'ni_pupitre':return Rt(x,y,w,h*.6,'#8a6b3c',dk)+Rt(x+w*.25,y+h*.65,w*.5,h*.35,'#a07a4a',dk)+C(x+w*.85,y+h*.15,h*.06,'#222','none');
+  case 'ni_munecas':return Rt(x,y+h*.3,w,h*.7,'#f2e2c8',dk)+`<path d="M${x} ${y+h*.3}L${cx} ${y}L${x+w} ${y+h*.3}Z" fill="#c0502a" stroke="${dk}" stroke-width="1.5"/>`+Rt(x+w*.15,y+h*.45,w*.2,h*.25,'#9cc4d6',dk)+Rt(x+w*.65,y+h*.45,w*.2,h*.25,'#9cc4d6',dk);
+  case 'ni_pizarra':return Rt(x,y,w,h*.6,'#2f3b2f','#5a3a1a','stroke-width="3"')+L(x+w*.1,y+h*.9,x+w*.2,y+h*.6,wd,2)+L(x+w*.9,y+h*.9,x+w*.8,y+h*.6,wd,2);
+  case 'co_maquina':return Rt(x,y,w,h,'#6b4a2b',dk,'rx="2"')+Rt(x+w*.2,y+h*.15,w*.55,h*.5,'#1c1c1c','#000','rx="6"')+C(x+w*.8,y+h*.4,h*.18,'#c8a040','#7a5a1a')+L(x+w*.1,y+h*.85,x+w*.9,y+h*.85,'#444',2);
+  case 'co_bastidor':return C(cx,cy,Math.min(w,h)*.42,'#f6f1e5','#8a6b3c','stroke-width="4"')+`<path d="M${cx-w*.15} ${cy}q${w*.08} ${-h*.15} ${w*.15} 0t${w*.15} 0" stroke="#c0302a" stroke-width="2" fill="none"/>`+L(cx,cy+h*.42,cx,y+h,wd,3);
+  case 'co_cesto':return C(cx,cy,R,'#c9a46a','#6b4a2b','stroke-width="2"')+C(cx-R*.3,cy-R*.2,R*.22,'#c0302a','#6b1a1a')+C(cx+R*.25,cy+R*.1,R*.2,'#2f5f8f','#1a2f4a')+C(cx,cy+R*.4,R*.15,'#e0c060','#8a6a1a');
+  case 'co_maniqui':return E(cx,cy-h*.1,w*.3,h*.35,'#e8dcc0',dk)+L(cx,cy+h*.25,cx,y+h,wd,3)+C(cx,y+h*.95,w*.12,'none',wd);
+  case 'co_mesa':return Rt(x,y,w,h,'#c9a46a',dk)+Rt(x+w*.1,y+h*.15,w*.5,h*.55,'#8a2a3a','#4a1a1a')+L(x+w*.65,y+h*.3,x+w*.85,y+h*.6,'#888',2);
+  case 'co_armario':{let o=Rt(x,y,w,h,'#6b4a2b',dk);['#8a2a3a','#2f5f8f','#e8dcc0','#4f8a52','#c8a040'].forEach((c2,i)=>o+=Rt(x+w*(.05+i*.18),y+h*.2,w*.15,h*.6,c2,dk));return o}
+  case 'co_plancha':return Rt(x,y,w,h,'#d8cfbb',dk,'rx="8"')+`<path d="M${x+w*.65} ${y+h*.75}L${x+w*.85} ${y+h*.75}L${x+w*.8} ${y+h*.25}Z" fill="#333" stroke="#000"/>`;
+  case 'bi_estante':{let o=Rt(x,y,w,h,'#5a3f22',dk);const cs=['#8a2a3a','#2f4f7a','#4f6b3a','#7a4a2b','#c8a040','#3a3a5a'];for(let i=0;i<14;i++)o+=Rt(x+w*(.03+i*.067),y+h*.15,w*.055,h*.7,cs[i%6],dk);return o}
+  case 'bi_escalera':{let o=L(x+w*.15,y,x+w*.15,y+h,wd,3)+L(x+w*.85,y,x+w*.85,y+h,wd,3);for(let i=1;i<5;i++)o+=L(x+w*.15,y+h*i/5,x+w*.85,y+h*i/5,wd,2);return o+C(x+w*.15,y+h,3,'#333','none')+C(x+w*.85,y+h,3,'#333','none')}
+  case 'bi_mesa':return Rt(x,y,w,h,'#7a5530',dk,'rx="3"')+Rt(x+w*.15,y+h*.2,w*.25,h*.5,'#f2ead8','#8a7a5c')+Rt(x+w*.42,y+h*.2,w*.25,h*.5,'#f2ead8','#8a7a5c')+L(x+w*.41,y+h*.2,x+w*.41,y+h*.7,'#8a7a5c',1)+C(x+w*.85,y+h*.35,h*.12,'#c8a040','#7a5a1a');
+  case 'bi_globo':return C(cx,cy,R*.95,'#9cc4d6','#2f5f7a','stroke-width="2"')+`<path d="M${cx-R*.5} ${cy-R*.2}q${R*.3} ${-R*.3} ${R*.6} 0t${R*.3} ${R*.4}" fill="#8fb070" stroke="#4f6b3a"/>`+`<path d="M${cx} ${cy-R*.95}A${R*.95} ${R*.95} 0 0 1 ${cx} ${cy+R*.95}" fill="none" stroke="#b08a2a" stroke-width="2"/>`;
+  case 'bi_atril':return Rt(x+w*.1,y,w*.8,h*.6,'#7a5530',dk)+Rt(x+w*.18,y+h*.08,w*.64,h*.45,'#f2ead8','#8a7a5c')+L(cx,y+h*.6,cx,y+h,wd,3);
+  case 'bi_butaca':return Rt(x,y,w,h,'#7a2a2a',dk,'rx="8"')+Rt(x+w*.15,y+h*.25,w*.7,h*.6,'#9a3a3a',dk,'rx="6"');
+  case 'bi_mapas':{let o=Rt(x,y,w,h,'#6b4a2b',dk);for(let i=1;i<5;i++)o+=L(x,y+h*i/5,x+w,y+h*i/5,dk,1);return o+[1,2,3,4,5].map(i=>C(cx,y+h*(i-.5)/5,2,'#c8a040','none')).join('')}
   }
   return Rt(x,y,w,h,'#c9b48a',dk)}
 const CATK={};Object.values(CAT).forEach(([g,o])=>Object.entries(o).forEach(([k,v])=>CATK[k]=[...v,g]));
