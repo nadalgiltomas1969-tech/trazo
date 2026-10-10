@@ -276,7 +276,7 @@ function alasOpen(){const ext=SD().ext||.6,P=items.find(i=>i.t==='room'&&i.ala==
   return n}
 function alasDo(box){const v=k=>parseFloat(String(box.querySelector('.al_'+k).value).replace(',','.')),a={n:v('n'),s:v('s'),o:v('o'),e:v('e'),esq:box.querySelector('.al_esq').value,all:box.querySelector('.al_all').checked?1:0,sin:box.querySelector('.al_sin').checked?1:0};
   if(!['n','s','o','e'].every(k=>a[k]>0)){note='Escribe un ancho mayor que 0 para cada ala';return render()}
-  const base=fl>=0?fl:0,fs=a.all?Array.from({length:F()},(_,i)=>i).filter(f=>contOf(f)):[base].filter(f=>contOf(f));
+  const base=fl>=0?fl:0;if(a.all){const c0=contOf(base)||contOf(0);if(c0)for(let f=0;f<F();f++)if(!contOf(f)){push();items.push({...c0,id:nid++,f})}}const fs=a.all?Array.from({length:F()},(_,i)=>i).filter(f=>contOf(f)):[base].filter(f=>contOf(f));
   if(!fs.length){note='Primero crea el contorno de la planta';return render()}
   const c0=contOf(fs[0]);if(a.n+a.s>c0.h-1||a.o+a.e>c0.w-1){note='Las alas no caben: la clastra tiene que quedar de al menos 1 m. El contorno mide '+fmt(c0.w)+' × '+fmt(c0.h)+' m';return render()}
   push();st.alas=a;
@@ -1678,7 +1678,7 @@ function facade0(){
   }
   chs.forEach(k=>{const m=horiz?k.x:k.y,[a,b]=rg(m-.45,m+.45),base=L*fh,top=base+rh+.9;
     h+=Rc(a,b,base,top,`fill="#b5533c" stroke="#4a2a20" stroke-width="1.5"`)+Rc(a-.06,b+.06,top-.1,top+.08,`fill="#8f3f2c" stroke="#4a2a20" stroke-width="1"`)});
-  rf.forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=L*fh;
+  [...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=L*fh;
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
     if(along)h+=Rc(a,b,base,base+rs,`fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2"`);
