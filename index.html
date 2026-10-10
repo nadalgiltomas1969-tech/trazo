@@ -338,6 +338,14 @@ function mkFoot(m,col,X,Y,s){const[w,h,pl]=mkSize(m);let g=`<rect x="${-w/2}" y=
   let lab='';if(pl)pl.rooms.forEach(r=>{if(Math.min(r.w,r.h)*s>38){const lx=r.x-pl.c.x-w/2+r.w/2,ly=r.y-pl.c.y-h/2+r.h/2,a=(m.rot||0)*Math.PI/180,px=X+(lx*Math.cos(a)-ly*Math.sin(a))*s,py=Y+(lx*Math.sin(a)+ly*Math.cos(a))*s;lab+=`<text x="${px}" y="${py+4}" text-anchor="middle" style="font:600 11px sans-serif;fill:#fff;paint-order:stroke;stroke:#2b2219;stroke-width:3px;pointer-events:none">${esc(r.name||'')}</text>`}});
   return `<g transform="translate(${X} ${Y}) rotate(${m.rot||0}) scale(${s})">${g}</g>`+lab}
 const mkBig=m=>{if(m.k==='safareig')return false;const[w,h]=mkSize(m);return Math.max(w,h)*fm.s>=22};
+/* ---------- ajuste magnético de habitaciones ---------- */
+let SG=[];
+function edgeC(id,f){const xs=[],ys=[];items.forEach(r=>{if(r.id===id||r.f!==f)return;if(r.t==='room'||r.t==='cont'||r.t==='porche'){xs.push(r.x,r.x+r.w);ys.push(r.y,r.y+r.h)}});return{xs,ys}}
+const snapTol=()=>Math.max(.12,14/view.s);
+function near(vals,cands){const t=snapTol();let best=null;vals.forEach(v=>cands.forEach(c=>{const d=c-v;if(Math.abs(d)<=t&&(best===null||Math.abs(d)<Math.abs(best.d)))best={d,c}}));return best}
+function snapRoomMove(it){const{xs,ys}=edgeC(it.id,it.f),bx=near([it.x,it.x+it.w],xs),by=near([it.y,it.y+it.h],ys);SG=[];if(bx){it.x=r2(it.x+bx.d);SG.push({x:bx.c})}if(by){it.y=r2(it.y+by.d);SG.push({y:by.c})}}
+function snapRoomBR(it){const{xs,ys}=edgeC(it.id,it.f),bx=near([it.x+it.w],xs),by=near([it.y+it.h],ys);SG=[];if(bx&&it.w+bx.d>.3){it.w=r2(it.w+bx.d);SG.push({x:bx.c})}if(by&&it.h+by.d>.3){it.h=r2(it.h+by.d);SG.push({y:by.c})}}
+function snapPtEdges(x,y,f){const{xs,ys}=edgeC(-1,f),bx=near([x],xs),by=near([y],ys);SG=[];if(bx){x=bx.c;SG.push({x:bx.c})}if(by){y=by.c;SG.push({y:by.c})}return[x,y]}
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
 const arcW=i=>r2((i.n||3)*(i.luz||2)+((i.n||3)+1)*(i.pil||.5));
@@ -1207,6 +1215,7 @@ function render(){
   if(draft){const bd=draft.t==='room'&&draft.w>0&&vmsg(draft);h+=bd?`<g style="--wall:var(--dng)">${draw(draft,1)}</g>`:draw(draft,1)}
   if(pas&&tool==='pasillo')h+=drawPas({...pas,pts:pas.hov?pas.pts.concat([pas.hov]):pas.pts,ws:pas.hov?pas.ws.concat([pasW]):pas.ws,ths:pas.hov?pas.ths.concat([pasT]):pas.ths,w:pasW,th:pasT,id:-3},1,true);
   if(meas&&tool==='medir'&&!draft&&fl>=0)h+=draw({...meas,t:'medir'},1);
+  if(drag&&SG.length){const S=view.s,B=1e4;SG.forEach(g=>{h+=g.x!==undefined?`<line x1="${g.x*S}" y1="${-B}" x2="${g.x*S}" y2="${B}" stroke="#e0218a" stroke-width="1.2" stroke-dasharray="6 4" pointer-events="none"/>`:`<line x1="${-B}" y1="${g.y*S}" x2="${B}" y2="${g.y*S}" stroke="#e0218a" stroke-width="1.2" stroke-dasharray="6 4" pointer-events="none"/>`})}
   const it=cur();if(it&&tool==='select'&&fl!==-1)h+=handles(it);
   svg.innerHTML=h+'</g>';if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest('#alasDock'))alasDock();
   const a=items.filter(i=>i.t==='room'&&i.f===fl&&!i.patio).reduce((s,i)=>s+i.w*i.h,0);
@@ -1373,21 +1382,21 @@ svg.onpointermove=e=>{
   if(!drag)return;const p=world(e);
   if(drag.k==='p'){view.ox=drag.ox+e.clientX-drag.sx;view.oy=drag.oy+e.clientY-drag.sy}
   else if(drag.k==='n'&&draft){
-    if(draft.t==='room'||draft.t==='cont'){const x=snap(p.x),y=snap(p.y);draft.x=Math.min(x,drag.sx);draft.y=Math.min(y,drag.sy);draft.w=Math.abs(x-drag.sx);draft.h=Math.abs(y-drag.sy)}
+    if(draft.t==='room'||draft.t==='cont'){let x=snap(p.x),y=snap(p.y);if(draft.t==='room'&&!e.shiftKey)[x,y]=snapPtEdges(x,y,draft.f);draft.x=Math.min(x,drag.sx);draft.y=Math.min(y,drag.sy);draft.w=Math.abs(x-drag.sx);draft.h=Math.abs(y-drag.sy)}
     else{const q=endPt(draft.x1,draft.y1,p);draft.x2=q.x;draft.y2=q.y}
   }else if(drag.k==='m'||drag.k==='h'){
     const it=cur();
     if(drag.k==='m'){const o=drag.o,dx=snap(p.x-drag.sx),dy=snap(p.y-drag.sy);
-      if(it.t==='tub'||it.t==='pas')it.pts=o.pts.map(([a,b])=>[r2(a+dx),r2(b+dy)]);else if(it.t==='wall'||it.t==='cota'){it.x1=o.x1+dx;it.x2=o.x2+dx;it.y1=o.y1+dy;it.y2=o.y2+dy}else{it.x=r2(o.x+dx);it.y=r2(o.y+dy)}}
+      if(it.t==='tub'||it.t==='pas')it.pts=o.pts.map(([a,b])=>[r2(a+dx),r2(b+dy)]);else if(it.t==='wall'||it.t==='cota'){it.x1=o.x1+dx;it.x2=o.x2+dx;it.y1=o.y1+dy;it.y2=o.y2+dy}else{it.x=r2(o.x+dx);it.y=r2(o.y+dy);if((it.t==='room'||it.t==='porche')&&!e.shiftKey)snapRoomMove(it)}}
     else if(/^v\d+$/.test(drag.h)){const q=snapPt(p,it.id);it.pts[+drag.h.slice(1)]=[q.x,q.y]}
-    else if(drag.h==='br'){it.w=Math.max(.3,snap(p.x)-it.x);it.h=Math.max(.3,snap(p.y)-it.y)}
+    else if(drag.h==='br'){it.w=Math.max(.3,snap(p.x)-it.x);it.h=Math.max(.3,snap(p.y)-it.y);if(it.t==='room'&&!e.shiftKey)snapRoomBR(it)}
     else if(drag.h==='a'){const q=endPt(it.x2,it.y2,p);it.x1=q.x;it.y1=q.y}
     else{const q=endPt(it.x1,it.y1,p);it.x2=q.x;it.y2=q.y}
     if(viol(it)){Object.assign(it,JSON.parse(drag.last));note=lastWhy}else{drag.last=JSON.stringify(it);note=''}
   }
   render();
 };
-svg.onpointerup=svg.onpointercancel=e=>{
+svg.onpointerup=svg.onpointercancel=e=>{SG=[];
   ptrs.delete(e.pointerId);
   if(pinch){if(ptrs.size<2)pinch=null;if(!ptrs.size)drag=null;done();return}
   if(drag&&drag.k==='n'&&draft&&draft.t==='medir'){const L=Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1);if(L>=.1){push();items.push({id:nid++,t:'cota',f:fl,x1:r2(draft.x1),y1:r2(draft.y1),x2:r2(draft.x2),y2:r2(draft.y2)});note='Medición de '+fmt(L)+' m guardada. Para borrarla: Editar, tócala y Eliminar'}meas=null;draft=null;drag=null;done();return}
@@ -1985,6 +1994,7 @@ function frender(){const F=FN(),sv=$('#fsv2'),T=terr(),s=fm.s,cont=F.it.find(i=>
     else g=`<circle cx="${x}" cy="${y}" r="${Math.max(3,.4*s)}" fill="#e6e0d0" stroke="#6b645a" stroke-width="1.2"/>`;
     h+=`<g data-i="${a.id}"${sl(a)}>${g}</g>`;if(s>.12)h+=T2(x,y+Math.max(6,1.2*s)+12,esc(a.name||JARD[k][0]))});
   F.it.filter(i=>i.t==='marca').forEach(m=>{const k=MK[m.k]||MK.casa,x=fX(m.x),y=fY(m.y),bad=(ANI.includes(m.k)&&nearCasa(m)<(F.dEst??100))||safBad(m);h+=`<g data-i="${m.id}"${sl(m)}>${m.k==='safareig'?safShape(m):''}${bad?`<circle cx="${x}" cy="${y}" r="19" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="4 3"/>`:''}${mkBig(m)?mkFoot(m,k[1],x,y,s):`<circle cx="${x}" cy="${y}" r="14" fill="${k[1]}" stroke="#fff" stroke-width="2.5"/><text x="${x}" y="${y+4}" text-anchor="middle" style="font:700 11px sans-serif;fill:#fff;pointer-events:none">${k[2]}</text>`}</g>`+(mkBig(m)?T2(x,y-mkSize(m)[1]/2*s-10,esc(m.name||k[0])):T2(x,y+28,esc(m.name||k[0])))});
+  {const sm=fit(fm.sel);if(sm&&sm.t==='marca'&&fm.tool==='select'&&mkBig(sm)){const[,mh]=mkSize(sm),a=(sm.rot||0)*Math.PI/180,L=mh/2*s+26,hx=fX(sm.x)+Math.sin(a)*L,hy=fY(sm.y)-Math.cos(a)*L;h+=`<line x1="${fX(sm.x)}" y1="${fY(sm.y)}" x2="${hx}" y2="${hy}" stroke="#1f5fbf" stroke-width="2" stroke-dasharray="4 3" pointer-events="none"/><circle data-rot="1" cx="${hx}" cy="${hy}" r="11" fill="#1f5fbf" stroke="#fff" stroke-width="2.5"/><path d="M${hx-5} ${hy+1}a5 5 0 1 1 5 5" fill="none" stroke="#fff" stroke-width="1.8" pointer-events="none"/>`}}
   const sel=fit(fm.sel);if(sel&&fm.tool==='select'&&sel.pts)sel.pts.forEach((p,i)=>{h+=`<circle data-hv="${i}" cx="${fX(p[0])}" cy="${fY(p[1])}" r="8" fill="#1f5fbf" stroke="#fff" stroke-width="2"/>`});
   if(fm.draft)fm.draft.pts.forEach(p=>{h+=`<circle cx="${fX(p[0])}" cy="${fY(p[1])}" r="5" fill="#1f5fbf" stroke="#fff" stroke-width="1.5" pointer-events="none"/>`});
   if(fm.pa)h+=`<circle cx="${fX(fm.pa[0])}" cy="${fY(fm.pa[1])}" r="7" fill="#c0562b" stroke="#fff" stroke-width="2" pointer-events="none"/>`;
@@ -2091,6 +2101,7 @@ fsv.onpointerdown=e=>{fsv.setPointerCapture(e.pointerId);fm.ptrs.set(e.pointerId
   if(fm.ptrs.size===2){fm.drag=null;const[a,b]=[...fm.ptrs.values()],r=fsv.getBoundingClientRect();fm.pinch={d:Math.max(10,Math.hypot(a.x-b.x,a.y-b.y)),s:fm.s,wx:((a.x+b.x)/2-r.left-fm.ox)/fm.s,wy:((a.y+b.y)/2-r.top-fm.oy)/fm.s};return}
   if(fm.ptrs.size>2)return;const w=fwld(e),hv=e.target.closest&&e.target.closest('[data-hv]'),g=e.target.closest&&e.target.closest('[data-i]');
   if(fm.tool==='select'&&hv&&fit(fm.sel)){fpush();fm.drag={k:'v',i:+hv.dataset.hv,moved:false};return}
+  if(fm.tool==='select'&&e.target.closest&&e.target.closest('[data-rot]')&&fit(fm.sel)){fpush();fm.drag={k:'rot',moved:false};return}
   if(fm.tool==='select'&&g){const o=fit(+g.dataset.i);if(o){const ch=fm.sel!==o.id;fm.sel=o.id;fpush();fm.drag={k:'m',sx:w.x,sy:w.y,o:JSON.parse(JSON.stringify(o)),moved:false};if(ch){fpanel();frender()}return}}
   fm.drag={k:'p',sx:e.clientX,sy:e.clientY,ox:fm.ox,oy:fm.oy,moved:false}};
 let _raf=0;const fr=()=>{if(!_raf)_raf=requestAnimationFrame(()=>{_raf=0;frender()})};
@@ -2101,6 +2112,7 @@ fsv.onpointermove=e=>{if(fm.ptrs.has(e.pointerId))fm.ptrs.set(e.pointerId,{x:e.c
   if(d.k==='p'){const dx=e.clientX-d.sx,dy=e.clientY-d.sy;if(Math.hypot(dx,dy)>5)d.moved=true;if(d.moved){fm.ox=d.ox+dx;fm.oy=d.oy+dy;fr()}return}
   const o=fit(fm.sel);if(!o)return;
   if(d.k==='v'){d.moved=true;o.pts[d.i]=[w.x,w.y];fr();return}
+  if(d.k==='rot'){d.moved=true;let a=Math.atan2(w.x-o.x,-(w.y-o.y))*180/Math.PI;a=((Math.round(a)%360)+360)%360;if(!e.shiftKey){const q=Math.round(a/15)*15;if(Math.abs(q-a)<=3)a=q%360}o.rot=a;fm.msg='Giro: '+a+'°';fr();return}
   const dx=w.x-d.sx,dy=w.y-d.sy;if(Math.hypot(dx,dy)*fm.s>4)d.moved=true;if(!d.moved)return;
   if(o.pts)o.pts=d.o.pts.map(p=>[p[0]+dx,p[1]+dy]);else{o.x=d.o.x+dx;o.y=d.o.y+dy}fr()};
 fsv.onpointerup=fsv.onpointercancel=e=>{fm.ptrs.delete(e.pointerId);if(fm.pinch){if(fm.ptrs.size<2)fm.pinch=null;if(!fm.ptrs.size)fm.drag=null;return}
