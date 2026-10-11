@@ -413,7 +413,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.clas
 /* ---------- tejado continuo alrededor de la clastra (limatesas y limahoyas) ---------- */
 const junta=()=>st.junta!==undefined?st.junta:(st.alas?'limas':'');
 function ringGeom(){if(junta()!=='limas'||st.mode!=='ind')return null;const t=topF();if(t<0)return null;const c=contOf(t)||contOf(0),P=items.find(i=>i.t==='room'&&i.patio&&i.f===t)||patioR();if(!c||!P)return null;
-  const rs=roofs().filter(r=>r.type==='teja');if(rs.length<2)return null;const e=getRP(rs[0].id).e,a=getRP(rs[0].id).a,tn=Math.tan(a*Math.PI/180);
+  const rs=roofs().filter(r=>r.type==='teja');if(rs.length<2)return null;const e=getRP(rs[0].id).e,a=getRP(rs[0].id).a,tn=a/100;
   const O=[c.x-e,c.y-e,c.x+c.w+e,c.y+c.h+e],I=[P.x+e,P.y+e,P.x+P.w-e,P.y+P.h-e],Rr=[(c.x+P.x)/2,(c.y+P.y)/2,(c.x+c.w+P.x+P.w)/2,(c.y+c.h+P.y+P.h)/2];
   const wN=P.y-c.y,wS=c.y+c.h-P.y-P.h,wO=P.x-c.x,wE=c.x+c.w-P.x-P.w,rise=Math.max(wN,wS,wO,wE)/2*tn+e*tn;
   const near=(x,y)=>rs.find(r=>x>=r.x-.01&&x<=r.x+r.w+.01&&y>=r.y-.01&&y<=r.y+r.h+.01);
@@ -630,7 +630,7 @@ const ZS=.7,isV=i=>i.t==='chim'||i.t==='baj',reach=(c,f)=>c.t==='chim'?f>c.f:f<c
 function topF(){for(let i=F()-1;i>=0;i--)if(items.some(x=>x.t==='room'&&x.f===i))return i;return -1}
 function getRP(id){const d=SD();return{e:d.ale,a:d.pend,o:'auto',...rp[id]}}
 const isH=(r,p)=>p.o==='h'||(p.o==='auto'&&r.w>=r.h);
-const rise=(r,p)=>((isH(r,p)?r.h:r.w)+2*p.e)/2*Math.tan(p.a*Math.PI/180);
+const rise=(r,p)=>((isH(r,p)?r.h:r.w)+2*p.e)/2*p.a/100;
 function roofs(){
   const t=topF();if(t<0)return[];const rs=items.filter(i=>i.t==='room'&&i.f===t&&!i.patio);if(!rs.length)return[];
   if(st.mode==='ind'){const inside=r=>rs.some(o=>o!==r&&o.w*o.h>r.w*r.h&&r.x>=o.x-.01&&r.y>=o.y-.01&&r.x+r.w<=o.x+o.w+.01&&r.y+r.h<=o.y+o.h+.01);
@@ -1512,13 +1512,13 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
     if(st.mode==='uno'){const sg=st.rseg&&st.rseg.length>1,ix=sg&&/^s\d+$/.test(r.id)?+r.id.slice(1):-1,dx=roofDX(roofAll()||r);
       h+=sg?`<p class="hint">Tramo ${ix+1} de ${st.rseg.length}: ${fmt(r.w)} × ${fmt(r.h)} m.</p>`+(ix<st.rseg.length-1?f('sl','Largo de este tramo (m)',r2(dx?r.w:r.h)):'<p class="hint">El último tramo ocupa lo que queda.</p>')+opt('rdir','Dividir',st.rdir||'',[['','A lo largo de la casa (automático)'],['x','En horizontal del plano'],['y','En vertical del plano']])+'<div class="row"><button id="rsAdd">Añadir otro tramo</button><button id="rsDel">Quitar divisiones</button></div>'
         :'<div class="row"><button id="rsAdd">Dividir en tramos: tejas y terrado</button></div><p class="hint">Parte la cubierta: unos tramos con tejas y otros de terrado, donde puede ir la caseta de la escalera.</p>'}
-    if(r.type==='teja')h+=`<div class="g2">${f('e','Alero (m)',p.e)}${f('a','Inclinación (°)',p.a)}</div>`+opt('o','Cumbrera',p.o,[['auto','Automática'],['h','Horizontal'],['v','Vertical']])+`<p class="hint">Cumbrera a +${fmt(rise(r,p))} m sobre la cornisa</p>`;
+    if(r.type==='teja')h+=`<div class="g2">${f('e','Alero (m)',p.e)}${f('a','Pendiente (%)',p.a)}</div><p class="hint" style="margin-top:-4px">${fmt(p.a)} % ≈ ${fmt(Math.round(Math.atan(p.a/100)*1800/Math.PI)/10)}° de inclinación</p>`+opt('o','Cumbrera',p.o,[['auto','Automática'],['h','Horizontal'],['v','Vertical']])+`<p class="hint">Cumbrera a +${fmt(rise(r,p))} m sobre la cornisa</p>`;
     if(st.mode==='ind'){const ts=roofs().filter(q=>q.type==='teja'),hs=ts.map(q=>rise(q,getRP(q.id)));if(ts.length>1&&Math.max(...hs)-Math.min(...hs)>.05)h+=`<div style="background:#fff4e0;border:1px solid #e0a040;border-radius:8px;padding:8px;margin:8px 0"><p class="hint" style="margin:0 0 6px">Las alas tienen anchos distintos y sus cumbreras quedan a alturas distintas: de +${fmt(r2(Math.min(...hs)))} a +${fmt(r2(Math.max(...hs)))} m.</p><button id="rEq">Igualar la altura de las cumbreras</button><p class="hint" style="margin:6px 0 0">Las alas más estrechas tendrán el tejado un poco más inclinado.</p></div>`}
     h+=opt('remate','Remate de la cumbrera',st.remate||'',[['','Remate de tejas (caballete de tejas árabes)'],['no','Sin remate']]);
     if(st.mode==='ind'&&patioR())h+=opt('junta','Unión de los tejados en las esquinas',junta(),[['','Cada ala con su tejado y su hastial'],['limas','Tejado continuo: limatesas fuera y limahoyas hacia la clastra']]);
     h+=`<div class="row"><button id="md">${st.mode==='uno'?'Separar en tejados independientes':'Unir en un solo tejado'}</button></div>`;
     b.innerHTML=h;wire();if($('#rEq'))$('#rEq').onclick=()=>{push();const ts=roofs().filter(q=>q.type==='teja'),mx=Math.max(...ts.map(q=>rise(q,getRP(q.id))));
-      ts.forEach(q=>{const p0=getRP(q.id),half=((isH(q,p0)?q.h:q.w)+2*p0.e)/2;rp[q.id]={...(rp[q.id]||{}),a:Math.round(Math.atan(mx/half)*18000/Math.PI)/100}});note='Cumbreras igualadas a +'+fmt(r2(mx))+' m';done()};$('#md').onclick=()=>{push();st.mode=st.mode==='uno'?'ind':'uno';sel=null;done()};
+      ts.forEach(q=>{const p0=getRP(q.id),half=((isH(q,p0)?q.h:q.w)+2*p0.e)/2;rp[q.id]={...(rp[q.id]||{}),a:Math.round(mx/half*10000)/100}});note='Cumbreras igualadas a +'+fmt(r2(mx))+' m';done()};$('#md').onclick=()=>{push();st.mode=st.mode==='uno'?'ind':'uno';sel=null;done()};
     if($('#rsAdd'))$('#rsAdd').onclick=()=>{push();const A=roofAll(),Lt=roofDX(A)?A.w:A.h;
       if(!st.rseg||st.rseg.length<2){st.rseg=[{l:r2(Lt/2),type:st.mat},{type:st.mat==='azotea'?'teja':'azotea'}]}
       else{const ps=roofs(),lp=ps[ps.length-1],ll=roofDX(A)?lp.w:lp.h,li=st.rseg.length-1;st.rseg[li].l=r2(ll/2);st.rseg.push({type:st.rseg[li].type==='azotea'?'teja':'azotea'})}
@@ -1987,7 +1987,8 @@ function facade0(){
   h+=`<path d="M0 ${gy}H${W}" stroke="#4a3f33" stroke-width="2"/><text class="nm" x="16" y="26">${PV?'Fachada interior de la clastra · '+PNAME.replace('Clastra · ',''):'Fachada '+SIDES[side].toLowerCase()} · ${MATS[c.mat].toLowerCase()}</text><text class="dm" x="${W/2}" y="${H-12}" text-anchor="middle">${fmt(total)} m de ancho · ${L} planta${L>1?'s':''} · ${fmt(Z(L))} m hasta el alero${nOp?'':' · sin puertas ni ventanas en esta fachada'}</text>`;
   v.innerHTML=defs+h;
 }
-function migrate(){for(const f of [...Array(F()).keys(),...UGL().map((_,i)=>-10-i)]){if(contOf(f))continue;const rs=items.filter(i=>i.f===f&&i.t==='room');if(!rs.length)continue;
+function migrate(){if(!st.pct){st.pct=1;if(st.std&&st.std.pend!=null)st.std.pend=30;Object.values(rp||{}).forEach(o=>{if(o&&o.a!=null)delete o.a})}
+for(const f of [...Array(F()).keys(),...UGL().map((_,i)=>-10-i)]){if(contOf(f))continue;const rs=items.filter(i=>i.f===f&&i.t==='room');if(!rs.length)continue;
   const x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h));
   items.push({id:nid++,t:'cont',f,x:r2(x0-.3),y:r2(y0-.3),w:r2(x1-x0+.6),h:r2(y1-y0+.6)})}}
 function fitView(){const k=contOf(fl<=-10?fl:Math.max(0,fl));if(!k)return;const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
@@ -2455,7 +2456,7 @@ $('#finBtn').onclick=finOpen;$('#fback').onclick=()=>{$('#fin').hidden=true;rend
 $('#fcvw').addEventListener('keydown',()=>{});
 document.addEventListener('keydown',e=>{if($('#fin').hidden||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;if((e.key==='Delete'||e.key==='Backspace')&&fit(fm.sel)){e.preventDefault();$('#fdel')&&$('#fdel').click()}});
 addEventListener('resize',()=>{if(!$('#fin').hidden)frender()});
-const STDF=[["fh", "Altura de cada planta (m)", 3, "Se usa en escaleras y fachadas"], ["ext", "Muros exteriores (m)", 0.6, "El grosor de piedra de la fachada, de 50 a 70 cm"], ["int", "Muros interiores (m)", 0.3, "Muros de carga entre habitaciones"], ["tab", "Tabiques (m)", 0.15, "Paredes ligeras que no cargan"], ["vw", "Ancho de ventana (m)", 1.2, "Ventana habitual de la casa"], ["vd", "Ancho de puerta de una hoja (m)", 0.9, "Puerta de una hoja habitual"], ["ant", "Antepecho de las ventanas (m)", 0.9, "Altura del alféizar desde el suelo"], ["din", "Altura del dintel de los huecos (m)", 2.1, "Altura superior de puertas y ventanas"], ["cw", "Vuelo de la cornisa de ventana a cada lado (cm)", 24, "Cuánto sobresale la cornisa del hueco"], ["ale", "Vuelo del alero del tejado (m)", 0.3, "Cuánto sobresale el tejado del muro"], ["pend", "Pendiente del tejado (°)", 30, "Inclinación de la teja"], ["bal", "Saliente de los balcones (m)", 1, "Cuánto sobresale un balcón de la fachada"]];
+const STDF=[["fh", "Altura de cada planta (m)", 3, "Se usa en escaleras y fachadas"], ["ext", "Muros exteriores (m)", 0.6, "El grosor de piedra de la fachada, de 50 a 70 cm"], ["int", "Muros interiores (m)", 0.3, "Muros de carga entre habitaciones"], ["tab", "Tabiques (m)", 0.15, "Paredes ligeras que no cargan"], ["vw", "Ancho de ventana (m)", 1.2, "Ventana habitual de la casa"], ["vd", "Ancho de puerta de una hoja (m)", 0.9, "Puerta de una hoja habitual"], ["ant", "Antepecho de las ventanas (m)", 0.9, "Altura del alféizar desde el suelo"], ["din", "Altura del dintel de los huecos (m)", 2.1, "Altura superior de puertas y ventanas"], ["cw", "Vuelo de la cornisa de ventana a cada lado (cm)", 24, "Cuánto sobresale la cornisa del hueco"], ["ale", "Vuelo del alero del tejado (m)", 0.3, "Cuánto sobresale el tejado del muro"], ["pend", "Pendiente del tejado (%)", 30, "Pendiente de la teja en %: 30 % ≈ 16,7°. La teja árabe suele ir al 30–35 %"], ["bal", "Saliente de los balcones (m)", 1, "Cuánto sobresale un balcón de la fachada"]];
 let wallT='int';
 function SD(){const d={};STDF.forEach(([k,,v])=>d[k]=v);return {...d,...(st.std||{})}}
 function stdOpen(){const d=SD(),b=$('#sdlg'),grid=$('#sdfields');
