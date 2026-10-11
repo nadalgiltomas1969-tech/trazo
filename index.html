@@ -290,7 +290,7 @@ function alasDo(box){const v=k=>parseFloat(String(box.querySelector('.al_'+k).va
     else{R(c.x,c.y,a.o,c.h,'Ala oeste','o');R(c.x+c.w-a.e,c.y,a.e,c.h,'Ala este','e');R(c.x+a.o,c.y,c.w-a.o-a.e,a.n,'Ala norte','n');R(c.x+a.o,c.y+c.h-a.s,c.w-a.o-a.e,a.s,'Ala sur','s')}
     if(f===0)items.push({id:nid++,t:'room',f,x:r2(c.x+a.o),y:r2(c.y+a.n),w:r2(c.w-a.o-a.e),h:r2(c.h-a.n-a.s),name:'Clastra',ala:'c',patio:'1',suelo:'empedrado'})});
   if(a.sin)alasOpen();
-  if(st.mode==='uno'){st.mode='ind';st.rseg=null}
+  if(st.mode==='uno'){st.mode='ind';st.rseg=null}st.junta='limas';
   sel=null;tool='select';toolsUI();note='Alas creadas en '+fs.length+(fs.length>1?' plantas':' planta')+'. Cada ala tiene su propio tejado y la clastra queda descubierta';done()}
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('.al_go');if(b)alasDo(b.closest('.alasBox'));const r=e.target&&e.target.closest&&e.target.closest('.al_rm');if(r){push();const n=alasOpen();note=n?'Muros entre alas quitados: cada planta es una sola superficie alrededor de la clastra':'No había muros que quitar';sel=null;done()}});
 document.addEventListener('change',e=>{const bx=e.target&&e.target.closest&&e.target.closest('.alasBox');if(!bx)return;const v=k=>parseFloat(String(bx.querySelector('.al_'+k).value).replace(',','.'));st.alas={...(st.alas||{}),n:v('n'),s:v('s'),o:v('o'),e:v('e'),esq:bx.querySelector('.al_esq').value,all:bx.querySelector('.al_all').checked?1:0,sin:bx.querySelector('.al_sin').checked?1:0}});
@@ -411,7 +411,8 @@ function floorHHTML(f){if(f<0)return'';const v=floorH(f),g=isGolf(f);let x='';
   return `<h2>${g?'Murete de ses golfes':'Altura de '+fname(f).toLowerCase()}</h2><label>${g?'Altura del murete de fachada (m)':'Altura de suelo a suelo (m)'}<input class="flH" data-f="${f}" type="number" step="0.1" min="0" inputmode="decimal" value="${v}"></label>${x}`}
 document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('flH'))return;const f=+t.dataset.f,n=parseFloat(String(t.value).replace(',','.'));if(isNaN(n)||n<0||(n<1.8&&!isGolf(f)))return;push();st.fhs={...(st.fhs||{}),[f]:n};note=isGolf(f)?'Murete de ses golfes: '+fmt(n)+' m':fname(f)+': '+fmt(n)+' m de altura';setTimeout(done,0)});
 /* ---------- tejado continuo alrededor de la clastra (limatesas y limahoyas) ---------- */
-function ringGeom(){if(st.junta!=='limas'||st.mode!=='ind')return null;const t=topF();if(t<0)return null;const c=contOf(t)||contOf(0),P=items.find(i=>i.t==='room'&&i.patio&&i.f===t)||patioR();if(!c||!P)return null;
+const junta=()=>st.junta!==undefined?st.junta:(st.alas?'limas':'');
+function ringGeom(){if(junta()!=='limas'||st.mode!=='ind')return null;const t=topF();if(t<0)return null;const c=contOf(t)||contOf(0),P=items.find(i=>i.t==='room'&&i.patio&&i.f===t)||patioR();if(!c||!P)return null;
   const rs=roofs().filter(r=>r.type==='teja');if(rs.length<2)return null;const e=getRP(rs[0].id).e,a=getRP(rs[0].id).a,tn=Math.tan(a*Math.PI/180);
   const O=[c.x-e,c.y-e,c.x+c.w+e,c.y+c.h+e],I=[P.x+e,P.y+e,P.x+P.w-e,P.y+P.h-e],Rr=[(c.x+P.x)/2,(c.y+P.y)/2,(c.x+c.w+P.x+P.w)/2,(c.y+c.h+P.y+P.h)/2];
   const wN=P.y-c.y,wS=c.y+c.h-P.y-P.h,wO=P.x-c.x,wE=c.x+c.w-P.x-P.w,rise=Math.max(wN,wS,wO,wE)/2*tn+e*tn;
@@ -632,7 +633,8 @@ const isH=(r,p)=>p.o==='h'||(p.o==='auto'&&r.w>=r.h);
 const rise=(r,p)=>((isH(r,p)?r.h:r.w)+2*p.e)/2*Math.tan(p.a*Math.PI/180);
 function roofs(){
   const t=topF();if(t<0)return[];const rs=items.filter(i=>i.t==='room'&&i.f===t&&!i.patio);if(!rs.length)return[];
-  if(st.mode==='ind')return rs.map(r=>({id:'r'+r.id,x:r.x,y:r.y,w:r.w,h:r.h,type:r.rt||st.mat}));
+  if(st.mode==='ind'){const inside=r=>rs.some(o=>o!==r&&o.w*o.h>r.w*r.h&&r.x>=o.x-.01&&r.y>=o.y-.01&&r.x+r.w<=o.x+o.w+.01&&r.y+r.h<=o.y+o.h+.01);
+    return rs.filter(r=>!inside(r)).map(r=>({id:'r'+r.id,x:r.x,y:r.y,w:r.w,h:r.h,type:r.rt||st.mat}))}
   const x0=Math.min(...rs.map(r=>r.x)),y0=Math.min(...rs.map(r=>r.y)),x1=Math.max(...rs.map(r=>r.x+r.w)),y1=Math.max(...rs.map(r=>r.y+r.h));
   const A={id:'all',x:x0,y:y0,w:x1-x0,h:y1-y0,type:st.mat},sg=st.rseg;if(!sg||sg.length<2)return[A];
   const dx=roofDX(A),Lt=dx?A.w:A.h,out=[];let o=0;
@@ -1511,10 +1513,12 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
       h+=sg?`<p class="hint">Tramo ${ix+1} de ${st.rseg.length}: ${fmt(r.w)} × ${fmt(r.h)} m.</p>`+(ix<st.rseg.length-1?f('sl','Largo de este tramo (m)',r2(dx?r.w:r.h)):'<p class="hint">El último tramo ocupa lo que queda.</p>')+opt('rdir','Dividir',st.rdir||'',[['','A lo largo de la casa (automático)'],['x','En horizontal del plano'],['y','En vertical del plano']])+'<div class="row"><button id="rsAdd">Añadir otro tramo</button><button id="rsDel">Quitar divisiones</button></div>'
         :'<div class="row"><button id="rsAdd">Dividir en tramos: tejas y terrado</button></div><p class="hint">Parte la cubierta: unos tramos con tejas y otros de terrado, donde puede ir la caseta de la escalera.</p>'}
     if(r.type==='teja')h+=`<div class="g2">${f('e','Alero (m)',p.e)}${f('a','Inclinación (°)',p.a)}</div>`+opt('o','Cumbrera',p.o,[['auto','Automática'],['h','Horizontal'],['v','Vertical']])+`<p class="hint">Cumbrera a +${fmt(rise(r,p))} m sobre la cornisa</p>`;
+    if(st.mode==='ind'){const ts=roofs().filter(q=>q.type==='teja'),hs=ts.map(q=>rise(q,getRP(q.id)));if(ts.length>1&&Math.max(...hs)-Math.min(...hs)>.05)h+=`<div style="background:#fff4e0;border:1px solid #e0a040;border-radius:8px;padding:8px;margin:8px 0"><p class="hint" style="margin:0 0 6px">Las alas tienen anchos distintos y sus cumbreras quedan a alturas distintas: de +${fmt(r2(Math.min(...hs)))} a +${fmt(r2(Math.max(...hs)))} m.</p><button id="rEq">Igualar la altura de las cumbreras</button><p class="hint" style="margin:6px 0 0">Las alas más estrechas tendrán el tejado un poco más inclinado.</p></div>`}
     h+=opt('remate','Remate de la cumbrera',st.remate||'',[['','Remate de tejas (caballete de tejas árabes)'],['no','Sin remate']]);
-    if(st.mode==='ind'&&patioR())h+=opt('junta','Unión de los tejados en las esquinas',st.junta||'',[['','Cada ala con su tejado y su hastial'],['limas','Tejado continuo: limatesas fuera y limahoyas hacia la clastra']]);
+    if(st.mode==='ind'&&patioR())h+=opt('junta','Unión de los tejados en las esquinas',junta(),[['','Cada ala con su tejado y su hastial'],['limas','Tejado continuo: limatesas fuera y limahoyas hacia la clastra']]);
     h+=`<div class="row"><button id="md">${st.mode==='uno'?'Separar en tejados independientes':'Unir en un solo tejado'}</button></div>`;
-    b.innerHTML=h;wire();$('#md').onclick=()=>{push();st.mode=st.mode==='uno'?'ind':'uno';sel=null;done()};
+    b.innerHTML=h;wire();if($('#rEq'))$('#rEq').onclick=()=>{push();const ts=roofs().filter(q=>q.type==='teja'),mx=Math.max(...ts.map(q=>rise(q,getRP(q.id))));
+      ts.forEach(q=>{const p0=getRP(q.id),half=((isH(q,p0)?q.h:q.w)+2*p0.e)/2;rp[q.id]={...(rp[q.id]||{}),a:Math.round(Math.atan(mx/half)*18000/Math.PI)/100}});note='Cumbreras igualadas a +'+fmt(r2(mx))+' m';done()};$('#md').onclick=()=>{push();st.mode=st.mode==='uno'?'ind':'uno';sel=null;done()};
     if($('#rsAdd'))$('#rsAdd').onclick=()=>{push();const A=roofAll(),Lt=roofDX(A)?A.w:A.h;
       if(!st.rseg||st.rseg.length<2){st.rseg=[{l:r2(Lt/2),type:st.mat},{type:st.mat==='azotea'?'teja':'azotea'}]}
       else{const ps=roofs(),lp=ps[ps.length-1],ll=roofDX(A)?lp.w:lp.h,li=st.rseg.length-1;st.rseg[li].l=r2(ll/2);st.rseg.push({type:st.rseg[li].type==='azotea'?'teja':'azotea'})}
