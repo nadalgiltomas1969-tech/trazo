@@ -1730,6 +1730,7 @@ function delFloor(k){push();const g=st.golfas?st.n:-99,ff={...(st.fac&&st.fac.ff
   else if(st.n<=1){items=items.filter(i=>i.f!==k);msg='Era la única planta: la he vaciado (el resto del proyecto sigue igual)'}
   else{const nm=fname(k);items=items.filter(i=>i.f!==k).map(i=>i.f>k?{...i,f:i.f-1}:i);const nf={};Object.keys(ff).forEach(x=>{x=+x;if(x<k)nf[x]=ff[x];else if(x>k)nf[x-1]=ff[x]});Object.keys(ff).forEach(x=>delete ff[x]);Object.assign(ff,nf);st.n--;msg=nm+' borrada; las de encima bajan un piso';fl=Math.min(k,F()-1)}
   if(st.fac)st.fac={...st.fac,ff};
+  if(st.facS&&k>=0&&!(k!==g&&st.n<1))Object.values(st.facS).forEach(o=>{if(!o||!o.ff)return;const n={};Object.keys(o.ff).forEach(x=>{x=+x;if(msg==='Golfas borradas'){if(x!==k)n[x]=o.ff[x]}else if(/borrada; las de encima/.test(msg)){if(x<k)n[x]=o.ff[x];else if(x>k)n[x-1]=o.ff[x]}else n[x]=o.ff[x]});o.ff=n});
   const ids=new Set(items.map(i=>i.id));Object.keys(rp).forEach(x=>{if(!ids.has(+x)&&!ids.has(x))delete rp[x]});
   sel=null;tdraft=null;note=msg;tabs();done()}
 $('#delFl').onclick=function(){const b=this;if(!b._arm){b._arm=1;b.textContent='¿Seguro? Toca otra vez';setTimeout(()=>{b._arm=0;delLbl()},3000);return}b._arm=0;closeMenus();delFloor(fl);delLbl()};
@@ -1801,8 +1802,17 @@ const STONE=(()=>{let r=7;const rn=()=>(r=(r*9301+49297)%233280)/233280;let o=`<
     o+=`<path d="M${pts.map(p=>p.map(v=>v.toFixed(1)).join(' ')).join('L')}Z" fill="${cols[Math.floor(rn()*cols.length)]}" stroke="#8a7a60" stroke-width="1.6" stroke-linejoin="round"/><path d="M${(x+4).toFixed(1)} ${(y+4).toFixed(1)}L${(x+w*.45).toFixed(1)} ${(y+2).toFixed(1)}" stroke="#f2ead8" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>`});return o})();
 const MARES=`<rect width="200" height="50" fill="#e8d6a6"/>`+[[0,0,60,'#ead9ab'],[60,0,70,'#e2cd98'],[130,0,70,'#ecdcb0'],[-30,25,60,'#e2cd98'],[30,25,65,'#eedfb5'],[95,25,60,'#e5d2a0'],[155,25,75,'#ead9ab']].map(([x,y,w,c])=>`<rect x="${x+1}" y="${y+1}" width="${w-2}" height="23" rx="2" fill="${c}" stroke="#b39558" stroke-width="1.3"/><circle cx="${x+w*.3}" cy="${y+9}" r="1.2" fill="#c9ad72"/><circle cx="${x+w*.7}" cy="${y+16}" r="1" fill="#c9ad72"/>`).join('');
 const CAL=`<rect width="100" height="100" fill="#f6f1e5"/><path d="M12 30q8 -3 14 2M62 70q6 4 12 0M80 18q3 5 9 4" stroke="#e2d9c3" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
-const FC=()=>({side:'bottom',mat:'piedra',shut:'',fh:3,ff:{},zm:'',zh:.8,cm:'',km:'',wc:'',rc:'moldura',rcm:'piedra',al:'',cn:'',...st.fac});
-const setFC=(k,v)=>{st.fac={...FC(),[k]:v};save();facUI();facade()};
+const FC0=()=>({side:'bottom',mat:'piedra',shut:'',fh:3,ff:{},zm:'',zh:.8,cm:'',km:'',wc:'',rc:'moldura',rcm:'piedra',al:'',cn:'',...st.fac});
+/* cada fachada con sus materiales, o todas iguales */
+const FACG=['side','fh'],facSides=()=>[...Object.keys(SIDES),...(patioR()?Object.keys(PSIDES):[])];
+const FC=()=>{const b=FC0();if(st.facI){const o=(st.facS||{})[b.side];if(o)return{...b,...o,side:b.side,fh:b.fh}}return b};
+const facOwn=c=>{const o={...c};FACG.forEach(k=>delete o[k]);return JSON.parse(JSON.stringify(o))};
+const setFC=(k,v)=>{if(st.facI&&!FACG.includes(k)){const c=FC();st.facS={...(st.facS||{}),[c.side]:{...facOwn(c),[k]:v}}}else st.fac={...FC0(),[k]:v};save();facUI();facade()};
+function facSame(on){const c=FC();if(on){st.fac={...FC0(),...facOwn(c)};st.facI=0;note='Todas las fachadas iguales a la '+(SIDES[c.side]||PSIDES[c.side]||'').toLowerCase()}
+  else{st.facI=1;const S0={...(st.facS||{})};facSides().forEach(sd=>{if(!S0[sd])S0[sd]=facOwn(FC0())});st.facS=S0;note='Ahora cada fachada tiene sus propios materiales'}save();facUI();facade()}
+function facCopyAll(){const c=FC(),S0={};facSides().forEach(sd=>S0[sd]=facOwn(c));st.facS=S0;note='Materiales copiados a todas las fachadas';save();facUI();facade()}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='fsame')facSame(e.target.checked)});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='fcopy')facCopyAll()});
 const MATC={piedra:['#b2a792','#7d725f'],mares:['#d9c48f','#a8955f'],encalado:['#f6f1e3','#b9b09a']};
 const selH=(attr,val,first)=>`<select ${attr}>${[['',first],['piedra','Piedra'],['mares','Marés'],['encalado','Encalado']].map(([v,t])=>`<option value="${v}"${val===v?' selected':''}>${t}</option>`).join('')}</select>`;
 const selG=(attr,val,opts)=>`<select ${attr}>${opts.map(([v,t])=>`<option value="${v}"${val===v?' selected':''}>${t}</option>`).join('')}</select>`;
@@ -1821,6 +1831,7 @@ function fac2(c){
 function facUI(){
   const c=FC();
   $('#fb').innerHTML=Object.entries(SIDES).map(([k,n])=>`<button data-fs="${k}" aria-pressed="${c.side===k}">${n}</button>`).join('')+(patioR()?Object.entries(PSIDES).map(([k,n])=>`<button data-fs="${k}" aria-pressed="${c.side===k}">${n.replace('Clastra · ala ','Clastra ')}</button>`).join(''):'')
+   +`<label style="margin:0;display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px"><input type="checkbox" id="fsame"${st.facI?'':' checked'}>Igual en todas las fachadas</label>`+(st.facI?`<button id="fcopy">Copiar esta a todas</button>`:'')
    +`<span class="hint" style="margin:0">Muro</span><select id="fmat" aria-label="Material del muro">${Object.entries(MATS).map(([v,t])=>`<option value="${v}"${c.mat===v?' selected':''}>${t}</option>`).join('')}</select>`
    +`<span class="hint" style="margin:0">Persianas</span><button data-fc="" aria-pressed="${!c.shut}">Sin</button>`
    +SHUT.map(([v,t])=>`<button class="sw" title="${t}" aria-label="Persianas ${t}" data-fc="${v}" aria-pressed="${c.shut===v}" style="background:${v}"></button>`).join('')
