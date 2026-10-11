@@ -50,16 +50,20 @@ input[type=checkbox]{display:inline-block;width:auto;margin:0 8px 0 0}
 #sdlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9;overflow:auto}
 body.nopan #dock{display:none}
 #dock.hassel>section:first-child{display:none}
+body.nodock #dock{display:none}
+#dockMin{grid-column:1/-1;justify-self:end;position:sticky;top:0;z-index:2;padding:4px 10px;font-size:13px;margin:-4px -4px 0 0}
+#dock.mini{max-height:none;overflow:hidden}#dock.mini>section{display:none}
+@media (min-width:600px) and (min-aspect-ratio:1/1){#dockMin{display:none}}
 @media (min-width:600px) and (min-aspect-ratio:1/1){
-  body:not(.nopan):not(.pbelow){display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);grid-template-rows:auto auto minmax(0,1fr)}
-  body:not(.nopan):not(.pbelow) .bar,body:not(.nopan):not(.pbelow) .tabs{grid-column:1/-1}
-  body:not(.nopan):not(.pbelow) #cvw{grid-column:1;grid-row:3}
-  body:not(.nopan):not(.pbelow) #dock{grid-column:2;grid-row:3;max-height:none;grid-template-columns:minmax(0,1fr);border-top:0;border-left:1px solid var(--line)}
+  body:not(.nopan):not(.nodock):not(.pbelow){display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);grid-template-rows:auto auto minmax(0,1fr)}
+  body:not(.nopan):not(.nodock):not(.pbelow) .bar,body:not(.nopan):not(.nodock):not(.pbelow) .tabs{grid-column:1/-1}
+  body:not(.nopan):not(.nodock):not(.pbelow) #cvw{grid-column:1;grid-row:3}
+  body:not(.nopan):not(.nodock):not(.pbelow) #dock{grid-column:2;grid-row:3;max-height:none;grid-template-columns:minmax(0,1fr);border-top:0;border-left:1px solid var(--line)}
 }
-body.pside:not(.nopan){display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);grid-template-rows:auto auto minmax(0,1fr)}
-body.pside:not(.nopan) .bar,body.pside:not(.nopan) .tabs{grid-column:1/-1}
-body.pside:not(.nopan) #cvw{grid-column:1;grid-row:3}
-body.pside:not(.nopan) #dock{grid-column:2;grid-row:3;max-height:none;grid-template-columns:minmax(0,1fr);border-top:0;border-left:1px solid var(--line)}
+body.pside:not(.nopan):not(.nodock){display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);grid-template-rows:auto auto minmax(0,1fr)}
+body.pside:not(.nopan):not(.nodock) .bar,body.pside:not(.nopan):not(.nodock) .tabs{grid-column:1/-1}
+body.pside:not(.nopan):not(.nodock) #cvw{grid-column:1;grid-row:3}
+body.pside:not(.nopan):not(.nodock) #dock{grid-column:2;grid-row:3;max-height:none;grid-template-columns:minmax(0,1fr);border-top:0;border-left:1px solid var(--line)}
 [hidden]{display:none!important}
 /* barra estrecha con menús */
 body .bar{padding:4px 8px;gap:6px}
@@ -159,30 +163,32 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
-  <section>
-    <h2>Contorno de la planta</h2>
+  <button id="dockMin" aria-label="Plegar el panel">▾ Plegar</button>
+  <section id="dkTools">
+    <div id="pCont"><h2>Contorno de la planta</h2><div id="pContNew">
     <div class="g2">
       <label>Ancho (m)<input id="cw" type="number" step="0.1" min="0.1" inputmode="decimal" value="12"></label>
       <label>Largo (m)<input id="ch" type="number" step="0.1" min="0.1" inputmode="decimal" value="9"></label>
     </div>
-    <div class="row"><button id="addCont">Crear contorno</button><button id="copyCont">Copiar el de abajo</button></div>
-    <div id="alasDock"></div>
-    <h2 style="margin-top:12px">Añadir por medidas</h2>
+    <div class="row"><button id="addCont">Crear contorno</button><button id="copyCont">Copiar el de abajo</button></div></div>
+    <p id="pContHas" class="hint"></p>
+    <div id="alasDock"></div></div>
+    <div id="pRoom"><h2>Añadir por medidas</h2>
     <label>Nombre<input id="rn" type="text" placeholder="Salón"></label>
     <div class="g2">
       <label>Ancho (m)<input id="rw" type="number" step="0.1" min="0.1" inputmode="decimal" value="4"></label>
       <label>Largo (m)<input id="rh" type="number" step="0.1" min="0.1" inputmode="decimal" value="3"></label>
     </div>
-    <div class="row"><button id="addRoom">Añadir habitación</button></div>
-    <div class="g2" style="margin-top:10px">
+    <div class="row"><button id="addRoom">Añadir habitación</button></div></div>
+    <div id="pWall"><h2>Añadir un muro</h2><div class="g2">
       <label>Muro: longitud (m)<input id="wl" type="number" step="0.1" min="0.1" inputmode="decimal" value="3"></label>
       <label>Ángulo (0° → derecha, 90° ↓)<input id="wa" type="number" step="15" inputmode="decimal" value="0"></label>
       <label>Tipo de muro<select id="wt"><option value="int">Interior</option><option value="ext">Exterior</option><option value="tab">Tabique</option></select></label>
     </div>
-    <div class="row"><button id="addWall">Añadir muro</button></div>
+    <div class="row"><button id="addWall">Añadir muro</button></div></div>
   </section>
-  <section>
-    <h2>Elemento seleccionado</h2>
+  <section id="dkSel">
+    <h2 id="dkSelH">Elemento seleccionado</h2>
     <div id="sp"></div>
   </section>
 </div>
@@ -1500,10 +1506,21 @@ function tabs(){
   $('#tabs').innerHTML=h;if(typeof delLbl==='function')delLbl();
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{fl=+b.dataset.f;tdraft=null;if(fl===-1||fl===-2||SUBT.includes(tool))tool='select';else if(tool==='room'&&!contOf(fl))tool='cont';else if(tool==='cont'&&contOf(fl))tool='room';sel=null;note='';toolsUI();tabs();done()});
 }
-function toolsUI(){document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===tool));svg.style.cursor=tool==='select'?'default':'crosshair';if(MENUS.length)menuUI()}
+let dkKey='';
+function dockUI(){const d=$('#dock');if(!d)return;const hs=d.classList.contains('hassel'),sp=$('#sp'),spOn=!!(sp&&sp.innerHTML.trim()),c=fl>=0?contOf(fl):null;
+  const showT=!hs&&fl>=0&&['cont','room','wall'].includes(tool);
+  $('#pCont').hidden=tool!=='cont';$('#pRoom').hidden=tool!=='room';$('#pWall').hidden=tool!=='wall';
+  $('#pContNew').hidden=!!c;$('#copyCont').hidden=!(fl>0&&contOf(fl-1));
+  $('#pContHas').hidden=!c;if(c)$('#pContHas').textContent=`Esta planta ya tiene su contorno de ${fmt(c.w)} × ${fmt(c.h)} m. Para cambiarlo, elige Editar y tócalo.`;
+  $('#dkTools').hidden=!showT;$('#dkSel').hidden=!spOn;$('#dkSelH').hidden=!(cur()||typeof sel==='string');$('#dkSelH').textContent=typeof sel==='string'?'Tejado':'Elemento seleccionado';
+  document.body.classList.toggle('nodock',!showT&&!spOn);
+  const k=sel+'|'+tool;if(k!==dkKey){dkKey=k;d.classList.remove('mini')}const mb=$('#dockMin');if(mb)mb.textContent=d.classList.contains('mini')?'▴ Mostrar el panel':'▾ Plegar'}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='dockMin'){$('#dock').classList.toggle('mini');dockUI()}});
+function toolsUI(){queueMicrotask(()=>{try{dockUI()}catch(e){}});document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===tool));svg.style.cursor=tool==='select'?'default':'crosshair';if(MENUS.length)menuUI()}
 const f=(k,l,v,t='number')=>`<label>${l}<input data-k="${k}" type="${t}" ${t==='number'?'step="0.1" inputmode="decimal"':''} value="${esc(v)}"></label>`;
 const opt=(k,l,v,o)=>`<label>${l}<select data-k="${k}">${o.map(([x,t])=>`<option value="${x}"${x===v?' selected':''}>${t}</option>`).join('')}</select></label>`;
-function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='string'||tdraft||pas||tool==='cat'));
+function panel(){if(fl===-1&&sel==null&&!pas&&!tdraft&&!pdfBusy){const r0=roofs();if(r0.length)sel=r0[0].id}panel0();dockUI()}
+function panel0(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='string'||tdraft||pas||tool==='cat'));
   const b=$('#sp'),it=cur();let h='';
   if(typeof sel==='string'){
     const r=roofs().find(x=>x.id===sel);if(!r){sel=null;return panel()}
@@ -1533,7 +1550,7 @@ function panel(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='st
   if(!it&&tool==='medir'){const n=items.filter(i=>i.t==='cota'&&i.f===fl).length,N=items.filter(i=>i.t==='cota').length;b.innerHTML=`<p class="hint">Arrastra para medir. Cada medición se queda en el plano hasta que la borres. Para borrar una sola: Editar, tócala y Eliminar.</p><p class="hint">${n} mediciones en ${fname(fl).toLowerCase()} · ${N} en todo el proyecto.</p><div class="row"><button id="cotaFl" class="dng"${n?'':' disabled'}>Borrar las de esta planta</button><button id="cotaAllP" class="dng"${N?'':' disabled'}>Borrar todas</button></div>`;
     $('#cotaFl').onclick=()=>{push();items=items.filter(i=>!(i.t==='cota'&&i.f===fl));note='Mediciones de esta planta borradas';done()};
     $('#cotaAllP').onclick=()=>{push();items=items.filter(i=>i.t!=='cota');note='Todas las mediciones borradas';done()};return}
-  if(!it){b.innerHTML='<p class="hint">Elige «Editar» y toca un elemento para cambiar sus medidas.</p>';return}
+  if(!it){b.innerHTML='';return}
   if(it.t==='esc'){const g=escGeom(it);h=`<p class="hint">Escalera de ${fname(it.f).toLowerCase()}: sube a la planta de arriba. ${g.n} escalones (contrahuella 18 cm, huella 28 cm). Ocupa ${fmt(g.W)} × ${fmt(g.H)} m. Arrástrala para moverla.</p>${escFields(it)}${opt('ty','Tipo',it.ty||'recta',[['recta','Recta (se puede ensanchar o estrechar)'],['L','En L, con descansillo'],['U','En U, dos tramos'],['caracol','De caracol'],['eliptica','Elíptica (largo y ancho distintos)'],['tramos','Por tramos: rectos, curvos y rellanos']])}${it.ty==='tramos'?escSegUI(it):''}`}
   else if(it.t==='farol')h=`<p class="hint">Farol de ${fname(it.f).toLowerCase()}. Arrástralo para moverlo; se ve en la fachada más cercana.</p>${f('h','Altura (m)',it.h)}${opt('ty','Tipo',it.ty||'pared',[['pared','Farol de pared con brazo de hierro'],['colgante','Farol colgante'],['poste','Poste con farol']])}`;
   else if(it.t==='balc'){const hs=items.find(i=>i.id===it.host);h=`<p class="hint">Balcón apoyado en ${hs&&hs.t==='door'?'una puerta':'una ventana'} de ${fname(it.f).toLowerCase()}. Sobresale del contorno hacia fuera.</p><div class="g2">${f('d','Saliente (m)',it.d)}${f('ex','Ancho extra a cada lado (m)',it.ex)}</div>${opt('rail','Barandilla',it.rail||'hierro',[['hierro','Barandilla de hierro forjado'],['balaustrada','Balaustrada de piedra'],['none','Sin barandilla']])}`}
