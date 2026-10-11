@@ -501,6 +501,8 @@ const DEST={entrada:['Entrada (estudi)',['mb_consola','mb_reloj','mb_perchero','
  costura:['Sala de costura',['co_maquina','co_bastidor','co_cesto','co_maniqui','co_mesa','co_armario','co_plancha','mb_sillon','mb_silla','lu_quinque','lu_aplique']],
  biblioteca:['Biblioteca',['bi_estante','bi_escalera','bi_mesa','bi_butaca','bi_globo','bi_atril','bi_mapas','mb_escritorio','mb_libreria','mb_chimenea','mb_reloj','mb_alfombra','lu_quinque','lu_candelabro','lu_lampara']],
  patio:['Patio o clastra',['jd_pozo','ck_aljibe','jd_fuente','jd_pergola','jd_cossiol','jd_banco_p','jd_banco_h','jd_mesa_p','jd_arriate','jd_parterre','jd_reloj','jd_pajarera','jd_estatua','jd_est_red','lu_farol','abrevadero_c','mb_macetero']],
+ servicio:['Patio de servicio',['lv_rentador','lv_cossi','ps_tendedero','ps_gallinero','ps_conejera','ps_comedero','gallina','gallo','pollito','coneja','gazapo','gato','ca_rater','perrera','jd_pozo','abrevadero_c','ck_horno','ck_lenya','lenya','ck_cantaros','lu_farol']],
+ criadas:['Habitación de las criadas',['mb_camaserv','mb_perchero','mb_baulpeq','mb_palanganero','mb_orinal','mb_silla','co_cesto','lu_candil','lu_palmatoria']],
  pasillo:['Pasillo o distribuidor',['lu_aplique','lu_farol','mb_macetero','mb_consola']],otro:['Otro',[]]};
 function destItems(k){const d=DEST[k];if(!d)return[];let L=[];[].concat(d[1]).forEach(x=>{if(typeof x==='string'&&x[0]==='@'){const g=CAT[x.slice(1)];if(g)L=L.concat(Object.keys(g[1]))}else L.push(x)});return L.filter(k2=>CATK[k2])}
 function destBox(it){if(!it.dest&&it.patio)it.dest='patio';const chips=Object.entries(DEST).map(([k,v])=>`<button class="destB" data-k="${k}" aria-pressed="${it.dest===k}" style="padding:6px 9px;font-size:13px">${v[0]}</button>`).join('');
@@ -1215,8 +1217,8 @@ const MATZ={ma_banco:['Banco de matar el cerdo',2,.8],ma_llibrell:['Lebrillo par
 CAT.era=['Era de trillar',ERA];CAT.molvent=['Molino de viento',MVI];CAT.sinia=['Sínia (noria de sangre)',SIN];CAT.capilla=['Capilla y oratorio',CAPI];CAT.luz=['Iluminación de época',LUZ];CAT.granero=['Porxo y granero',GRA];CAT.matanza=['Matanza del cerdo',MATZ];
 const CASA2={ni_cama:['Cama pequeña de niño',1.6,.8],ni_caballito:['Caballito de madera',.9,.35],ni_juguetes:['Baúl de juguetes',.8,.45],ni_pupitre:['Pupitre de estudio',.9,.6],ni_munecas:['Casa de muñecas',.8,.4],ni_pizarra:['Pizarra con caballete',1,.4],
  co_maquina:['Máquina de coser de pedal',1,.5],co_bastidor:['Bastidor de bordar',.8,.6],co_cesto:['Cesto de costura',.45,.45],co_maniqui:['Maniquí',.5,.5],co_mesa:['Mesa de cortar telas',2,1],co_armario:['Armario de telas',1.4,.5],co_plancha:['Mesa de planchar con planchas de hierro',1.2,.4],
- bi_estante:['Estantería alta de libros',2,.4],bi_escalera:['Escalera de biblioteca',.6,.9],bi_mesa:['Mesa de lectura',1.8,.9],bi_globo:['Globo terráqueo',.5,.5],bi_atril:['Atril',.5,.4],bi_butaca:['Butaca de lectura',.8,.8],bi_mapas:['Mapero (cajonera de mapas)',1.2,.8]};
-CAT.casa2=['Niños, costura y biblioteca',CASA2];
+ bi_estante:['Estantería alta de libros',2,.4],bi_escalera:['Escalera de biblioteca',.6,.9],bi_mesa:['Mesa de lectura',1.8,.9],bi_globo:['Globo terráqueo',.5,.5],bi_atril:['Atril',.5,.4],bi_butaca:['Butaca de lectura',.8,.8],bi_mapas:['Mapero (cajonera de mapas)',1.2,.8],ps_tendedero:['Tendedero de ropa',3,.4],ps_gallinero:['Gallinero de obra',3,2],ps_conejera:['Conejeras',1.5,.6],ps_comedero:['Comedero y bebedero de aves',.8,.4]};
+CAT.casa2=['Niños, costura, biblioteca y servicio',CASA2];
 const EXTRA={...ERA,...MVI,...SIN,...CAPI,...LUZ,...GRA,...MATZ,...CASA2};
 LOWO.push('er_era','si_andador','gr_almendra','gr_algarroba');
 function extraSvg(k,x,y,w,h){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2,C=(a,b,r,f,st,ex)=>`<circle cx="${a}" cy="${b}" r="${r}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`,Rt=(a,b,c,d,f,st,ex)=>`<rect x="${a}" y="${b}" width="${c}" height="${d}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`,E=(a,b,rx,ry,f,st)=>`<ellipse cx="${a}" cy="${b}" rx="${rx}" ry="${ry}" fill="${f}" stroke="${st}" stroke-width="1.2"/>`,L=(a,b,c,d,st,sw)=>`<path d="M${a} ${b}L${c} ${d}" stroke="${st}" stroke-width="${sw||1.5}"/>`,wd='#8a6b3c',dk='#3a2514',st='#9a917f',sd='#5d574c';
@@ -1302,6 +1304,10 @@ function extraSvg(k,x,y,w,h){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2,C=(a,b,r,
   case 'bi_globo':return C(cx,cy,R*.95,'#9cc4d6','#2f5f7a','stroke-width="2"')+`<path d="M${cx-R*.5} ${cy-R*.2}q${R*.3} ${-R*.3} ${R*.6} 0t${R*.3} ${R*.4}" fill="#8fb070" stroke="#4f6b3a"/>`+`<path d="M${cx} ${cy-R*.95}A${R*.95} ${R*.95} 0 0 1 ${cx} ${cy+R*.95}" fill="none" stroke="#b08a2a" stroke-width="2"/>`;
   case 'bi_atril':return Rt(x+w*.1,y,w*.8,h*.6,'#7a5530',dk)+Rt(x+w*.18,y+h*.08,w*.64,h*.45,'#f2ead8','#8a7a5c')+L(cx,y+h*.6,cx,y+h,wd,3);
   case 'bi_butaca':return Rt(x,y,w,h,'#7a2a2a',dk,'rx="8"')+Rt(x+w*.15,y+h*.25,w*.7,h*.6,'#9a3a3a',dk,'rx="6"');
+  case 'ps_tendedero':{let o=L(x,cy,x+w,cy,'#888',1.5)+C(x,cy,3,'#5a3a1a','none')+C(x+w,cy,3,'#5a3a1a','none');['#f6f1e5','#c8d8e8','#f6f1e5','#e8c8c8','#f6f1e5'].forEach((c2,i)=>o+=Rt(x+w*(.08+i*.18),cy,w*.12,h*.45,c2,'#8a8070'));return o}
+  case 'ps_gallinero':return Rt(x,y,w,h,'#d8cfbb',dk)+Rt(x+w*.05,y+h*.08,w*.5,h*.84,'#b5533c',dk)+`<path d="M${x+w*.58} ${y+h*.1}H${x+w*.95}V${y+h*.9}H${x+w*.58}" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="2 2"/>`+E(x+w*.75,cy,w*.06,h*.08,'#fff',dk)+E(x+w*.85,cy+h*.2,w*.05,h*.07,'#c8a060',dk);
+  case 'ps_conejera':{let o=Rt(x,y,w,h,'#a07a4a',dk);for(let i=1;i<3;i++)o+=L(x+w*i/3,y,x+w*i/3,y+h,dk,1.5);return o+[0,1,2].map(i=>`<path d="M${x+w*(i+.15)/3} ${y+h*.2}h${w*.7/3}M${x+w*(i+.15)/3} ${y+h*.5}h${w*.7/3}M${x+w*(i+.15)/3} ${y+h*.8}h${w*.7/3}" stroke="#666" stroke-width="1"/>`).join('')}
+  case 'ps_comedero':return Rt(x,y,w*.55,h,'#a07a4a',dk,'rx="2"')+Rt(x+w*.05,y+h*.2,w*.45,h*.6,'#d9b24a','none')+C(x+w*.78,cy,h*.42,'#9a9a9a','#555')+C(x+w*.78,cy,h*.28,'#9cc4d6','none');
   case 'bi_mapas':{let o=Rt(x,y,w,h,'#6b4a2b',dk);for(let i=1;i<5;i++)o+=L(x,y+h*i/5,x+w,y+h*i/5,dk,1);return o+[1,2,3,4,5].map(i=>C(cx,y+h*(i-.5)/5,2,'#c8a040','none')).join('')}
   }
   return Rt(x,y,w,h,'#c9b48a',dk)}
