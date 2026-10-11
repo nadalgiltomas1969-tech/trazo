@@ -532,9 +532,15 @@ let GH=null,lastPT='mouse',MFROM=null;
 try{if(localStorage.getItem('trazoLbl')==='0')document.body.classList.add('nolbl')}catch(e){}
 function lblOff(){return document.body.classList.contains('nolbl')}
 function toggleLbl(){const off=!lblOff();document.body.classList.toggle('nolbl',off);try{localStorage.setItem('trazoLbl',off?'0':'1')}catch(e){}const b=$('#lblBtn');if(b)b.textContent=off?'Mostrar leyendas':'Ocultar leyendas';note=off?'Leyendas ocultas (tecla L para volver a verlas)':'Leyendas visibles';render()}
-function roomLbl(it,S){const w=it.w*S,h=it.h*S,cx=(it.x+it.w/2)*S,cy=(it.y+it.h/2)*S,vert=it.h>it.w*1.25,len=(vert?h:w)-10,thick=vert?w:h,nm=it.name||'',dims=`${fmt(it.w)} × ${fmt(it.h)} m · ${fmt(it.w*it.h)} m²`,nt=it.patio?(it.f>0?'Vacío: se ve la clastra desde arriba':'Patio descubierto'):it.bov?bovN(it.bov):'';
+function roomLbl(it,S){const w=it.w*S,h=it.h*S,cx0=(it.x+it.w/2)*S,cy0=(it.y+it.h/2)*S,vert=it.h>it.w*1.25,len=(vert?h:w)-10,thick=vert?w:h,nm=it.name||'',dims=`${fmt(it.w)} × ${fmt(it.h)} m · ${fmt(it.w*it.h)} m²`,nt=it.patio?(it.f>0?'Vacío: se ve la clastra desde arriba':'Patio descubierto'):it.bov?bovN(it.bov):'';
   const fits=(t,f)=>t.length*f*.56<=len;let fs=Math.max(8,Math.min(22,thick*.2));while(fs>8&&!fits(nm,fs))fs-=1;
   const fd=Math.max(8,Math.min(14,fs*.75)),showD=fits(dims,fd)&&thick>fs+fd+6,showN=!!nt&&showD&&fits(nt,fd)&&thick>fs+2*fd+12,st='paint-order:stroke;stroke:var(--panel);stroke-width:3px';
+  /* si otra estancia tapa el centro, el rótulo se desplaza a un hueco libre */
+  const lw=Math.max(nm.length*fs*.56,showD?dims.length*fd*.56:0,showN?nt.length*fd*.56:0)+8,lh=fs+(showD?fd*1.3:0)+(showN?fd*1.2:0)+6,bw=vert?lh:lw,bh=vert?lw:lh;
+  const obs=items.filter(o=>o.t==='room'&&o!==it&&o.f===it.f&&o.w*o.h<it.w*it.h&&o.x<it.x+it.w&&o.x+o.w>it.x&&o.y<it.y+it.h&&o.y+o.h>it.y).map(o=>[o.x*S,o.y*S,(o.x+o.w)*S,(o.y+o.h)*S]);
+  let cx=cx0,cy=cy0;if(obs.length){const x0=it.x*S,y00=it.y*S,free=(X,Y)=>X-bw/2>=x0&&X+bw/2<=x0+w&&Y-bh/2>=y00&&Y+bh/2<=y00+h&&!obs.some(b=>X-bw/2<b[2]&&X+bw/2>b[0]&&Y-bh/2<b[3]&&Y+bh/2>b[1]);
+    if(!free(cx,cy)){const hz=w>=h,stp=Math.max(6,(hz?w:h)/40);let ok=0;for(let k=1;k<=40&&!ok;k++)for(const sg of[1,-1]){const X=hz?cx0+sg*k*stp:cx0,Y=hz?cy0:cy0+sg*k*stp;if(free(X,Y)){cx=X;cy=Y;ok=1;break}}
+      for(let k=1;k<=40&&!ok;k++)for(const sg of[1,-1]){const X=hz?cx0:cx0+sg*k*stp,Y=hz?cy0+sg*k*stp:cy0;if(free(X,Y)){cx=X;cy=Y;ok=1;break}}}}
   const y0=showN?cy-fd*.6:showD?cy-fd*.15:cy+fs*.35;let o=`<g${vert?` transform="rotate(-90 ${cx} ${cy})"`:''} pointer-events="none"><text class="nm" x="${cx}" y="${y0}" text-anchor="middle" style="${st};font-size:${fs}px">${esc(nm)}</text>`;
   if(showD)o+=`<text class="dm" x="${cx}" y="${y0+fd*1.25}" text-anchor="middle" style="${st};font-size:${fd}px">${dims}</text>`;
   if(showN)o+=`<text class="dm" x="${cx}" y="${y0+fd*2.45}" text-anchor="middle" style="${st};font-size:${fd}px;font-style:italic">${esc(nt)}</text>`;return o+'</g>'}
