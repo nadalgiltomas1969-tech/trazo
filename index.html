@@ -84,6 +84,7 @@ body .tabs{padding:4px 8px}
 #fpanel{background:var(--panel);border-top:1px solid var(--line);max-height:42%;overflow:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
 #fopt:empty{display:none}
 button.sub,button.ug{display:none}.subon button.sub,.ugon button.ug{display:inline-block}.subon .nosub{display:none}
+#imgdlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}#imgdlg[hidden]{display:none}#imgdlg textarea{width:100%;box-sizing:border-box;font:12px/1.4 sans-serif;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
 #pdlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
 .prj{border:1px solid var(--line);border-radius:10px;padding:8px;margin:0 0 8px}.prj.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}.prj .row{margin-top:6px}
 .card{background:var(--panel);border-radius:12px;padding:16px;max-width:360px;width:100%;max-height:100%;overflow:auto}
@@ -250,6 +251,17 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
     <div id="fzoom"><button id="fzin" aria-label="Acercar">+</button><button id="fzout" aria-label="Alejar">−</button><button id="ffit" aria-label="Ver toda la finca" style="font-size:12px">Todo</button></div></div>
   <div id="fpanel"></div>
 </div>
+<div id="imgdlg" hidden><div class="card" style="max-width:640px">
+  <h2>Prompt para imagen · <span id="imgT"></span></h2>
+  <p class="hint">Pensado para Gemini (Nano Banana). Copia el texto, pégalo en Gemini y adjunta la imagen de referencia de la planta y, si los tienes, los dibujos de tus personajes.</p>
+  <div class="g2"><label>Encuadre<select id="imgCam"><option value="ojo">Interior, a la altura de los ojos</option><option value="alto">Interior, desde una esquina alta</option><option value="maqueta">Vista desde arriba, como una maqueta</option></select></label>
+  <label>Hora<select id="imgHora"><option value="manana">Mañana</option><option value="mediodia">Mediodía</option><option value="tarde">Atardecer</option><option value="noche">Noche, con velas y candiles</option></select></label>
+  <label>Estación<select id="imgEst"><option value="">Sin indicar</option><option value="primavera">Primavera</option><option value="verano">Verano</option><option value="otono">Otoño</option><option value="invierno">Invierno</option></select></label>
+  <label>Personajes y acción (opcional)<input id="imgPers" type="text" placeholder="la madona amasando pan, dos niños mirando"></label></div>
+  <h3 style="margin:10px 0 4px">En inglés (para pegar)</h3><textarea id="imgEN" rows="9" readonly></textarea><div class="row"><button id="imgCEN">Copiar en inglés</button></div>
+  <h3 style="margin:10px 0 4px">En castellano</h3><textarea id="imgES" rows="7" readonly></textarea><div class="row"><button id="imgCES">Copiar en castellano</button></div>
+  <div class="row" style="margin-top:8px"><button id="imgRef">Descargar imagen de referencia (planta)</button><button id="imgX">Cerrar</button></div>
+</div></div>
 <div id="pdlg" hidden><div class="card" style="max-width:480px">
   <h2>Mis proyectos</h2>
   <p class="hint">Cada proyecto es un plano distinto (la casa señorial, una cuadra, el molino…). Se guardan en este navegador; para llevarlos a otro dispositivo, expórtalos.</p>
@@ -582,6 +594,64 @@ document.addEventListener('pointerdown',e=>{if(!ctxm.hidden&&!ctxm.contains(e.ta
 svg.addEventListener('contextmenu',e=>{e.preventDefault();if(lastPT!=='mouse'||fl<0)return;openCtx(e)});
 svg.addEventListener('pointerleave',()=>{if(GH){GH=null;render()}});
 document.addEventListener('click',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('ctrB')){const it=cur();if(it)centerItem(it)}});
+
+/* ---------- prompts para imágenes (Gemini) ---------- */
+const IMG_DEST={entrada:['entrance hall (estudi)','entrada (estudi)'],sala:['noble drawing room','sala noble'],comedor:['dining room','comedor'],dormitorio:["masters' bedroom",'dormitorio de los señores'],dormserv:["servants' bedroom",'dormitorio del servicio'],cocina:['farmhouse kitchen','cocina'],rebost:['pantry (rebost)','rebost (despensa)'],bano:['bathroom and privy','baño y escusat'],despacho:["master's study",'despacho del señor'],capilla:['private chapel (oratori)','capilla'],bodega:['wine cellar (celler)','bodega (celler)'],almazara:['olive oil mill (tafona)','almazara (tafona)'],cuadra:['horse stable','cuadra'],cochera:['carriage house','cochera'],granero:['granary and porch (porxo)','porxo y granero'],lavadero:['laundry room','lavadero'],matanza:['pig-slaughter workroom (matances)','sala de la matanza'],carpinteria:["carpenter's workshop",'carpintería'],forja:['blacksmith forge','forja'],aperos:['tool and farm-implement store','casa de aperos'],ninos:["children's bedroom",'habitación de los niños'],costura:['sewing room','sala de costura'],biblioteca:['library','biblioteca'],pasillo:['corridor','pasillo']};
+const IMG_SUELO={hidraulica:['patterned hydraulic floor tiles with flowers','baldosa hidráulica de flores'],hidraulica_geo:['geometric hydraulic floor tiles','baldosa hidráulica geométrica'],ajedrez:['black and white marble chequered floor','suelo de mármol blanco y negro'],marmol:['white marble floor','suelo de mármol blanco'],terracota:['terracotta tile floor (rajola de fang)','suelo de terracota'],madera:['wooden plank floor','tarima de madera'],losa:['sandstone (marés) slab floor','losas de marés'],empedrado:['cobblestone floor','empedrado de cantos rodados'],tierra:['beaten earth floor','suelo de tierra batida']};
+const IMG_BOV={canon:['a semicircular barrel vault','bóveda de cañón'],rebajada:['a low segmental barrel vault','bóveda de cañón rebajada'],catalana:['a thin Catalan brick vault','bóveda tabicada catalana'],arista:['groin vaults','bóvedas de arista'],cruceria:['ribbed vaults','bóvedas de crucería'],arcos:['stone diaphragm arches carrying wooden beams','arcos de diafragma con vigas']};
+const WALLN={n:['north','norte'],s:['south','sur'],o:['west','oeste'],e:['east','este']};
+function imgData(R0){const f=R0.f,tol=.6;
+  const objs=items.filter(o=>o.t==='obj'&&o.f===f&&o.x+o.w/2>=R0.x&&o.x+o.w/2<=R0.x+R0.w&&o.y+o.h/2>=R0.y&&o.y+o.h/2<=R0.y+R0.h);
+  const byW={n:{},s:{},o:{},e:{},c:{}};objs.forEach(o=>{const cx=o.x+o.w/2,cy=o.y+o.h/2,q=((o.r||0)%180+180)%180===90,hw=(q?o.h:o.w)/2,hh=(q?o.w:o.h)/2,d={n:cy-hh-R0.y,s:R0.y+R0.h-cy-hh,o:cx-hw-R0.x,e:R0.x+R0.w-cx-hw};
+    let k=Object.keys(d).reduce((a,b)=>d[a]<=d[b]?a:b);if(d[k]>.8)k='c';const nm=(CATK[o.ok]||['pieza'])[0];byW[k][nm]=(byW[k][nm]||0)+1});
+  const ops={n:{d:0,w:0,a:0,b:0},s:{d:0,w:0,a:0,b:0},o:{d:0,w:0,a:0,b:0},e:{d:0,w:0,a:0,b:0}};
+  items.filter(o=>o.f===f&&(o.t==='door'||o.t==='window'||o.t==='arco')).forEach(o=>{const r=((o.r||0)%360+360)%360,L=o.w||1;let cx,cy;
+    if(r===0){cx=o.x+L/2;cy=o.y}else if(r===180){cx=o.x-L/2;cy=o.y}else if(r===90){cx=o.x;cy=o.y+L/2}else{cx=o.x;cy=o.y-L/2}
+    let k=null;if(cx>=R0.x-.1&&cx<=R0.x+R0.w+.1){if(Math.abs(cy-R0.y)<tol)k='n';else if(Math.abs(cy-R0.y-R0.h)<tol)k='s'}
+    if(!k&&cy>=R0.y-.1&&cy<=R0.y+R0.h+.1){if(Math.abs(cx-R0.x)<tol)k='o';else if(Math.abs(cx-R0.x-R0.w)<tol)k='e'}
+    if(!k)return;const t=o.t==='door'?'d':o.t==='window'?'w':'a';ops[k][t]++;if(items.some(b=>b.t==='balc'&&b.host===o.id))ops[k].b++});
+  return{objs,byW,ops}}
+function imgPrompt(R0){const D=imgData(R0),cam=$('#imgCam').value,hora=$('#imgHora').value,est=$('#imgEst').value,pers=$('#imgPers').value.trim();
+  const proj=(PJ.p[PJ.cur]||{}).name||'Son Pons',dk=R0.dest,de=IMG_DEST[dk]||[R0.name||'room',R0.name||'estancia'],nmR=R0.name&&R0.name!==(DEST[dk]||[])[0]?R0.name:'';
+  const fh=floorH(R0.f),su=IMG_SUELO[R0.suelo],bv=IMG_BOV[R0.bov],out=!!R0.patio;
+  const lst=(o,es)=>Object.entries(o).map(([n,c])=>(c>1?c+' × ':'')+(es?n.toLowerCase():'"'+n+'"')).join(', ');
+  const fu=(es)=>{const a=[];['n','s','o','e'].forEach(k=>{const t=lst(D.byW[k],es);if(t)a.push(es?`junto a la pared ${WALLN[k][1]}: ${t}`:`against the ${WALLN[k][0]} wall: ${t}`)});const c=lst(D.byW.c,es);if(c)a.push(es?`en el centro: ${c}`:`in the middle of the room: ${c}`);return a};
+  const op=(es)=>{const a=[];['n','s','o','e'].forEach(k=>{const q=D.ops[k],p=[];if(q.w)p.push(es?q.w+(q.w>1?' ventanas':' ventana'):q.w+(q.w>1?' windows':' window'));if(q.d)p.push(es?q.d+(q.d>1?' puertas':' puerta'):q.d+(q.d>1?' doors':' door'));if(q.a)p.push(es?q.a+(q.a>1?' arcos':' arco'):q.a+(q.a>1?' stone arches':' stone arch'));
+    if(p.length)a.push((es?`pared ${WALLN[k][1]}: `:`${WALLN[k][0]} wall: `)+p.join(', ')+(q.b?(es?' (con balcón)':' (with balcony)'):''))});return a};
+  // camera looks at the wall with most furniture
+  const cnt=k=>Object.values(D.byW[k]).reduce((a,b)=>a+b,0)+D.ops[k].w+D.ops[k].d,look=['n','s','o','e'].reduce((a,b)=>cnt(a)>=cnt(b)?a:b),from={n:'s',s:'n',o:'e',e:'o'}[look];
+  const H={manana:['soft morning sunlight streaming through the windows','luz suave de mañana entrando por las ventanas'],mediodia:['bright Mediterranean midday light, cool shade inside','luz clara de mediodía mediterráneo, sombra fresca dentro'],tarde:['warm golden late-afternoon light','luz dorada del atardecer'],noche:['night, lit only by candles and oil lamps (candils), warm glow and deep shadows','de noche, iluminado solo con velas y candiles, resplandor cálido']}[hora];
+  const E={primavera:['spring','primavera'],verano:['summer','verano'],otono:['autumn','otoño'],invierno:['winter','invierno']}[est];
+  const C={ojo:[`eye-level view from the ${WALLN[from][0]} side of the room looking towards the ${WALLN[look][0]} wall`,`vista a la altura de los ojos desde el lado ${WALLN[from][1]}, mirando hacia la pared ${WALLN[look][1]}`],alto:[`view from a high corner of the room, slightly from above, showing the whole room`,`vista desde una esquina alta, un poco desde arriba, que muestre toda la estancia`],maqueta:[`cutaway view from above like a dollhouse model, walls cut at mid height, showing the full layout`,`vista desde arriba como una maqueta, con los muros cortados a media altura, mostrando toda la distribución`]}[cam];
+  const fuE=fu(0),fuS=fu(1),opE=op(0),opS=op(1);
+  const en=[`STYLE: still frame from a children's animated TV series, 2D hand-painted cartoon style, soft clean outlines, warm earthy Mediterranean colours, gentle and friendly mood, 16:9 widescreen, no text, no captions, no watermark.`,
+   `SETTING: ${out?'open-air courtyard':'interior of the '+de[0]}${nmR?' called "'+nmR+'"':''} in "${proj}", a large rural estate house (possessió) in Mallorca, Spain, at the end of the 19th century. Historically accurate: no electricity, no plastic, no modern objects.`,
+   `ROOM: about ${fmt(R0.w)} × ${fmt(R0.h)} m${out?'':', ceiling '+fmt(fh)+' m high'+(bv?' with '+bv[0]:' with exposed wooden beams')}. ${su?'Floor: '+su[0]+'. ':''}${out?'Surrounded by sandstone (marés) walls.':'Thick stone walls with white lime plaster.'}`,
+   opE.length?`OPENINGS (keep these positions): ${opE.join('; ')}.`:'',
+   fuE.length?`FURNITURE AND OBJECTS (Mallorcan names, keep this layout): ${fuE.join('; ')}.`:'',
+   `CAMERA: ${C[0]}.`,`LIGHT: ${H[0]}${E?', '+E[0]:''}.`,
+   pers?`CHARACTERS AND ACTION: ${pers}.`:'',
+   `If reference images are attached: in the floor plan north is at the top; match its layout exactly, and keep the characters identical to their reference drawings.`].filter(Boolean).join('\n');
+  const es=[`ESTILO: fotograma de una serie de dibujos animados infantil, dibujo 2D pintado a mano, contornos suaves, colores cálidos mediterráneos, ambiente amable, formato 16:9, sin textos ni marcas de agua.`,
+   `LUGAR: ${out?'patio descubierto':de[1]}${nmR?' llamado «'+nmR+'»':''} de «${proj}», una possessió mallorquina de finales del siglo XIX. Fiel a la época: sin electricidad ni objetos modernos.`,
+   `ESTANCIA: unos ${fmt(R0.w)} × ${fmt(R0.h)} m${out?'':', techo a '+fmt(fh)+' m'+(bv?' con '+bv[1]:' con vigas de madera vistas')}. ${su?'Suelo: '+su[1]+'. ':''}${out?'Rodeado de muros de marés.':'Muros gruesos de piedra encalados.'}`,
+   opS.length?`HUECOS (respetar su posición): ${opS.join('; ')}.`:'',
+   fuS.length?`MUEBLES Y OBJETOS (respetar la distribución): ${fuS.join('; ')}.`:'',
+   `CÁMARA: ${C[1]}.`,`LUZ: ${H[1]}${E?', '+E[1]:''}.`,pers?`PERSONAJES Y ACCIÓN: ${pers}.`:'',
+   `Si se adjuntan imágenes de referencia: en la planta el norte está arriba; respetar exactamente su distribución y mantener los personajes idénticos a sus dibujos.`].filter(Boolean).join('\n');
+  return{en,es}}
+let IMGR=null;
+function imgUpd(){if(!IMGR)return;const P=imgPrompt(IMGR);$('#imgEN').value=P.en;$('#imgES').value=P.es}
+function imgOpen(R0){IMGR=R0;$('#imgT').textContent=R0.name||'Estancia';$('#imgdlg').hidden=false;imgUpd()}
+['imgCam','imgHora','imgEst'].forEach(i=>$('#'+i).addEventListener('change',imgUpd));$('#imgPers').addEventListener('input',imgUpd);
+const imgCopy=t=>{t.select();try{navigator.clipboard.writeText(t.value)}catch(e){try{document.execCommand('copy')}catch(_){}}note='Texto copiado: pégalo en Gemini';render()};
+$('#imgCEN').onclick=()=>imgCopy($('#imgEN'));$('#imgCES').onclick=()=>imgCopy($('#imgES'));$('#imgX').onclick=()=>{$('#imgdlg').hidden=true};
+$('#imgRef').onclick=async()=>{if(!IMGR)return;const dl=await getDL();if(!dl){note='Este visor no permite guardar archivos';return render()}
+  const R0=IMGR,sv={view:{...view},sel,fl},r=svg.getBoundingClientRect(),W=Math.round(r.width),Hh=Math.round(r.height),m=1.5,sc=Math.min((W-40)/(R0.w+2*m),(Hh-40)/(R0.h+2*m));
+  try{sel=null;fl=R0.f;view.s=sc;view.ox=(W-R0.w*sc)/2-R0.x*sc;view.oy=(Hh-R0.h*sc)/2-R0.y*sc;render();const png=await svgToPng(svgStr(svg,W,Hh),W,Hh,2);
+    await dl.save({filename:((R0.name||'estancia').replace(/[^\w\- áéíóúñÁÉÍÓÚÑ]+/g,'_'))+'_planta.png',data:png});note='Imagen de referencia guardada: adjúntala en Gemini junto al texto'}
+  catch(e){note='No se pudo crear la imagen de referencia'}finally{view=sv.view;sel=sv.sel;fl=sv.fl;render()}};
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('.imgP');if(b){const it=cur();if(it&&it.t==='room')imgOpen(it)}});
 /* ---------- arcadas y caseta ---------- */
 const ARC=[['medio','Medio punto'],['rebajado','Rebajado'],['carpanel','Carpanel (tres centros)'],['escarzano','Escarzano'],['apuntado','Apuntado (ojival)'],['dintel','Adintelado (vigas rectas)']],ARCN=Object.fromEntries(ARC);
 const arcW=i=>r2((i.n||3)*(i.luz||2)+((i.n||3)+1)*(i.pil||.5));
@@ -1561,7 +1631,7 @@ function panel0(){$('#dock').classList.toggle('hassel',!!(cur()||typeof sel==='s
   else if(it.t==='pujador'){const n=Math.max(1,Math.round(it.n||3));h=`<p class="hint">Pujador de piedra para montar a caballo o subir al carruaje. ${n} escalones de ${fmt((it.alt||.9)/n*100)} cm. La flecha marca hacia dónde se sube; usa «Girar 90°» para orientarlo.</p><div class="g2">${f('w','Ancho (m)',it.w)}${f('h','Fondo (m)',it.h)}</div><div class="g2">${f('alt','Altura total (m)',it.alt||.9)}${f('n','Escalones',n)}</div>`+opt('mat','Material',it.mat||'mares',PMAT)+opt('ani','Argolla para atar',it.ani||'si',[['si','Con argolla de hierro en la pared'],['no','Sin argolla']])}
   else if(it.t==='caseta'){const t=topF(),hs=items.some(e=>{if(e.t!=='esc'||e.f!==t)return false;const bx=escBox(e);return bx.x<it.x+it.w&&bx.x+bx.w>it.x&&bx.y<it.y+it.h&&bx.y+bx.h>it.y});
     h=`<p class="hint">Caseta sobre el terrado que cubre la salida de la escalera. ${hs?'Debajo está la escalera de '+fname(t).toLowerCase()+': llega bien.':'Pon una escalera en '+fname(t).toLowerCase()+' justo debajo para que suba hasta aquí.'}</p><div class="g2">${f('w','Ancho (m)',it.w)}${f('h','Largo (m)',it.h)}</div>`+f('al','Altura (m)',it.al||2.4)+opt('pt','Puerta hacia',it.pt||'bottom',[['bottom','Abajo en el plano'],['top','Arriba en el plano'],['left','Izquierda'],['right','Derecha']])+opt('cub','Cubierta',it.cub||'teja',[['teja','Tejado de una vertiente'],['plana','Plana con pretil']])}
-  else if(it.t==='room')h=destBox(it)+f('name','Nombre',it.name,'text')+`<div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Largo (m)',r2(it.h))}</div>`+opt('suelo','Suelo',it.suelo||'',SUELOS)+f('th','Grosor de los muros (m) · 0 = sin muros',it.th??.3)+'<p class="hint">El grosor se dibuja hacia dentro y hacia fuera de la línea de la habitación.</p>'+opt('patio','Tipo',it.patio||'',[['','Habitación cubierta'],['1','Patio descubierto (clastra), sin tejado']])+opt('bov','Techo / bóveda',it.bov||'',BOV)+(it.bov?(()=>{const g=bovG(it);return opt('beje','Dirección de la bóveda',it.beje||'',[['','Automática (a lo largo del ala)'],['x','Horizontal en el plano'],['y','Vertical en el plano']])+(['arista','cruceria','arcos'].includes(it.bov)?f('btr',it.bov==='arcos'?'Número de tramos entre arcos':'Número de tramos',g.n):'')+opt('bmat','Material',it.bmat||'mares',BMAT)+f('bal','Altura de arranque (m)',it.bal||2.4)+`<p class="hint">Luz ${fmt(g.W)} m · flecha ${fmt(g.fl)} m · altura en la clave ${fmt((it.bal||2.4)+g.fl)} m.</p>`})():'')+(/Porche de carruajes|Galer/i.test(it.name||'')?'<button id="garc">Rehacer la arcada a lo largo de toda la galería</button>':'')+'<button id="bfull">Ocupar todo el ancho del ala</button><p class="hint">Estira la habitación de muro exterior a muro exterior, atravesando el ala, para que la bóveda cubra todo el ancho.</p>';
+  else if(it.t==='room')h=`<div class="row"><button class="imgP">🎨 Prompt para imagen (Gemini)</button></div>`+destBox(it)+f('name','Nombre',it.name,'text')+`<div class="g2">${f('w','Ancho (m)',r2(it.w))}${f('h','Largo (m)',r2(it.h))}</div>`+opt('suelo','Suelo',it.suelo||'',SUELOS)+f('th','Grosor de los muros (m) · 0 = sin muros',it.th??.3)+'<p class="hint">El grosor se dibuja hacia dentro y hacia fuera de la línea de la habitación.</p>'+opt('patio','Tipo',it.patio||'',[['','Habitación cubierta'],['1','Patio descubierto (clastra), sin tejado']])+opt('bov','Techo / bóveda',it.bov||'',BOV)+(it.bov?(()=>{const g=bovG(it);return opt('beje','Dirección de la bóveda',it.beje||'',[['','Automática (a lo largo del ala)'],['x','Horizontal en el plano'],['y','Vertical en el plano']])+(['arista','cruceria','arcos'].includes(it.bov)?f('btr',it.bov==='arcos'?'Número de tramos entre arcos':'Número de tramos',g.n):'')+opt('bmat','Material',it.bmat||'mares',BMAT)+f('bal','Altura de arranque (m)',it.bal||2.4)+`<p class="hint">Luz ${fmt(g.W)} m · flecha ${fmt(g.fl)} m · altura en la clave ${fmt((it.bal||2.4)+g.fl)} m.</p>`})():'')+(/Porche de carruajes|Galer/i.test(it.name||'')?'<button id="garc">Rehacer la arcada a lo largo de toda la galería</button>':'')+'<button id="bfull">Ocupar todo el ancho del ala</button><p class="hint">Estira la habitación de muro exterior a muro exterior, atravesando el ala, para que la bóveda cubra todo el ancho.</p>';
   else if(it.t==='wall'){const L=Math.hypot(it.x2-it.x1,it.y2-it.y1),A=Math.atan2(it.y2-it.y1,it.x2-it.x1)*180/Math.PI;
     h=`<div class="g2">${f('len','Longitud (m)',r2(L))}${f('ang','Ángulo (°)',r2(A))}</div>${f('th','Grosor (m)',it.th)}`}
   else if(it.t==='pas')h=pasPanelItem(it);
