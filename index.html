@@ -1440,7 +1440,7 @@ function layObjLbl(f){const S=view.s;OLBL={_k:S+'|'+f};const os=items.filter(i=>
   bb.forEach(b=>{let tw=0;try{tw=objLblTxt(b.it).length*6.6+4}catch(e){tw=60}const th=14;
     const cands=[[b.cx,b.y2+13,'middle'],[b.cx,b.y1-4,'middle'],[b.x2+4,b.cy+4,'start'],[b.x1-4,b.cy+4,'end'],[b.cx,b.y2+27,'middle'],[b.cx,b.y1-18,'middle']];
     const rect=c=>{const x0=c[2]==='middle'?c[0]-tw/2:c[2]==='start'?c[0]:c[0]-tw;return[x0,c[1]-11,x0+tw,c[1]-11+th]};
-    let ch=cands.find(c=>!hit(rect(c),b));if(!ch){if(b.it.id!==sel){OLBL[b.it.id]={hide:1};return}ch=cands[0]}placed.push(rect(ch));OLBL[b.it.id]={x:ch[0],y:ch[1],a:ch[2]}})}
+    let ch=cands.find(c=>!hit(rect(c),b));if(!ch){if(b.it.id!==sel&&!pdfBusy){OLBL[b.it.id]={hide:1};return}ch=cands[0]}placed.push(rect(ch));OLBL[b.it.id]={x:ch[0],y:ch[1],a:ch[2]}})}
 
 function conduit(c){
   const S=view.s,z=ZS*S,x=c.x*S-z/2,y=c.y*S-z/2,col=c.t==='chim'?'var(--brick)':'var(--acc)';
