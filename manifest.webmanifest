@@ -1,17 +1,13 @@
 {
- "name": "Trazo · planos de Son Pons",
+ "name": "Trazo",
  "short_name": "Trazo",
- "description": "Planos, fachadas y finca de Son Pons",
+ "description": "Elige Obra nueva o Finca",
  "start_url": "./",
  "scope": "./",
- "display": "fullscreen",
- "display_override": [
-  "fullscreen",
-  "standalone"
- ],
+ "display": "standalone",
  "orientation": "any",
- "background_color": "#eef1ec",
- "theme_color": "#b5533c",
+ "background_color": "#eef1f4",
+ "theme_color": "#3b4a5a",
  "lang": "es",
  "icons": [
   {

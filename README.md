@@ -1,5 +1,10 @@
-# Trazo · planos de Son Pons
+# Trazo
 
-App para diseñar los planos, fachadas y la finca de Son Pons.
+Dos apps separadas, cada una con su código, su icono y sus proyectos:
 
-Ábrela en Chrome: https://nadalgiltomas1969-tech.github.io/trazo/ y pulsa **Vista → Instalar la app**.
+- **Trazo · Obra nueva** (`obra/`): viviendas de hoy — solar, sótanos, plantas, instalaciones, cimentación y estructura.
+- **Trazo · Finca** (`finca/`): Son Pons, la casa de Palma y edificios de época.
+
+Portada: https://nadalgiltomas1969-tech.github.io/trazo/ · Obra nueva: …/trazo/obra/ · Finca: …/trazo/finca/
+
+Ábrelas en Chrome y pulsa **Vista → Instalar la app** en cada una.
