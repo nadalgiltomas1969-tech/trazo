@@ -11857,7 +11857,7 @@ try{if(Array.isArray(HAS3D)&&!HAS3D.includes('monta'))HAS3D.push('monta')}catch(
 /* ===================== SÓTANO: CONTORNO PROPIO Y SEGUNDO SÓTANO ===================== */
 const s2On=()=>isMod()&&!!st.sot;
 const isSotF=f=>s2On()&&(f===0||f<=-10);
-function ugName2(i){if(!s2On())return null;return 'Sótano '+(-i-8)}
+function ugName2(i){try{if(!s2On())return null}catch(e){return null}return 'Sótano '+(-i-8)}
 const s2Levels=()=>s2On()?UGL().map((_,i)=>-10-i):[];
 const s2Low=()=>{const L=s2Levels();return L.length?L[L.length-1]:0};
 const _floorZS2=floorZ;floorZ=function(f){if(f<=-10&&s2On()){let z=0;for(let k=-10;k>=f;k--)z-=floorH(k);return z}return _floorZS2.apply(this,arguments)};

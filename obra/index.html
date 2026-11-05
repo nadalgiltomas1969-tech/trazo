@@ -11857,7 +11857,7 @@ try{if(Array.isArray(HAS3D)&&!HAS3D.includes('monta'))HAS3D.push('monta')}catch(
 /* ===================== SÓTANO: CONTORNO PROPIO Y SEGUNDO SÓTANO ===================== */
 const s2On=()=>isMod()&&!!st.sot;
 const isSotF=f=>s2On()&&(f===0||f<=-10);
-function ugName2(i){if(!s2On())return null;return 'Sótano '+(-i-8)}
+function ugName2(i){try{if(!s2On())return null}catch(e){return null}return 'Sótano '+(-i-8)}
 const s2Levels=()=>s2On()?UGL().map((_,i)=>-10-i):[];
 const s2Low=()=>{const L=s2Levels();return L.length?L[L.length-1]:0};
 const _floorZS2=floorZ;floorZ=function(f){if(f<=-10&&s2On()){let z=0;for(let k=-10;k>=f;k--)z-=floorH(k);return z}return _floorZS2.apply(this,arguments)};
@@ -12732,7 +12732,7 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 function obraForceMod(){try{if(isMod())return;st.epoca='moderna';const o=OB();if(!o.fach)o.fach=WPRES.fa_termo[1].map(x=>x.slice());if(!o.cub)o.cub=WPRES.cu_plana[1].map(x=>x.slice());if(!o.suelo)o.suelo=WPRES.su_sanit[1].map(x=>x.slice());st.golfas=false;if(PJ.p[PJ.cur]){PJ.p[PJ.cur].mod=1;PJ.p[PJ.cur].app='obra'}try{tabs();toolsUI()}catch(e){}save();render()}catch(e){console.warn(e)}}
 {const _lpnFM=loadProjNoSave;loadProjNoSave=function(){const r=_lpnFM.apply(this,arguments);obraForceMod();return r}}
 {const _lpFM=loadProj;loadProj=function(){const r=_lpFM.apply(this,arguments);obraForceMod();return r}}
-setTimeout(obraForceMod,0);
+setTimeout(obraForceMod,0);setTimeout(()=>{try{tabs();render()}catch(e){}},50);
 
 /* ===================== PASO 4 POR FASES DE OBRA ===================== */
 /* excavación → cimentación → cada planta de abajo arriba → planos. Una ventana cada vez y el 3D hasta esa fase. */
