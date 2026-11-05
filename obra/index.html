@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · estructura por fases de obra</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · la estructura es el paso 3</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12396,14 +12396,14 @@ new MutationObserver(()=>{const b=document.querySelector('[data-inik="moderna"]'
 
 /* ===================== OBRA NUEVA · LOS CUATRO PASOS ===================== */
 /* 1 Solar → 2 Contornos → 3 Dibujar → 4 Cimentación y estructura. Cada cosa se pregunta una sola vez. */
-const PASOS=[[1,'Solar'],[2,'Contornos'],[3,'Dibujar'],[4,'Estructura']];
-const pasoCur=()=>{try{return (st&&st.paso)||1}catch(e){return 1}};
+const PASOS=[[1,'Solar'],[2,'Contornos'],[3,'Estructura'],[4,'Dibujar']];
+const pasoCur=()=>{try{if(st&&st.paso&&!st.pasoV2){st.paso=st.paso===3?4:st.paso===4?3:st.paso;st.pasoV2=1}return (st&&st.paso)||1}catch(e){return 1}};
 const pf1=v=>fmt(Math.round(v*10)/10);
 const CTRK={agua:{t:'Contador de agua',w:.6,h:.5,z:.4},elec:{t:'Caja de protección y contador de luz',w:.7,h:1,z:.4},gas:{t:'Armario del gas',w:.6,h:.6,z:.4},tel:{t:'Registro de teléfono y fibra',w:.45,h:.6,z:.6}};
 /* ---------- estado de cada paso ---------- */
 function pasoHecho(n){try{const o=OB();if(n===1)return !!SOL()&&!!(o.calle&&o.calle.lado)&&(o.acom||[]).length>0;
   if(n===2){for(let f=pbF();f<F();f++)if(!contOf(f))return false;return !!contOf(pbF())&&(!st.sot||!!contOf(0))}
-  if(n===3)return items.some(i=>i.t==='room');if(n===4)return items.some(i=>i.t==='pilar')}catch(e){}return false}
+  if(n===4)return items.some(i=>i.t==='room');if(n===3)return items.some(i=>i.t==='pilar')}catch(e){}return false}
 /* ---------- barra de pasos ---------- */
 function pasosBar(){if(!isMod())return;let b=$('#pasos');if(!b){$('#cvw').insertAdjacentHTML('beforeend','<nav id="pasos" aria-label="Pasos del proyecto"></nav>');b=$('#pasos')}const c=pasoCur();
   b.innerHTML=PASOS.map(([n,t])=>`<button data-paso="${n}" class="${n===c?'on':''}${pasoHecho(n)?' ok':''}" aria-current="${n===c?'step':'false'}"><span>${pasoHecho(n)&&n!==c?'✓':n}</span>${t}</button>`).join('<i>›</i>')}
@@ -12413,7 +12413,7 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 function pasoOpen(n){st.paso=n;save();['#solP','#obraP','#ccP','#rfP','#sotCP'].forEach(q=>{const e=$(q);if(e)e.remove()});let P=$('#pwP');if(!P){document.body.insertAdjacentHTML('beforeend','<div id="pwP" class="dlgw" role="dialog" aria-modal="true"><div class="card"></div></div>');P=$('#pwP')}P.dataset.n=n;pasoBody();render()}
 function pasoClose(){const P=$('#pwP');if(P)P.remove()}
 function pasoBody(){const P=$('#pwP');if(!P)return;const n=+P.dataset.n,box=P.querySelector('.card'),sc=box.scrollTop;let h=`<div class="pwH"><b>Paso ${n} de 4</b> · ${PASOS[n-1][1]}<button data-pw="x" aria-label="Cerrar">✕</button></div>`;
-  try{h+=[0,pw1,pw2,pw3,pw4][n]()}catch(e){console.warn(e);h+='<p>No se pudo mostrar este paso.</p>'}
+  try{h+=[0,pw1,pw2,pw4,pw3][n]()}catch(e){console.warn(e);h+='<p>No se pudo mostrar este paso.</p>'}
   h+=`<div class="bt">${n>1?`<button data-paso="${n-1}">‹ Paso ${n-1}</button>`:''}${n<4?`<button data-paso="${n+1}" class="pri">Siguiente: ${PASOS[n][1]} ›</button>`:`<button data-pw="x" class="pri">Terminar</button>`}</div>`;box.innerHTML=h;box.scrollTop=sc}
 const pwRow=(ok,t,sub,btns)=>`<div class="pwR${ok?' ok':''}"><span class="pwI">${ok?'✓':'○'}</span><div class="pwT"><b>${t}</b>${sub?`<small>${sub}</small>`:''}</div><div class="pwB">${btns}</div></div>`;
 const pwBtn=(a,t,pri,extra)=>`<button data-pw="${a}"${pri?' class="pri"':''}${extra||''}>${t}</button>`;
@@ -12793,7 +12793,7 @@ let STUP=null;
       const M=8,X0=t[0][0]-M,X1=t[1][0]+M,Y0=t[0][1]-M,Y1=t[2][1]+M,slab=(x0,y0,x1,y1)=>{if(x1-x0<.01||y1-y0<.01)return;const s=new T.Mesh(new T.BoxGeometry(x1-x0,.05,y1-y0),mg);s.position.set((x0+x1)/2,zt-.025,(y0+y1)/2);B.sc.add(s)};
       slab(X0,Y0,X1,t[0][1]);slab(X0,t[2][1],X1,Y1);slab(X0,t[0][1],t[0][0],t[2][1]);slab(t[1][0],t[0][1],X1,t[2][1]);
       B.I={x0:Math.min(B.I.x0,X0),y0:Math.min(B.I.y0,Y0),x1:Math.max(B.I.x1,X1),y1:Math.max(B.I.y1,Y1)}}}catch(e){console.warn('fases3D',e)}return B}}
-document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'&&STUP){STUP=null;setTimeout(()=>pasoOpen(4),50)}},true);
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'&&STUP){STUP=null;setTimeout(()=>pasoOpen(3),50)}},true);
 /* una ventana cada vez */
 {const _pasoOpenF=pasoOpen;pasoOpen=function(){['#eaP','#ccP','#shP','#destBox','#recP'].forEach(q=>{const x=$(q);if(x)x.remove()});return _pasoOpenF.apply(this,arguments)}}
 /* ---------- el solar se pide una sola vez ---------- */
