@@ -311,7 +311,7 @@ const $=s=>document.querySelector(s),svg=$('#cv');
 let st={n:0,golfas:false,mode:'uno',mat:'teja'},items=[],rp={},sel=null,tool='cont',fl=0,view={s:60,ox:30,oy:30},draft=null,drag=null,undo=[],nid=1,note='',warn=0;
 let PJ={cur:null,p:{}};
 const pid=()=>'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-try{if(!localStorage.getItem('trazoFincaP')){const o=JSON.parse(localStorage.getItem('trazoP')||'null');if(o&&o.p){const n={cur:null,p:{}};Object.entries(o.p).forEach(([id,q])=>{if(!(q.mod||(q.data&&q.data.st&&q.data.st.epoca==='moderna')))n.p[id]=q});const ids=Object.keys(n.p).sort((a,b)=>(n.p[b].upd||0)-(n.p[a].upd||0));if(ids.length){n.cur=n.p[o.cur]?o.cur:ids[0];localStorage.setItem('trazoFincaP',JSON.stringify(n))}}['Lbl','Pan','Lay','UI'].forEach(k=>{const v=localStorage.getItem('trazo'+k);if(v!=null&&localStorage.getItem('trazoFinca'+k)==null)localStorage.setItem('trazoFinca'+k,v)})}}catch(e){}
+try{if(!localStorage.getItem('trazoFincaP')){const o=JSON.parse(localStorage.getItem('trazoP')||'null');if(o&&o.p){const n={cur:null,p:{}};Object.entries(o.p).forEach(([id,q])=>{if(!(q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')))n.p[id]=q});const ids=Object.keys(n.p).sort((a,b)=>(n.p[b].upd||0)-(n.p[a].upd||0));if(ids.length){n.cur=n.p[o.cur]?o.cur:ids[0];localStorage.setItem('trazoFincaP',JSON.stringify(n))}}['Lbl','Pan','Lay','UI'].forEach(k=>{const v=localStorage.getItem('trazo'+k);if(v!=null&&localStorage.getItem('trazoFinca'+k)==null)localStorage.setItem('trazoFinca'+k,v)})}}catch(e){}
 try{PJ=JSON.parse(localStorage.getItem('trazoFincaP')||'null')||PJ}catch(e){}
 if(!PJ.cur||!PJ.p||!PJ.p[PJ.cur]){PJ={cur:null,p:{}};let d=null;try{d=JSON.parse(localStorage.getItem('trazo3')||localStorage.getItem('trazo2')||'null')}catch(e){}
   const id=pid();PJ.cur=id;PJ.p[id]={name:'Plano 1',upd:Date.now(),data:d&&d.st?{st:d.st,items:d.items||[],rp:d.rp||{},nid:d.nid||1}:null}}
@@ -12363,6 +12363,27 @@ try{done()}catch(e){}
 /* ---------- solo lo de Finca: fuera lo de obra nueva ---------- */
 {const cs=document.createElement('style');cs.textContent=`[data-pso],[data-tool="plaza"],[data-tool="rampa"],[data-tool="monta"],[data-rxo],[data-sotco],[data-rfo]{display:none!important}`;document.head.appendChild(cs)}
 {const _obraHTMLFI=obraHTML;obraHTML=function(){let h=_obraHTMLFI.apply(this,arguments);try{h=h.replace(/<label>[^<]*<select data-ob="epoca"[\s\S]*?<\/select><\/label>/,'')}catch(e){}return h}}
+
+/* ===================== RECUPERAR PROYECTOS DE LA VERSIÓN ANTERIOR ===================== */
+const REC_KEY='trazoFincaP',REC_APP='finca';
+function recOld(){try{return JSON.parse(localStorage.getItem('trazoP')||'null')}catch(e){return null}}
+const recMod=q=>!!(q&&(q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')));
+function recList(){const o=recOld();if(!o||!o.p)return[];return Object.entries(o.p).filter(([id,q])=>q&&!PJ.p[id]).map(([id,q])=>({id,q,mod:recMod(q),n:((q.data&&q.data.items)||[]).length})).sort((a,b)=>(b.q.upd||0)-(a.q.upd||0))}
+function recOpen(){$('#recP')&&$('#recP').remove();const L=recList(),mine=L.filter(x=>REC_APP==='obra'?x.mod:!x.mod),other=L.filter(x=>!(REC_APP==='obra'?x.mod:!x.mod));
+  const row=x=>`<div class="recR"><div><b>${esc(x.q.name||'Sin nombre')}</b><small>${x.mod?'Vivienda moderna':'De época'} · ${x.n} elemento${x.n===1?'':'s'}${x.q.upd?' · '+new Date(x.q.upd).toLocaleDateString('es-ES'):''}</small></div><button data-rec="${esc(x.id)}">Traer aquí</button></div>`;
+  let h=`<h2>Proyectos de la versión anterior</h2><p class="hint">Son los que tenías en Trazo antes de separarlo en dos apps. Traerlos aquí hace una copia: no se borra nada.</p>`;
+  if(!L.length)h+=`<p>No queda ninguno por traer: ya están todos en esta app o en la otra, o en este Chrome no había proyectos de la versión anterior.</p>`;
+  else{h+=`<h3>${REC_APP==='obra'?'De obra nueva':'De la finca y de época'}</h3>${mine.length?mine.map(row).join(''):'<p class="hint">Ninguno.</p>'}${mine.length>1?`<button data-rec="*mine" class="pri">Traer todos estos (${mine.length})</button>`:''}`;
+    if(other.length)h+=`<h3>${REC_APP==='obra'?'Los de época (van mejor en Trazo · Finca)':'Los de obra nueva (van mejor en Trazo · Obra nueva)'}</h3>${other.map(row).join('')}`}
+  h+=`<div class="row" style="margin-top:12px"><button data-rec="x">Cerrar</button></div>`;
+  document.body.insertAdjacentHTML('beforeend',`<div id="recP" class="dlgw" style="position:fixed;inset:0;z-index:95;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;font-size:16px;line-height:1.45">${h}</div></div>`)}
+function recTake(ids){const o=recOld();if(!o||!o.p||!ids.length)return;try{save()}catch(e){}ids.forEach(id=>{if(o.p[id])PJ.p[id]=JSON.parse(JSON.stringify(o.p[id]))});PJ.cur=ids[0];try{localStorage.setItem(REC_KEY,JSON.stringify(PJ))}catch(e){alert('No cabe en la memoria del navegador: borra algún proyecto que no uses y vuelve a probar');return}location.reload()}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rec]');if(!b)return;const k=b.dataset.rec;if(k==='x'){$('#recP')&&$('#recP').remove();return}if(k==='open'){recOpen();return}
+  if(k==='*mine'){recTake(recList().filter(x=>REC_APP==='obra'?x.mod:!x.mod).map(x=>x.id));return}recTake([k])});
+/* el botón aparece en la pantalla de inicio y en el menú Proyecto */
+new MutationObserver(()=>{const ini=$('#ini');if(!ini||ini.querySelector('[data-rec="open"]'))return;const n=recList().length;if(!n)return;const card=ini.firstElementChild;if(card)card.insertAdjacentHTML('beforeend',`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><button data-rec="open" style="font-size:15px;padding:8px 14px;background:var(--acc);border-color:var(--acc);color:#fff">↺ Recuperar proyectos de la versión anterior (${n})</button></div>`)}).observe(document.body,{childList:true});
+(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-rec]'))return;const b=document.createElement('button');b.dataset.rec='open';b.textContent='Recuperar proyectos anteriores';m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
+{const cs=document.createElement('style');cs.textContent=`#recP h3{font-size:17px;margin:14px 0 6px}#recP .recR{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}#recP .recR>div{flex:1}#recP .recR small{display:block;color:var(--mute);font-size:14px}#recP button{font-size:15px;padding:7px 12px}#recP .pri{background:var(--acc);border-color:var(--acc);color:#fff;margin-top:6px}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
