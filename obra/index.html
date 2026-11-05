@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · cimentación visible, parkings y estructura en 3D</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · copia en la nube y más espacio</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -311,21 +311,36 @@ const $=s=>document.querySelector(s),svg=$('#cv');
 let st={n:0,golfas:false,mode:'uno',mat:'teja'},items=[],rp={},sel=null,tool='cont',fl=0,view={s:60,ox:30,oy:30},draft=null,drag=null,undo=[],nid=1,note='',warn=0;
 let PJ={cur:null,p:{}};
 const pid=()=>'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-/* Un solo almacén de proyectos para las dos apps (no se duplica: el navegador tiene poco sitio).
-   Cada app ve solo los suyos: los modernos en Obra nueva y el resto en Finca. */
-const PJAPP='obra';let PJX={},PJXM={},PJXD=0;
+/* Un solo almacén de proyectos para las dos apps, en la base de datos del navegador (IndexedDB: mucho más sitio).
+   Cada app ve solo los suyos: los modernos en Obra nueva y el resto en Finca. La finca (PJ.fn) también se guarda. */
+const PJAPP='obra';let PJX={},PJXM={},PJXD=0,PJREADY=false,PJPEND=0,PJIDB=!!(window.indexedDB),PJT=null,PJS=null;
 function pjIsMod(q){return !!(q&&(q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')))}
 function pjMine(q){if(!q)return false;if(q.app)return q.app===PJAPP;return PJAPP==='obra'?pjIsMod(q):!pjIsMod(q)}
-function pjRead(){let A=null;try{A=JSON.parse(localStorage.getItem('trazoP')||'null')}catch(e){}return A&&A.p?A:{cur:null,p:{}}}
-function pjLoad(){const A=pjRead();
-  ['trazoObraP','trazoFincaP'].forEach(k=>{try{const o=JSON.parse(localStorage.getItem(k)||'null');if(o&&o.p)Object.entries(o.p).forEach(([id,q])=>{if(A.p[id]||!q)return;const n=((q.data&&q.data.items)||[]).length;if(n<=1&&/^Plano \d+$/.test(q.name||''))return;q.app=k==='trazoObraP'?'obra':'finca';A.p[id]=q})}catch(e){}});
+function pjParse(s){try{const A=JSON.parse(s||'null');return A&&A.p?A:null}catch(e){return null}}
+function pjRead(){return pjParse(localStorage.getItem('trazoP'))||{cur:null,p:{}}}
+function pjSplit(A){['trazoObraP','trazoFincaP'].forEach(k=>{try{const o=JSON.parse(localStorage.getItem(k)||'null');if(o&&o.p)Object.entries(o.p).forEach(([id,q])=>{if(A.p[id]||!q)return;const n=((q.data&&q.data.items)||[]).length;if(n<=1&&/^Plano \d+$/.test(q.name||''))return;q.app=k==='trazoObraP'?'obra':'finca';A.p[id]=q})}catch(e){}});
   const mine={},other={};Object.entries(A.p).forEach(([id,q])=>{(pjMine(q)?mine:other)[id]=q});PJX=other;PJXM={...A};delete PJXM.p;
-  const c=A['cur_'+PJAPP];const cur=(c&&mine[c])?c:(mine[A.cur]?A.cur:(Object.keys(mine).sort((a,b)=>(mine[b].upd||0)-(mine[a].upd||0))[0]||null));return{cur,p:mine}}
+  const c=A['cur_'+PJAPP];const cur=(c&&mine[c])?c:(mine[A.cur]?A.cur:(Object.keys(mine).sort((a,b)=>(mine[b].upd||0)-(mine[a].upd||0))[0]||null));const R={...PJXM,cur,p:mine};return R}
+function pjLoad(){return pjSplit(pjRead())}
 addEventListener('storage',e=>{if(e.key==='trazoP')PJXD=1});
-function pjSave(){if(PJXD){const A=pjRead();const o={};Object.entries(A.p).forEach(([id,q])=>{if(!PJ.p[id]&&!pjMine(q))o[id]=q});PJX=o;PJXD=0}
-  const A={...PJXM,p:{...PJX}};Object.entries(PJ.p).forEach(([id,q])=>{if(!q.app)q.app=PJAPP;A.p[id]=q});A['cur_'+PJAPP]=PJ.cur;localStorage.setItem('trazoP',JSON.stringify(A));PJXM=Object.assign(PJXM,{['cur_'+PJAPP]:PJ.cur});
-  try{localStorage.removeItem('trazoObraP');localStorage.removeItem('trazoFincaP')}catch(e){}}
+/* base de datos */
+function idbDB(){return new Promise((ok,ko)=>{const r=indexedDB.open('trazo',1);r.onupgradeneeded=()=>{try{r.result.createObjectStore('kv')}catch(e){}};r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}
+function idbGet(k){return idbDB().then(db=>new Promise((ok,ko)=>{const q=db.transaction('kv','readonly').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ko(q.error)}))}
+function idbPut(k,v){return idbDB().then(db=>new Promise((ok,ko)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>ok();tx.onerror=()=>ko(tx.error)}))}
+function pjFlush(){if(!PJS)return;const s=PJS;PJS=null;clearTimeout(PJT);PJT=null;if(PJIDB)idbPut('trazoP',s).catch(()=>{})}
+addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pjFlush()});addEventListener('pagehide',pjFlush);
+function pjSave(){if(!PJREADY){PJPEND=1;return}
+  if(PJXD){const A0=pjRead();if(A0&&A0.p){const o={};Object.entries(A0.p).forEach(([id,q])=>{if(!PJ.p[id]&&!pjMine(q))o[id]=q});PJX=o;const m={...A0};delete m.p;PJXM={...PJXM,...m};if(PJAPP==='obra'&&A0.fn)PJ.fn=A0.fn}PJXD=0}
+  const A={...PJXM,...PJ,p:{...PJX}};Object.entries(PJ.p).forEach(([id,q])=>{if(!q.app)q.app=PJAPP;A.p[id]=q});A['cur_'+PJAPP]=PJ.cur;A.sv=Date.now();PJXM.sv=A.sv;PJXM['cur_'+PJAPP]=PJ.cur;
+  const s=JSON.stringify(A);try{localStorage.setItem('trazoP',s)}catch(e){try{if(PJIDB)localStorage.removeItem('trazoP')}catch(_){}}
+  try{localStorage.removeItem('trazoObraP');localStorage.removeItem('trazoFincaP')}catch(e){}
+  if(PJIDB){PJS=s;clearTimeout(PJT);PJT=setTimeout(pjFlush,400)}}
+/* al arrancar: si la base de datos tiene algo más nuevo, se carga; si está vacía, se llena con lo de siempre */
+function pjInit(){if(!PJIDB){PJREADY=true;return}idbGet('trazoP').then(s=>{const A=pjParse(s),L=pjParse(localStorage.getItem('trazoP'));
+    if(A&&(!L||(A.sv||0)>(L.sv||0))){const R=pjSplit(A),hadMine=Object.keys(R.p).length;if(hadMine){PJ=R;try{loadProjNoSave(PJ.cur)}catch(e){}try{const ini=$('#ini');if(ini){ini.remove();if(typeof iniOpen==='function')iniOpen()}}catch(e){}}else{PJX=pjSplit(A)&&PJX}}
+    PJREADY=true;pjSave();PJPEND=0}).catch(()=>{PJIDB=false;PJREADY=true;if(PJPEND)pjSave()})}
 try{PJ=pjLoad()}catch(e){}
+setTimeout(pjInit,0);
 
 if(!PJ.cur||!PJ.p||!PJ.p[PJ.cur]){PJ={cur:null,p:{}};let d=null;try{d=JSON.parse(localStorage.getItem('trazo3')||localStorage.getItem('trazo2')||'null')}catch(e){}
   const id=pid();PJ.cur=id;PJ.p[id]={name:'Plano 1',upd:Date.now(),data:d&&d.st?{st:d.st,items:d.items||[],rp:d.rp||{},nid:d.nid||1}:null}}
@@ -12693,6 +12708,22 @@ function recTake(id){const q=PJX[id];if(!q)return;try{save()}catch(e){}q.app=PJA
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rec]');if(!b)return;const k=b.dataset.rec;if(k==='x'){$('#recP')&&$('#recP').remove();return}if(k==='open'){try{closeMenus()}catch(er){}recOpen();return}recTake(k)});
 (function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-rec]'))return;const b=document.createElement('button');b.dataset.rec='open';b.textContent='Proyectos de Trazo · Finca…';m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
 {const cs=document.createElement('style');cs.textContent=`#recP .recR{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}#recP .recR>div{flex:1}#recP .recR small{display:block;color:var(--mute);font-size:14px}#recP button{font-size:15px;padding:7px 12px}`;document.head.appendChild(cs)}
+
+/* ===================== COPIA EN LA NUBE (DRIVE) ===================== */
+/* En la tablet abre el menú de compartir de Android: se elige Drive y queda guardada en la nube.
+   Para recuperarla, «Abrir copia de la nube» abre el selector de archivos, donde también está Drive. */
+const NUBE_BK='trazoObraBk';
+async function nubeGuardar(){try{save()}catch(e){}const d=new Date(),nm=`Trazo_${PJAPP==='obra'?'Obra_nueva':'Finca'}_${d.toISOString().slice(0,10)}.txt`;
+  const txt=JSON.stringify({trazoAll:1,app:PJAPP,fecha:d.toISOString(),p:PJ.p,fn:PJ.fn||null});const ok=()=>{try{localStorage.setItem(NUBE_BK,String(Date.now()))}catch(e){}try{bkUpd()}catch(e){}};
+  let f=null;try{f=new File([txt],nm,{type:'text/plain'})}catch(e){}
+  if(f&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:nm});ok();note='Copia enviada. Si elegiste Drive, ya está en la nube: '+nm;render();return}catch(e){if(e&&e.name==='AbortError'){note='Copia cancelada';render();return}}}
+  try{const dl=await getDL();if(dl){await dl.save({filename:nm,data:txt});ok();note='Copia descargada: '+nm+'. Súbela a Drive desde Descargas.';render()}}catch(e){note='No se pudo guardar la copia';render()}}
+function nubeAbrir(){try{closeMenus()}catch(e){}const f=$('#pfile');if(f)f.click()}
+(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-nube]'))return;const mk=(k,t)=>{const b=document.createElement('button');b.dataset.nube=k;b.textContent=t;return b};const ref=m.pop.children[2]||null;m.pop.insertBefore(mk('g','☁ Guardar copia en la nube (Drive)'),ref);m.pop.insertBefore(mk('a','☁ Abrir copia de la nube'),ref)}catch(e){}})();
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-nube]');if(!b)return;try{closeMenus()}catch(er){}if(b.dataset.nube==='g')nubeGuardar();else nubeAbrir()});
+/* en «Mis proyectos» y en el aviso de copia */
+(function(){try{const r=$('#pall');if(r&&!$('#pnube'))r.insertAdjacentHTML('beforebegin','<button id="pnube" type="button" data-nube="g" style="background:var(--acc);border-color:var(--acc);color:#fff">☁ Guardar copia en la nube (Drive)</button><button type="button" data-nube="a">☁ Abrir copia de la nube</button>')}catch(e){}})();
+{const _bkUpdN=bkUpd;bkUpd=function(){const r=_bkUpdN.apply(this,arguments);try{const g=$('#bkGo');if(g&&!g._nube){g._nube=1;g.textContent='☁ Guardar en la nube';g.onclick=()=>nubeGuardar()}const t=$('#bkT');if(t&&!/nube/.test(t.innerHTML))t.insertAdjacentHTML('beforeend',' Pulsa el botón y elige <b>Drive</b>: queda guardada en la nube.')}catch(e){}return r}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
