@@ -12724,6 +12724,12 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 /* en «Mis proyectos» y en el aviso de copia */
 (function(){try{const r=$('#pall');if(r&&!$('#pnube'))r.insertAdjacentHTML('beforebegin','<button id="pnube" type="button" data-nube="g" style="background:var(--acc);border-color:var(--acc);color:#fff">☁ Guardar copia en la nube (Drive)</button><button type="button" data-nube="a">☁ Abrir copia de la nube</button>')}catch(e){}})();
 {const _bkUpdN=bkUpd;bkUpd=function(){const r=_bkUpdN.apply(this,arguments);try{const g=$('#bkGo');if(g&&!g._nube){g._nube=1;g.textContent='☁ Guardar en la nube';g.onclick=()=>nubeGuardar()}const t=$('#bkT');if(t&&!/nube/.test(t.innerHTML))t.insertAdjacentHTML('beforeend',' Pulsa el botón y elige <b>Drive</b>: queda guardada en la nube.')}catch(e){}return r}}
+
+/* ===================== EN OBRA NUEVA TODO PROYECTO ES MODERNO ===================== */
+function obraForceMod(){try{if(isMod())return;st.epoca='moderna';const o=OB();if(!o.fach)o.fach=WPRES.fa_termo[1].map(x=>x.slice());if(!o.cub)o.cub=WPRES.cu_plana[1].map(x=>x.slice());if(!o.suelo)o.suelo=WPRES.su_sanit[1].map(x=>x.slice());st.golfas=false;if(PJ.p[PJ.cur]){PJ.p[PJ.cur].mod=1;PJ.p[PJ.cur].app='obra'}try{tabs();toolsUI()}catch(e){}save();render()}catch(e){console.warn(e)}}
+{const _lpnFM=loadProjNoSave;loadProjNoSave=function(){const r=_lpnFM.apply(this,arguments);obraForceMod();return r}}
+{const _lpFM=loadProj;loadProj=function(){const r=_lpFM.apply(this,arguments);obraForceMod();return r}}
+setTimeout(obraForceMod,0);
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
