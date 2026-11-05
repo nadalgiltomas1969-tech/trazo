@@ -168,7 +168,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Versión 4 nov 2026 · rampa exterior con rellanos y puerta en el muro, sótano 2, contorno propio del sótano, piscinas y balance de tierras</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Versión 5 nov 2026 · sótanos iguales al primero, fachada trasera a la vista o rellena con tierra del desmonte, avisos más claros</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -5938,11 +5938,7 @@ const _renderSUB=render;render=function(){const r=_renderSUB.apply(this,argument
   if(show&&g){const I=subIso();if(I&&I.L.length){const S=view.s;let p='',t='';I.L.forEach(l=>{const maj=Math.abs(l.v-Math.round(l.v))<1e-6;const d=l.seg.map(([a,b])=>`M${(a[0]*S).toFixed(1)} ${(a[1]*S).toFixed(1)}L${(b[0]*S).toFixed(1)} ${(b[1]*S).toFixed(1)}`).join('');p+=`<path d="${d}" stroke="#7a5a2a" stroke-opacity="${maj?.7:.35}" stroke-width="${maj?1.4:.8}" fill="none"/>`;
       if(maj&&l.seg.length){const s0=l.seg[Math.floor(l.seg.length/2)][0];t+=`<text x="${s0[0]*S}" y="${s0[1]*S}" font-size="11" fill="#5a3a12" style="paint-order:stroke;stroke:#fff;stroke-width:3px">${l.v>0?'+':''}${fmt(l.v)}</text>`}});
       g.insertAdjacentHTML('afterbegin',`<g pointer-events="none" id="subTerr">${p}${t}</g>`)}}
-  if(isUG(fl)&&terrOn()&&contOf(fl)){const k=contOf(fl),sd={top:[],bottom:[],left:[],right:[]};for(let u=0;u<=k.w;u+=1){sd.top.push(tzAt(k.x+u,k.y-.5));sd.bottom.push(tzAt(k.x+u,k.y+k.h+.5))}for(let u=0;u<=k.h;u+=1){sd.left.push(tzAt(k.x-.5,k.y+u));sd.right.push(tzAt(k.x+k.w+.5,k.y+u))}
-    const low=Object.entries(sd).map(([s,a])=>[s,Math.min(...a)]).filter(([,z])=>z<-.3);
-    const msg=low.length?`${fname(fl)}: por ${low.map(([s,z])=>'el lado '+SIDES[s].toLowerCase()+' (terreno a '+fmt(r2(z))+' m)').join(', ')} el terreno queda por debajo de la planta baja, así que este nivel bajo tierra asoma en parte al aire y se verá desde fuera.`:'';
-    if(msg){if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="ugw" style="position:absolute;left:10px;right:70px;bottom:34px;background:#fbeeec;border:1px solid #e0b4ae;color:#8a1c14;border-radius:8px;padding:6px 10px;font-size:13px;pointer-events:none"></div>');w=$('#ugw')}w.textContent=msg;w.hidden=false}else if(w)w.hidden=true}
-  else if(w)w.hidden=true;
+  try{ugwShow(fl)}catch(e){}
   if(show&&!isUG(fl)){let n=$('#subN');if(!n){$('#cvw').insertAdjacentHTML('beforeend','<div id="subN" style="position:absolute;left:10px;bottom:34px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px;color:var(--mute);pointer-events:none"></div>');n=$('#subN')}n.textContent='Curvas de nivel del terreno exterior (respecto al suelo de la planta baja). La roca y los cimientos siguen el terreno.';n.hidden=false}else{const n=$('#subN');if(n)n.hidden=true}
 }catch(e){console.warn(e)}return r};
 
@@ -11928,6 +11924,44 @@ function rxAt(G,x,y,ext){ext=ext||0;let best=null;const n=G.seg.length;
 /* el terreno queda cortado por la rampa (trinchera) */
 function rxCut(x,y,z){if(_rxIn||!items||!items.length)return z;let out=z;_rxIn++;try{for(const it of items){if(!isRX(it))continue;const G=rxGeo(it);if(!G)continue;const B=G.bb||(G.bb=rxBB(G,.6));if(x<B[0]||x>B[2]||y<B[1]||y>B[3])continue;const q=rxAt(G,x,y,.3);if(q)out=Math.min(out,q.z-(q.wall?.02:.02))}}catch(e){}finally{_rxIn--}return out}
 function rxBB(G,m){const xs=[],ys=[];G.seg.forEach(q=>{[q.a,q.b].forEach(p=>{xs.push(p[0]);ys.push(p[1])})});const e=Math.max(G.g,G.wr)/2+(m||0);return[Math.min(...xs)-e,Math.min(...ys)-e,Math.max(...xs)+e,Math.max(...ys)+e]}
+/* ===================== RELLENO CON TIERRA DEL DESMONTE ===================== */
+/* el terreno sube alrededor de los sótanos (explanada + talud o muro) */
+let _rfNat=0,RFV=0,RFB=null,RFSIG='',RFVOL=null,UGWHIDE='';
+const RFD={modo:'',hasta:'pb',cota:-3,borde:'talud',t:1.5,pl:3,lados:{n:1,s:1,o:1,e:1}};
+function RF(){const r=(st&&st.rell)||{},o={};for(const k in RFD)o[k]=r[k]!=null?r[k]:JSON.parse(JSON.stringify(RFD[k]));return o}
+function RFset(k,v){if(!st.rell)st.rell={};st.rell[k]=v}
+const rfOn=()=>{try{return isMod()&&!!st.sot&&!!st.rell&&st.rell.modo==='relleno'}catch(e){return false}};
+function rfZ(r){r=r||RF();if(r.hasta==='s1')return -floorH(0);if(r.hasta==='cota')return Math.min(0,+r.cota||0);return 0}
+function rfBox(){if(RFB&&RFB.v===RFV)return RFB;let b=null;try{const L=[0,...(s2On()?s2Levels():[])].map(f=>items.find(i=>i.t==='cont'&&i.f===f)).filter(Boolean);if(L.length){const E=(SD().ext||.3)/2;b={x0:Math.min(...L.map(c=>c.x))-E,y0:Math.min(...L.map(c=>c.y))-E,x1:Math.max(...L.map(c=>c.x+c.w))+E,y1:Math.max(...L.map(c=>c.y+c.h))+E}}}catch(e){}
+  const r=RF();RFB={v:RFV,b,r,hf:b?rfZ(r):0,on:rfOn(),sol:(()=>{try{return !!SOL()}catch(e){return false}})()};return RFB}
+/* altura del terreno rellenado en (x,y), sin mirar si el relleno está activo */
+function rfFill(x,y,z,C){const B=C.b,r=C.r,hf=C.hf;if(!B||z>=hf-1e-3)return z;
+  const dn=Math.max(0,B.y0-y),ds=Math.max(0,y-B.y1),dw=Math.max(0,B.x0-x),de=Math.max(0,x-B.x1);
+  if(!(dn||ds||dw||de))return z;const L=r.lados||{};if((dn&&!L.n)||(ds&&!L.s)||(dw&&!L.o)||(de&&!L.e))return z;
+  if(C.sol){try{if(!rxInSolar(x,y,.01))return z}catch(e){}}
+  const d=Math.hypot(Math.max(dn,ds),Math.max(dw,de)),pl=Math.max(0,+r.pl||0);
+  if(d<=pl)return hf;if(r.borde==='muro')return z;return Math.max(z,hf-(d-pl)/Math.max(.5,+r.t||1.5))}
+function rfAt(x,y,z){if(_rfNat)return z;const C=rfBox();if(!C.on||!C.b)return z;return rfFill(x,y,z,C)}
+const _exZRF=exZ;exZ=function(x,y){const z=_exZRF.apply(this,arguments);try{return rfAt(x,y,z)}catch(e){return z}};
+const _tzAtRF=tzAt;tzAt=function(x,y){const z=_tzAtRF.apply(this,arguments);try{return rfAt(x,y,z)}catch(e){return z}};
+/* volumen del relleno y altura del muro, con el terreno natural */
+function rfVolFor(r){const C0=rfBox();if(!C0.b)return{V:0,wall:0,area:0};const C={...C0,r,hf:rfZ(r)},B=C.b,pl=Math.max(0,+r.pl||0),t=Math.max(.5,+r.t||1.5);
+  const key=JSON.stringify([r,B,C.hf,(typeof EX!=='undefined'&&EX)?EX.ver:0,RFV]);if(RFVOL&&RFVOL.key===key)return RFVOL.R;
+  let X0=B.x0-pl-(r.borde==='muro'?0:14*t)-1,X1=B.x1+pl+(r.borde==='muro'?0:14*t)+1,Y0=B.y0-pl-(r.borde==='muro'?0:14*t)-1,Y1=B.y1+pl+(r.borde==='muro'?0:14*t)+1;
+  try{const P=solPts();if(P){X0=Math.max(X0,Math.min(...P.map(p=>p[0])));X1=Math.min(X1,Math.max(...P.map(p=>p[0])));Y0=Math.max(Y0,Math.min(...P.map(p=>p[1])));Y1=Math.min(Y1,Math.max(...P.map(p=>p[1])))}}catch(e){}
+  const A=Math.max(1,(X1-X0)*(Y1-Y0)),s=Math.max(.5,Math.sqrt(A/12000));let V=0,wall=0,area=0;_rfNat++;
+  try{for(let x=X0+s/2;x<X1;x+=s)for(let y=Y0+s/2;y<Y1;y+=s){if(x>B.x0&&x<B.x1&&y>B.y0&&y<B.y1)continue;let z0=0;try{z0=tzAt(x,y)}catch(e){}const z1=rfFill(x,y,z0,C);if(z1>z0+.005){V+=(z1-z0)*s*s;area+=s*s;
+      if(r.borde==='muro'){const d=Math.hypot(Math.max(0,B.y0-y,y-B.y1),Math.max(0,B.x0-x,x-B.x1));if(d>pl-s)wall=Math.max(wall,z1-z0)}}}}finally{_rfNat--}
+  const R={V,wall,area};RFVOL={key,R};return R}
+const rfVol=()=>rfVolFor(RF());
+/* sótanos encadenados: todos iguales al sótano 1 */
+const s2Link=()=>{try{return s2On()&&UGL().length>0&&st.s2link!==false}catch(e){return false}};
+const _floorHRF=floorH;floorH=function(f){if(f<=-10&&s2Link())return _floorHRF(0);return _floorHRF.apply(this,arguments)};
+function s2Sync(){if(!s2Link())return;const c0=items.find(i=>i.t==='cont'&&i.f===0);if(!c0)return;s2Levels().forEach(f=>{const c=items.find(i=>i.t==='cont'&&i.f===f);if(!c)items.push({...JSON.parse(JSON.stringify(c0)),id:nid++,f});else['x','y','w','h'].forEach(k=>{c[k]=c0[k]})})}
+function rfSig(){const C=rfBox();return JSON.stringify([C.on,C.r,C.b,C.hf])}
+const _doneRF=done;done=function(){try{s2Sync()}catch(e){console.warn(e)}RFV++;try{const sg=rfSig();if(sg!==RFSIG){RFSIG=sg;EX.ver++;EX.grid=null}}catch(e){}return _doneRF.apply(this,arguments)};
+{const _lpRF=loadProj;loadProj=function(){RFV++;RFSIG='';UGWHIDE='';return _lpRF.apply(this,arguments)};const _lnRF=loadProjNoSave;loadProjNoSave=function(){RFV++;RFSIG='';UGWHIDE='';return _lnRF.apply(this,arguments)}}
+
 const _exZRX=exZ;exZ=function(x,y){const z=_exZRX.apply(this,arguments);return _rxIn?z:rxCut(x,y,z)};
 const _tzAtRX=tzAt;tzAt=function(x,y){const z=_tzAtRX.apply(this,arguments);return _rxIn?z:rxCut(x,y,z)};
 const _doneRX=done;done=function(){RXV++;try{rxSyncDoors()}catch(e){console.warn(e)}return _doneRX.apply(this,arguments)};
@@ -12241,6 +12275,88 @@ const _shListS2=shList;shList=function(){const L=_shListS2.apply(this,arguments)
 {const _rRXF=render;render=function(){try{rxDragFix()}catch(e){}return _rRXF.apply(this,arguments)}}
 function rxDragFix(e){try{if(!drag||drag.k!=='h'||!/^v\d+$/.test(drag.h||''))return;const it=cur();if(!isRX(it))return;const i=+drag.h.slice(1);if(!drag.rxo){const P0=JSON.parse(drag.last||'{}').pts||it.pts;drag.rxo=P0.map((p,k)=>k<P0.length-1?(Math.abs(P0[k+1][0]-p[0])<.01?'v':'h'):null)}
   const P=it.pts,q=P[i];if(i>0){const o=drag.rxo[i-1];if(o==='v')P[i-1]=[q[0],P[i-1][1]];else if(o==='h')P[i-1]=[P[i-1][0],q[1]]}if(i<P.length-1){const o=drag.rxo[i];if(o==='v')P[i+1]=[q[0],P[i+1][1]];else if(o==='h')P[i+1]=[P[i+1][0],q[1]]}drag.last=JSON.stringify(it);RXV++}catch(er){}}
+
+/* ===================== FACHADA TRASERA DEL SÓTANO: A LA VISTA O RELLENA ===================== */
+/* el desmonte se calcula con el terreno natural; el relleno se suma después */
+{const _excRF=exc;exc=function(){_rfNat++;let X;try{X=_excRF.apply(this,arguments)}finally{_rfNat--}
+  try{if(X&&X.kind&&rfOn()){const R=rfVol();X.rf=R;X.rel=(X.rel||0)+R.V;X.reuse=Math.min(X.rel,X.V);X.sale=Math.max(0,X.V-X.reuse);X.aporte=Math.max(0,X.rel-X.V);X.cam=Math.ceil(X.sale*(X.esp||1.25)/11)}}catch(e){console.warn(e)}return X}}
+{const _dhRF=desmonteHTML;desmonteHTML=function(){let h=_dhRF.apply(this,arguments);try{const X=exc();if(X&&X.rf&&X.rf.V>.05){const f1=v=>fmt(Math.round(v*10)/10);
+  h=h.replace('<b style="font-size:13px">Balance de tierras</b><p class="hint" style="margin:2px 0">',`<b style="font-size:13px">Balance de tierras</b><p class="hint" style="margin:2px 0"><span>Relleno alrededor de los sótanos con tierra del desmonte: <b>${f1(X.rf.V)} m³</b> (ya sumado al relleno).</span><br>`)}}catch(e){}return h}}
+
+const RFLADO={n:'Norte',s:'Sur',o:'Oeste',e:'Este'},RFSK={top:'n',bottom:'s',left:'o',right:'e'};
+const fmtZ=v=>(v>0?'+':v<0?'−':'')+fmt(Math.abs(r2(v)));
+/* altura de un nivel bajo tierra respecto al suelo de la planta baja */
+function ugTB(f){const H=floorH(f);if(st.sot&&(f===0||s2On())){const top=f===0?0:floorZ(f)+H-floorH(0);return{top,bot:top-H,H}}return{top:0,bot:-H,H}}
+/* por qué lados se ve el nivel desde fuera, con el terreno tal como queda (con relleno si lo hay) */
+function ugExpo(f){const k=contOf(f);if(!k)return null;const E=(SD().ext||.3)/2,dd=E+.3,T=ugTB(f),S={top:[],bottom:[],left:[],right:[]};
+  for(let u=0;u<=k.w;u+=1){S.top.push(tzAt(k.x+u,k.y-dd));S.bottom.push(tzAt(k.x+u,k.y+k.h+dd))}for(let u=0;u<=k.h;u+=1){S.left.push(tzAt(k.x-dd,k.y+u));S.right.push(tzAt(k.x+k.w+dd,k.y+u))}
+  const sides=[];Object.entries(S).forEach(([s,a])=>{if(!a.length)return;const z=Math.min(...a),ex=Math.min(T.H,T.top-z);if(ex>.3)sides.push({s:RFSK[s],z,ex:r2(ex),full:z<=T.bot+.05})});
+  return{...T,sides,sig:f+'|'+JSON.stringify(sides.map(q=>[q.s,Math.round(q.z*10)]))+'|'+((st.rell&&st.rell.modo)||'')}}
+/* aviso fácil de leer en el plano */
+function ugwShow(f){let w=$('#ugw');const on=isMod()&&(isUG(f)||(st.sot&&f===0))&&terrOn()&&contOf(f);const I=on?ugExpo(f):null;
+  if(!I||!I.sides.length||UGWHIDE===I.sig){if(w)w.hidden=true;return}
+  if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="ugw" role="status"></div>');w=$('#ugw')}
+  const md=(st.rell&&st.rell.modo)||'',nm=fname(f);
+  const li=I.sides.map(q=>`<li><b>${RFLADO[q.s]}</b>: terreno a ${fmtZ(q.z)} m → ${q.full?`<b>se ve entero</b> (${fmt(I.H)} m de fachada)`:`asoma <b>${fmt(q.ex)} m</b> de sus ${fmt(I.H)} m`}</li>`).join('');
+  const hfI=md==='relleno'?rfZ():0,intd=md==='relleno'&&I.bot>=hfI-.05;const est=intd?`El relleno llega hasta ${fmtZ(hfI)} m, así que este nivel <b>queda a la vista</b> por aquí, como has elegido.`:md==='vista'?'Has elegido <b>dejarlo a la vista</b>: por estos lados tendrá fachada, con ventanas y puertas si quieres.':md==='relleno'?'Con el relleno que has elegido <b>todavía asoma</b> por aquí. Puedes subir el relleno o dejar esta parte a la vista.':'¿Lo dejas <b>a la vista</b> o lo <b>rellenas con tierra del desmonte</b>?';
+  w.className='ugw'+(md==='vista'||intd?' ok':'');
+  w.innerHTML=`<div class="ugwT">${esc(nm)} · se verá desde fuera</div><p>Este nivel va de ${fmtZ(I.top)} m a ${fmtZ(I.bot)} m. Fuera, el terreno está más bajo:</p><ul>${li}</ul><p>${est}</p><div class="ugwB"><button data-rfo="1">${md?'Cambiar…':'Elegir…'}</button><button data-ugwok="${esc(I.sig)}">Entendido</button></div>`;w.hidden=false}
+document.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('[data-ugwok],[data-rfo]');if(!t)return;if(t.dataset.ugwok!=null){UGWHIDE=t.dataset.ugwok;const w=$('#ugw');if(w)w.hidden=true;return}try{closeMenus()}catch(er){}rfOpen()});
+{const cs=document.createElement('style');cs.textContent=`
+#ugw{position:absolute;left:10px;bottom:34px;z-index:6;width:min(560px,calc(100% - 90px));max-height:46%;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:6px solid #d08a1e;border-radius:10px;padding:10px 14px;font-size:15px;line-height:1.45;box-shadow:0 3px 12px #0003}
+#ugw.ok{border-left-color:#3a8a5a}#ugw p{margin:4px 0}#ugw ul{margin:4px 0 6px;padding-left:20px}#ugw li{margin:2px 0}
+#ugw .ugwT{font-weight:700;font-size:16px;margin-bottom:2px}#ugw .ugwB{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}#ugw .ugwB button{font-size:15px;padding:7px 14px}
+#rfP .card{max-width:560px;font-size:16px;line-height:1.5}#rfP h2{margin:0 0 6px}#rfP h3{font-size:17px;margin:14px 0 6px}#rfP .hint{font-size:14px}
+#rfP .op{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0;cursor:pointer;font-size:16px}
+#rfP .op{flex-direction:row}#rfP .op>span{flex:1;min-width:0;display:block}#rfP input[type=radio],#rfP input[type=checkbox]{width:auto!important;height:auto;flex:none;margin:5px 2px 0}#rfP .op>input{transform:scale(1.25)}#rfP .lados label{flex-direction:row}#rfP .op small span{display:flex}#rfP input[type=number]{display:inline-block;width:90px!important;flex:none;margin:0 6px 0 12px}#rfP .op small span{flex-wrap:wrap;align-items:center}#rfP .op.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}#rfP .op small{display:block;color:var(--mute);font-size:14px}
+#rfP .lados{display:flex;gap:8px;flex-wrap:wrap}#rfP .lados label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0;font-size:15px}
+#rfP .res{border-radius:10px;padding:10px 12px;margin:12px 0 4px;background:color-mix(in srgb,var(--acc) 7%,var(--panel));border:1px solid var(--line);font-size:16px}#rfP .res p{margin:3px 0}
+#rfP input[type=number],#rfP select{font-size:16px;padding:5px 8px}#rfP .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}#rfP .bt button{font-size:16px;padding:8px 18px}`;document.head.appendChild(cs)}
+
+/* ventana de opciones */
+let RFPU=0;
+function rfLowSides(){const out={};try{const C=rfBox(),B=C.b;if(!B)return out;_rfNat++;try{const sm=(a)=>Math.min(...a);const st2=1;const xs=[],ys=[];for(let x=B.x0;x<=B.x1;x+=st2)xs.push(x);for(let y=B.y0;y<=B.y1;y+=st2)ys.push(y);
+  out.n=sm(xs.map(x=>tzAt(x,B.y0-.3)));out.s=sm(xs.map(x=>tzAt(x,B.y1+.3)));out.o=sm(ys.map(y=>tzAt(B.x0-.3,y)));out.e=sm(ys.map(y=>tzAt(B.x1+.3,y)))}finally{_rfNat--}}catch(e){}return out}
+function rfOpen(){const old=$('#rfP');if(old)old.remove();RFPU=0;document.body.insertAdjacentHTML('beforeend','<div id="rfP" class="dlgw" style="position:fixed;inset:0;z-index:80;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-height:92vh;overflow:auto"></div></div>');rfBody()}
+function rfBody(){const P=$('#rfP');if(!P)return;const box=P.querySelector('.card'),r=RF(),md=r.modo||'vista',two=s2On()&&UGL().length>0,H0=floorH(0),H2=two?floorH(-10):0,f1=v=>fmt(Math.round(v*10)/10);
+  const op=(nm,v,cur,t,sub)=>`<label class="op${cur===v?' on':''}"><input type="radio" name="${nm}" value="${v}"${cur===v?' checked':''}><span>${t}${sub?`<small>${sub}</small>`:''}</span></label>`;
+  const low=rfLowSides();let h=`<h2>Sótanos y terreno</h2>`;
+  if(two)h+=`<h3>1. Los sótanos</h3><label class="op${st.s2link!==false?' on':''}"><input type="checkbox" data-rf="link"${st.s2link!==false?' checked':''}><span>Todos iguales al sótano 1<small>Mismo contorno y misma altura. Si cambias el sótano 1, los de abajo cambian solos.</small></span></label>
+    <p class="hint">Sótano 1: de ±0 a ${fmtZ(-H0)} m · Sótano 2: de ${fmtZ(-H0)} a ${fmtZ(-H0-H2)} m (medido desde el suelo de la planta baja).</p>`;
+  h+=`<h3>${two?'2':'1'}. La parte del sótano que queda al aire</h3>`+op('modo','vista',md,'Dejarla a la vista','Tendrá fachada hacia donde baja el terreno, como una casa en ladera. Puedes poner ventanas y puertas.')+op('modo','relleno',md,'Rellenar con tierra del desmonte','Se aprovecha la tierra que sale al excavar los sótanos para tapar esa parte.');
+  if(md==='relleno'){
+    h+=`<h3>¿Hasta qué altura se rellena?</h3>`+op('hasta','pb',r.hasta,'Todo tapado, a nivel de la planta baja','El terreno queda plano a ±0 alrededor de la casa: los sótanos no se ven.')+(two?op('hasta','s1',r.hasta,`Hasta el techo del sótano 2 (${fmtZ(-H0)} m)`,'El sótano 2 queda enterrado y el sótano 1 se ve por detrás.'):'')+op('hasta','cota',r.hasta,'A la altura que yo diga',`<span style="display:flex;gap:6px;align-items:center;margin-top:4px"><span>Altura del relleno</span><input type="number" step="0.1" max="0" inputmode="decimal" data-rf="cota" value="${r.cota}" style="width:90px"><span>m (0 = planta baja; negativo = más abajo)</span></span>`);
+    h+=`<h3>¿Por qué lados?</h3><div class="lados">${['n','s','o','e'].map(k=>`<label><input type="checkbox" data-rf="lado" value="${k}"${r.lados[k]?' checked':''}> ${RFLADO[k]}${low[k]!=null?` <span class="hint">(terreno a ${fmtZ(low[k])} m)</span>`:''}</label>`).join('')}</div>
+      <p class="hint">Solo se rellena donde el terreno está más bajo que el relleno. Por la calle no cambia nada.</p>
+      <label style="font-size:16px">Ancho de la explanada alrededor de la casa <input type="number" step="0.5" min="0" inputmode="decimal" data-rf="pl" value="${r.pl}" style="width:80px"> m</label>
+      <h3>¿Cómo termina el relleno?</h3>`+op('borde','talud',r.borde,'En talud (tierra en pendiente)','Más barato y sin obra, pero ocupa más sitio del solar.'+(r.borde==='talud'?`<span style="display:flex;gap:6px;align-items:center;margin-top:4px"><span>Pendiente</span><select data-rf="t">${[[1,'1:1 · fuerte'],[1.5,'1,5:1 · normal'],[2,'2:1 · suave'],[3,'3:1 · muy suave, se puede plantar']].map(([v,l])=>`<option value="${v}"${+r.t===v?' selected':''}>${l}</option>`).join('')}</select></span>`:''))+op('borde','muro',r.borde,'Con muro de contención (vertical)','Ocupa menos sitio: la explanada termina en un muro.');
+    let X=null;try{X=exc()}catch(e){}const R=rfVol();
+    h+=`<div class="res"><p><b>Cuentas de la tierra</b></p>`;
+    if(X&&X.kind){h+=`<p>Sale al excavar: <b>${f1(X.V)} m³</b></p><p>Para este relleno: <b>${f1(R.V)} m³</b>${R.area?` (sobre ${fmt(Math.round(R.area))} m² de solar)`:''}</p>`;
+      if(r.borde==='muro'&&R.wall>.05)h+=`<p>Muro de contención: hasta <b>${f1(R.wall)} m</b> de alto.</p>`;
+      h+=X.aporte>.05?`<p style="color:var(--dng)"><b>Falta tierra</b>: hay que traer unos ${f1(X.aporte)} m³ de fuera.</p>`:`<p>Con el resto de rellenos de la obra, <b>sobran ${f1(X.sale)} m³</b> → unos ${X.cam} camiones a vertedero.</p>`}
+    else h+=`<p>Para este relleno: <b>${f1(R.V)} m³</b>.</p><p class="hint">El desmonte se calcula cuando el sótano tiene contorno.</p>`;
+    h+=`</div><p class="hint">El relleno se ve en las curvas de nivel, en las fachadas y en el 3D. El detalle completo está en el balance de tierras.</p>`}
+  h+=`<div class="bt"><button data-rf="ok">Aceptar</button></div>`;box.innerHTML=h}
+function rfApply(fn){if(!RFPU){push();RFPU=1}fn();done();rfBody()}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#rfP'))return;
+  if(t.name==='modo')rfApply(()=>RFset('modo',t.value));
+  else if(t.name==='hasta')rfApply(()=>RFset('hasta',t.value));
+  else if(t.name==='borde')rfApply(()=>RFset('borde',t.value));
+  else if(t.dataset.rf==='link')rfApply(()=>{st.s2link=t.checked?true:false});
+  else if(t.dataset.rf==='lado')rfApply(()=>{const L={...RF().lados};L[t.value]=t.checked?1:0;RFset('lados',L)});
+  else if(t.dataset.rf==='t')rfApply(()=>RFset('t',+t.value));
+  else if(t.dataset.rf==='pl'||t.dataset.rf==='cota'){const v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v)){rfBody();return}rfApply(()=>{if(t.dataset.rf==='pl')RFset('pl',Math.max(0,Math.min(50,v)));else{RFset('cota',Math.min(0,v));RFset('hasta','cota')}})}});
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;if(t.closest('[data-rf="ok"]')||t.id==='rfP'){const P=$('#rfP');if(P)P.remove();if(!st.rell||!st.rell.modo){if(!RFPU)push();RFset('modo','vista');done()}}});
+/* la caja «Contorno del sótano»: el sótano 2 sigue al 1, o va por su cuenta */
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-sotc]');if(!b)return;const P=$('#sotCP'),f=+((P&&P.dataset.f)||fl);if(!(f<=-10))return;const k=b.dataset.sotc;if(k==='s1')st.s2link=true;else if(['pb','sol','med','mano'].includes(k))st.s2link=false},true);
+{const _sotCOpenRF=sotCOpen;sotCOpen=function(f){_sotCOpenRF.apply(this,arguments);try{f=f==null?fl:f;const P=$('#sotCP');if(!P)return;const c=P.querySelector('.card'),h2=c&&c.querySelector('h2');if(!h2)return;
+  if(f<=-10)h2.insertAdjacentHTML('afterend',`<p class="hint" style="font-size:14px">${st.s2link!==false?'<b>Ahora sigue al sótano 1</b> (mismo contorno y altura). Si eliges otras medidas, irá por su cuenta.':'Va por su cuenta. Pulsa «Igual que el sótano» para que vuelva a seguir al sótano 1.'}</p>`);
+  const bt=c.querySelector('[data-sotc="x"]');if(bt&&terrOn())bt.insertAdjacentHTML('beforebegin','<button data-rfo="1">Terreno: a la vista o relleno…</button>')}catch(e){}}}
+/* entrada en el menú «Bajo tierra» */
+(function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-rfo]'))return;const b=document.createElement('button');b.className='ug';b.dataset.rfo='1';b.textContent='Sótanos y terreno: a la vista o relleno…';const ref=m.pop.querySelector('[data-sotco]');if(ref&&ref.nextSibling)m.pop.insertBefore(b,ref.nextSibling);else m.pop.appendChild(b)}catch(e){}})();
+{const _rRFm=render;render=function(){const r=_rRFm.apply(this,arguments);try{document.querySelectorAll('button[data-rfo]').forEach(b=>{if(b.closest('#ugw')||b.closest('#sotCP'))return;b.style.display=isSotF(fl)?'':'none'})}catch(e){}return r}}
+try{done()}catch(e){}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
