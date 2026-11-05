@@ -12785,13 +12785,18 @@ let STUP=null;
     if(EA().sinVig||OB().vigOff)B.sc.traverse(o=>{if(o.userData&&o.userData.k==='viga')o.visible=false});
     /* el hueco de la excavación con sus taludes y el terreno alrededor */
     let X=null;try{X=exc()}catch(e){}const P=X&&X.pit;B.sc.traverse(o=>{if(o.userData&&o.userData.k==='terr')o.visible=false});
-    if(P){const m=new T.MeshLambertMaterial({color:'#a07a52',side:T.DoubleSide}),mg=new T.MeshLambertMaterial({color:'#8fb36a',side:T.DoubleSide}),zt=P.z,zb=P.z-P.dep,ts=P.ts||{n:P.t,s:P.t,o:P.t,e:P.t},d=P.dep;
-      const b=[[P.x0,P.y0],[P.x1,P.y0],[P.x1,P.y1],[P.x0,P.y1]],t=[[P.x0-d*(ts.o||0),P.y0-d*(ts.n||0)],[P.x1+d*(ts.e||0),P.y0-d*(ts.n||0)],[P.x1+d*(ts.e||0),P.y1+d*(ts.s||0)],[P.x0-d*(ts.o||0),P.y1+d*(ts.s||0)]];
-      const pos=[];for(let k=0;k<4;k++){const a=b[k],c=b[(k+1)%4],A=t[k],C=t[(k+1)%4];pos.push(a[0],zb,a[1],c[0],zb,c[1],C[0],zt,C[1],a[0],zb,a[1],C[0],zt,C[1],A[0],zt,A[1])}
-      pos.push(b[0][0],zb,b[0][1],b[1][0],zb,b[1][1],b[2][0],zb,b[2][1],b[0][0],zb,b[0][1],b[2][0],zb,b[2][1],b[3][0],zb,b[3][1]);
-      const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.computeVertexNormals();const pit=new T.Mesh(g,m);B.sc.add(pit);
-      const M=8,X0=t[0][0]-M,X1=t[1][0]+M,Y0=t[0][1]-M,Y1=t[2][1]+M,slab=(x0,y0,x1,y1)=>{if(x1-x0<.01||y1-y0<.01)return;const s=new T.Mesh(new T.BoxGeometry(x1-x0,.05,y1-y0),mg);s.position.set((x0+x1)/2,zt-.025,(y0+y1)/2);B.sc.add(s)};
-      slab(X0,Y0,X1,t[0][1]);slab(X0,t[2][1],X1,Y1);slab(X0,t[0][1],t[0][0],t[2][1]);slab(t[1][0],t[0][1],X1,t[2][1]);
+    if(P){/* terreno real (cotas y pendientes) con el hueco excavado: una sola superficie */
+      const zg=st.sot?rasante():0,zb=P.z-P.dep,ts=P.ts||{n:P.t,s:P.t,o:P.t,e:P.t},inv=t=>t>.01?1/t:1e3;
+      const pitS=(x,y)=>{const d=Math.max(0,P.x0-x)*inv(ts.o),e2=Math.max(0,x-P.x1)*inv(ts.e),n=Math.max(0,P.y0-y)*inv(ts.n),so=Math.max(0,y-P.y1)*inv(ts.s);return zb+Math.max(d,e2,n,so)};
+      const mt=Math.max(ts.o||0,ts.e||0,ts.n||0,ts.s||0),ext=P.dep*mt+12;let X0=P.x0-ext,X1=P.x1+ext,Y0=P.y0-ext,Y1=P.y1+ext;
+      try{const S0=SOL();if(S0){const Q=solPts(S0),xs=Q.map(q=>q[0]),ys=Q.map(q=>q[1]);X0=Math.max(X0,Math.min(...xs)-3);X1=Math.min(X1,Math.max(...xs)+3);Y0=Math.max(Y0,Math.min(...ys)-3);Y1=Math.min(Y1,Math.max(...ys)+3)}}catch(e){}
+      const stp=Math.max(.4,Math.sqrt((X1-X0)*(Y1-Y0)/16000)),nx=Math.max(2,Math.ceil((X1-X0)/stp)+1),ny=Math.max(2,Math.ceil((Y1-Y0)/stp)+1),pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[];
+      const cG=new T.Color('#9cbf6a'),cC=new T.Color('#a8825a'),cD=new T.Color('#7c5b3c');
+      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=X0+(X1-X0)*i/(nx-1),y=Y0+(Y1-Y0)*j/(ny-1);let tz=0;try{tz=tzAt(x,y)}catch(e){}const zt=zg+tz,zp=pitS(x,y),z=Math.min(zt,zp),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=z;pos[k+2]=y;
+        const cc=zt-z>.05?(z<=zb+.05?cD:cC):cG;col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
+      for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d)}
+      const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
+      const terr=new T.Mesh(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));B.sc.add(terr);
       B.I={x0:Math.min(B.I.x0,X0),y0:Math.min(B.I.y0,Y0),x1:Math.max(B.I.x1,X1),y1:Math.max(B.I.y1,Y1)}}}catch(e){console.warn('fases3D',e)}return B}}
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'&&STUP){STUP=null;setTimeout(()=>pasoOpen(3),50)}},true);
 /* una ventana cada vez */
