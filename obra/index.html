@@ -12714,7 +12714,7 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
    Para recuperarla, «Abrir copia de la nube» abre el selector de archivos, donde también está Drive. */
 const NUBE_BK='trazoObraBk';
 async function nubeGuardar(){try{save()}catch(e){}const d=new Date(),nm=`Trazo_${PJAPP==='obra'?'Obra_nueva':'Finca'}_${d.toISOString().slice(0,10)}.txt`;
-  const txt=JSON.stringify({trazoAll:1,app:PJAPP,fecha:d.toISOString(),p:PJ.p,fn:PJ.fn||null});const ok=()=>{try{localStorage.setItem(NUBE_BK,String(Date.now()))}catch(e){}try{bkUpd()}catch(e){}};
+  const txt=JSON.stringify({trazoAll:1,app:PJAPP,fecha:d.toISOString(),p:{...PJX,...PJ.p},fn:PJ.fn||null});const ok=()=>{try{localStorage.setItem(NUBE_BK,String(Date.now()))}catch(e){}try{bkUpd()}catch(e){}};
   let f=null;try{f=new File([txt],nm,{type:'text/plain'})}catch(e){}
   if(f&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:nm});ok();note='Copia enviada. Si elegiste Drive, ya está en la nube: '+nm;render();return}catch(e){if(e&&e.name==='AbortError'){note='Copia cancelada';render();return}}}
   try{const dl=await getDL();if(dl){await dl.save({filename:nm,data:txt});ok();note='Copia descargada: '+nm+'. Súbela a Drive desde Descargas.';render()}}catch(e){note='No se pudo guardar la copia';render()}}
@@ -12806,6 +12806,13 @@ destAsk=function(){const q=PJ.p[PJ.cur];if(!q)return;$('#destBox')&&$('#destBox'
   $('#destOk').onclick=()=>{q.mdest=$('#destSel').value;q.mod=1;close();try{save()}catch(e){}note='Ahora es: '+(MDEST.find(x=>x[0]===q.mdest)||['',''])[1];render()}};
 {const cs=document.createElement('style');cs.textContent=`#pwP .fsN{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 2px}#pwP .fsN button{font-size:13px;padding:5px 9px;border-radius:16px}#pwP .fsN button.on{background:var(--acc);border-color:var(--acc);color:#fff}#pwP .fsN button.ok{border-color:#3a8a5a;color:#3a8a5a}
 #pwP .bt3{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}#pwP .fsB{display:flex;justify-content:space-between;gap:8px;margin-top:14px;padding-top:10px;border-top:1px dashed var(--line);flex-wrap:wrap}#pwP .fsB .pri{margin-left:auto}#pwP select[data-pwluz]{font-size:16px;padding:6px}`;document.head.appendChild(cs)}
+
+/* ===================== IMPORTAR UNA COPIA: CADA PROYECTO A SU APP ===================== */
+{const _pImpSP=pImport;pImport=function(text,name){let d;try{d=JSON.parse(text)}catch(e){return _pImpSP.apply(this,arguments)}
+  if(!(d&&d.trazoAll&&d.p))return _pImpSP.apply(this,arguments);try{save()}catch(e){}const nm=new Set([...Object.values(PJ.p),...Object.values(PJX)].map(q=>q&&q.name));let first=null,n=0,m=0;
+  Object.values(d.p).forEach(q=>{if(!q||!q.name)return;const id=pid()+'i'+(n+m);const o={name:nm.has(q.name)?q.name+' (copia importada)':q.name,upd:Date.now(),data:q.data||null};['mod','mdest','dest','app'].forEach(k=>{if(q[k]!=null)o[k]=q[k]});if(pjMine(o)){PJ.p[id]=o;n++;if(!first)first=id}else{PJX[id]=o;m++}});
+  if(d.fn&&(!PJ.fn||!Object.keys(PJ.fn).length))PJ.fn=d.fn;try{pjSave();pjFlush()}catch(e){}if(first)loadProj(first);try{plist()}catch(e){}
+  note=n+' proyecto'+(n===1?'':'s')+' a esta app'+(m?' y '+m+' a la otra app (ábrela para verlos)':'');render();return true}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
