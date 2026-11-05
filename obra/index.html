@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · la estructura es el paso 3</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · presupuesto con IVA y todos los gastos</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12821,6 +12821,97 @@ destAsk=function(){const q=PJ.p[PJ.cur];if(!q)return;$('#destBox')&&$('#destBox'
   Object.values(d.p).forEach(q=>{if(!q||!q.name)return;const id=pid()+'i'+(n+m);const o={name:nm.has(q.name)?q.name+' (copia importada)':q.name,upd:Date.now(),data:q.data||null};['mod','mdest','dest','app'].forEach(k=>{if(q[k]!=null)o[k]=q[k]});if(pjMine(o)){PJ.p[id]=o;n++;if(!first)first=id}else{PJX[id]=o;m++}});
   if(d.fn&&(!PJ.fn||!Object.keys(PJ.fn).length))PJ.fn=d.fn;try{pjSave();pjFlush()}catch(e){}if(first)loadProj(first);try{plist()}catch(e){}
   note=n+' proyecto'+(n===1?'':'s')+' a esta app'+(m?' y '+m+' a la otra app (ábrela para verlos)':'');render();return true}}
+
+/* ===================== PRESUPUESTO ORIENTATIVO (con IVA y todos los gastos) ===================== */
+/* Precios de partida para Mallorca, noviembre de 2026. Todos se pueden cambiar en «Precios…». */
+const PRES_D={
+  exc:['Excavación del vaciado con máquina','m³',9],tra:['Carga, transporte y vertedero de tierras','m³ esponjado',16],rel:['Relleno con tierra de la obra, compactado','m³',12],pan:['Muro pantalla o entibación donde no cabe el talud','m²',220],
+  lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
+  pil:['Pilares de hormigón armado','m³',750],vig:['Vigas de hormigón armado','m³',620],muro:['Muro de sótano de hormigón, impermeabilizado y con drenaje','m²',230],sol:['Solera del sótano','m²',45],
+  fj_viguetas:['Forjado de viguetas y bovedillas','m²',78],fj_losa:['Forjado de losa maciza','m²',112],fj_reticular:['Forjado reticular','m²',98],fj_madera:['Forjado de madera','m²',140],fj_chapa:['Forjado de chapa colaborante','m²',90],
+  c_bloque:['Muro de bloque enfoscado y pintado','m',125],c_murete:['Murete con reja metálica','m',150],c_lamas:['Valla de lamas de aluminio','m',185],c_malla:['Malla metálica sobre postes','m',38],c_piedra:['Muro de piedra en seco','m',360],c_seto:['Seto vegetal','m',45],
+  p_corredera:['Puerta corredera para coches','ud',3800],p_batiente:['Puerta batiente de dos hojas','ud',2600],p_peatonal:['Puerta peatonal','ud',950],p_garaje:['Puerta de garaje enrollable','ud',3200],
+  k_agua:['Armario del contador de agua','ud',380],k_elec:['Caja de protección y contador de luz','ud',650],k_gas:['Armario del gas','ud',480],k_tel:['Registro de teléfono y fibra','ud',260],
+  fach:['Fachada (cerramiento, aislamiento y acabado)','m²',165],cub:['Cubierta (azotea o tejado, con aislamiento)','m²',150],vent:['Ventanas y puertas al exterior','ud',950],
+  int:['Obra por dentro (tabiques, suelos, techos, puertas, pintura e instalaciones)','m² útil',650],ban:['Baño completo (sanitarios, grifería y alicatado)','ud',4500],coc:['Cocina (muebles y electrodomésticos básicos)','ud',9000],park:['Acabado del parking (pavimento, pintura, ventilación, incendios)','m²',65],
+  aco:['Acometidas de agua, luz y saneamiento','global',6000],geo:['Estudio geotécnico','global',1500]};
+const PRES_Q={basica:['Básica',.75],media:['Media',1],alta:['Alta',1.6]};
+const PRES_INT=[['Tabiquería y trasdosados',.12],['Suelos y revestimientos',.22],['Falsos techos',.06],['Carpintería interior',.12],['Pintura',.06],['Electricidad',.12],['Fontanería y saneamiento',.14],['Climatización',.16]];
+function presCfg(){if(!OB().pres)OB().pres={q:'media',p:{},gg:13,bi:6,iva:10,hon:9,ivah:21,icio:4,tasa:2.61,icioDed:50,ess:1,oct:1.2,dobra:2,solar:0,solarIva:0,cmpGast:1.2};return OB().pres}
+const presP_=k=>{const P=presCfg();return P.p[k]!=null?+P.p[k]:PRES_D[k][2]};
+const presE=v=>Math.round(v).toLocaleString('es-ES')+' €',presM=v=>fmt(Math.round(v*10)/10);
+function itpBal(v){const T=[[400000,.08],[600000,.09],[1000000,.10],[2000000,.12],[Infinity,.13]];let t=0,lo=0;for(const[hi,r]of T){if(v>lo)t+=(Math.min(v,hi)-lo)*r;lo=hi}return t}
+/* mediciones y capítulos */
+function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=SD().ext||.3,L=[],cap=(k,t,ls)=>{const ok=ls.filter(x=>x&&x[1]>0);L.push({k,t,ls:ok,tot:ok.reduce((s,x)=>s+x[1]*x[2],0)})};
+  const ln=(k,med,pre,txt)=>[txt||PRES_D[k][0],med,pre==null?presP_(k):pre,PRES_D[k][1]];
+  /* 1 tierras */let X=null;try{X=exc()}catch(e){}
+  if(X&&X.kind){const Pt=X.pit;let pan=0;(X.pan||[]).forEach(s=>{if(Pt)pan+=((s==='n'||s==='s')?(Pt.x1-Pt.x0):(Pt.y1-Pt.y0))*Pt.dep});cap('tie','Excavación y tierras',[ln('exc',X.V),ln('tra',(X.sale||0)*(X.esp||1.25)),ln('rel',X.rel||0),ln('pan',pan)])}
+  /* 2 cimentación */let C=null;try{C=cimCalc()}catch(e){}
+  if(C){if(o.cim==='losa'&&C.losa)cap('cim','Cimentación',[ln('losa',C.losa.V),ln('lim',C.losa.A)]);else{const A=C.zap.reduce((s,z)=>s+z.B*z.B,0)+C.corr.reduce((s,z)=>s+z.B*z.L,0);cap('cim','Cimentación',[ln('zap',C.tot),ln('lim',A)])}}
+  /* 3 estructura */const lv=(typeof f3List==='function'?f3List(F()):Array.from({length:F()},(_,i)=>i)).filter(f=>contOf(f)&&!(typeof isGolf==='function'&&isGolf(f)));const fjA={};let pV=0,vV=0,mA=0,sA=0;
+  lv.forEach((f,i)=>{const c=contOf(f),fj=(o.forj||{})[f]||(f<=-10?(o.forj||{})[0]:null)||{t:'viguetas'},t=FJT[fj.t]?fj.t:'viguetas',cf=fj.c||FJT[t][1],H=floorH(f);fjA[t]=(fjA[t]||0)+(c.w+E)*(c.h+E);
+    items.filter(p=>p.t==='pilar'&&p.f===f).forEach(p=>{pV+=(p.w||.3)*(p.h||.3)*Math.max(.5,H-cf)});(o.vig||[]).filter(v=>v.f===f).forEach(v=>{vV+=(v.b||.3)*(v.c||.3)*Math.hypot(v.x2-v.x1,v.y2-v.y1)});
+    if(f<=-10||(st.sot&&f===0))mA+=2*(c.w+c.h+2*E)*H;if(i===0)sA+=c.w*c.h});
+  cap('est','Estructura',[ln('pil',pV),ln('vig',vV),ln('muro',mA),ln('sol',sA),...Object.entries(fjA).map(([t,a])=>ln('fj_'+t,a))]);
+  /* 4 cierre del solar */const cl={},pc={};(o.cerr||[]).forEach(c=>{try{cerrSegs(c).forEach(([a,b])=>{cl[c.t]=(cl[c.t]||0)+Math.hypot(b[0]-a[0],b[1]-a[1])})}catch(e){}});(o.ppar||[]).forEach(p=>{pc[p.k]=(pc[p.k]||0)+1});const kc={};try{ctrList().forEach(x=>{kc[x.k]=(kc[x.k]||0)+1})}catch(e){}
+  cap('cer','Cierre del solar y contadores',[...Object.entries(cl).map(([t,l])=>PRES_D['c_'+t]?ln('c_'+t,l):null),...Object.entries(pc).map(([t,n])=>PRES_D['p_'+t]?ln('p_'+t,n):null),...Object.entries(kc).map(([t,n])=>ln('k_'+t,n))]);
+  /* 5 fachadas y cubierta */const up=lv.filter(f=>!(f<=-10||(st.sot&&f===0)));let fa=0,top=null;up.forEach(f=>{const c=contOf(f);fa+=2*(c.w+c.h+2*E)*floorH(f);top=c});const nv=items.filter(i=>i.t==='window').length+items.filter(i=>i.t==='door'&&up.includes(i.f)&&(()=>{try{return !!facadeSide(i)}catch(e){return false}})()).length;
+  cap('env','Fachadas, cubierta y ventanas',[ln('fach',fa),top?ln('cub',(top.w+E)*(top.h+E)):null,ln('vent',nv,presP_('vent')*q)]);
+  /* 6 obra por dentro */const R=items.filter(i=>i.t==='room'),aU=R.reduce((s,r)=>s+r.w*r.h,0),nb=R.filter(r=>/ba[ñn]o|aseo/i.test((r.name||'')+' '+(r.dest||''))).length,nc=R.filter(r=>/cocina/i.test((r.name||'')+' '+(r.dest||''))).length;let pk=0;lv.forEach(f=>{if((f<=-10||(st.sot&&f===0))&&typeof ugUso==='function'&&ugUso(f)==='parking'){const c=contOf(f);pk+=c.w*c.h-R.filter(r=>r.f===f).reduce((s,r)=>s+r.w*r.h,0)}});
+  cap('int','Obra por dentro',[ln('int',aU,presP_('int')*q),ln('ban',nb,presP_('ban')*q),ln('coc',nc,presP_('coc')*q),ln('park',pk)]);
+  /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
+  const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
+  const hon=pem*P.hon/100,honI=hon*P.ivah/100,tasa=pem*P.tasa/100,icio=Math.max(0,pem*P.icio/100-tasa*P.icioDed/100),oct=pem*P.oct/100,octI=oct*P.ivah/100,dobra=(pec+iva)*P.dobra/100;
+  const sv=+P.solar||0,itp=P.solarIva?0:itpBal(sv),sIva=P.solarIva?sv*.21:0,sAjd=P.solarIva?sv*.015:0,sG=sv*P.cmpGast/100;
+  const G=[['Seguridad y salud en la obra',ess,'(dentro de la obra)'],['Gastos generales del constructor ('+P.gg+' %)',gg],['Beneficio del constructor ('+P.bi+' %)',bi],['IVA de la obra ('+P.iva+' %)',iva],['Honorarios de arquitecto y aparejador ('+P.hon+' %)',hon],['IVA de los honorarios ('+P.ivah+' %)',honI],['Tasa de licencia ('+fmt(P.tasa)+' %)',tasa],['ICIO ('+fmt(P.icio)+' %, descontado el '+P.icioDed+' % de la tasa)',icio],['Control de calidad y seguro decenal ('+fmt(P.oct)+' %, con IVA)',oct+octI],['Notaría, registro y AJD de la obra nueva ('+fmt(P.dobra)+' %)',dobra]];
+  const S=sv>0?[['Precio del solar',sv],[P.solarIva?'IVA del solar (21 %)':'Impuesto de transmisiones (ITP Baleares)',P.solarIva?sIva:itp],P.solarIva?['AJD (1,5 %)',sAjd]:null,['Notaría, registro y gestoría ('+fmt(P.cmpGast)+' %)',sG]].filter(Boolean):[];
+  const tObra=pec+iva,tGast=hon+honI+tasa+icio+oct+octI+dobra,tSol=S.reduce((s,x)=>s+x[1],0);let mC=0;up.forEach(f=>{const c=contOf(f);mC+=c.w*c.h});
+  return{L,pem0,pem,pec,iva,G,S,tObra,tGast,tSol,total:tObra+tGast+tSol,q:P.q,mC,aU}}
+/* ventana */
+function presOpen(){$('#presP')&&$('#presP').remove();['#pwP','#eaP','#ccP'].forEach(q=>{const x=$(q);if(x)x.remove()});document.body.insertAdjacentHTML('beforeend','<div id="presP" class="dlgw" role="dialog" aria-label="Presupuesto"><div class="card"></div></div>');presBody()}
+function presBody(edit){const D=$('#presP');if(!D)return;const box=D.querySelector('.card'),sc=box.scrollTop,R=presCalc(),P=presCfg();
+  let h=`<div class="prH"><b>Presupuesto orientativo</b><button data-pr="x" aria-label="Cerrar">✕</button></div>`;
+  h+=`<div class="prT"><div><small>Total con IVA y todos los gastos</small><b>${presE(R.total)}</b></div><div><small>Obra (con IVA)</small><b>${presE(R.tObra)}</b></div><div><small>Gastos, licencias y honorarios</small><b>${presE(R.tGast)}</b></div>${R.tSol?`<div><small>Solar y su compra</small><b>${presE(R.tSol)}</b></div>`:''}</div>`;
+  h+=`<div class="prQ"><span>Calidad de acabados</span>${Object.entries(PRES_Q).map(([k,v])=>`<button data-prq="${k}"${P.q===k?' class="on"':''}>${v[0]}</button>`).join('')}</div>`;
+  if(R.mC>0)h+=`<p class="hint">${presM(R.mC)} m² construidos sobre rasante · obra con IVA a ${presE(R.tObra/Math.max(1,R.mC))}/m².</p>`;
+  h+=`<h3>Compra del solar</h3><div class="prG"><label>Precio del solar (€)<input data-prs="solar" type="number" step="1000" min="0" inputmode="numeric" value="${+P.solar||''}" placeholder="0"></label><label class="prC"><input type="checkbox" data-prs="solarIva"${P.solarIva?' checked':''}> Lo vende una empresa (IVA 21 % + AJD)</label></div>`;
+  R.S.forEach(x=>{h+=`<div class="prL"><span>${esc(x[0])}</span><b>${presE(x[1])}</b></div>`});
+  R.L.forEach(c=>{h+=`<details class="prD"${c.k==='tie'?' open':''}><summary><span>${esc(c.t)}</span><b>${presE(c.tot)}</b></summary>`+(c.ls.length?c.ls.map(x=>`<div class="prL"><span>${esc(x[0])}<small>${presM(x[1])} ${esc(x[3])} × ${presE(x[2]).replace(' €','')} €</small></span><b>${presE(x[1]*x[2])}</b></div>`).join(''):'<p class="hint">Todavía no hay nada que medir aquí.</p>')+(c.k==='int'&&c.tot>0?`<p class="hint">Reparto aproximado: ${PRES_INT.map(([t,p])=>t.toLowerCase()+' '+Math.round(p*100)+' %').join(', ')}.</p>`:'')+`</details>`});
+  h+=`<div class="prL prS"><span>Ejecución material (obra a precio de coste)</span><b>${presE(R.pem)}</b></div>`;
+  R.G.forEach(x=>{h+=`<div class="prL"><span>${esc(x[0])}</span><b>${presE(x[1])}</b></div>`});
+  h+=`<div class="prL prS"><span>TOTAL con IVA y todos los gastos</span><b>${presE(R.total)}</b></div>`;
+  h+=`<p class="hint">Es una estimación para hacerse una idea: precios de partida para Mallorca (noviembre de 2026). Para contratar, pide presupuestos a constructores. ICIO y tasa según Palma; en otros municipios cambian.</p>`;
+  if(edit)h+=`<h3>Precios</h3><div class="prE">${Object.entries(PRES_D).map(([k,v])=>`<label>${esc(v[0])} <small>(€/${esc(v[1])})</small><input data-prp="${k}" type="number" step="0.5" inputmode="decimal" value="${presP_(k)}"></label>`).join('')}${[['gg','Gastos generales %'],['bi','Beneficio %'],['iva','IVA obra %'],['hon','Honorarios %'],['ivah','IVA honorarios %'],['icio','ICIO %'],['tasa','Tasa licencia %'],['icioDed','Descuento de la tasa en el ICIO %'],['ess','Seguridad y salud %'],['oct','Control y seguro decenal %'],['dobra','Notaría y AJD obra nueva %'],['cmpGast','Gastos de compra del solar %']].map(([k,t])=>`<label>${t}<input data-prk="${k}" type="number" step="0.1" inputmode="decimal" value="${P[k]}"></label>`).join('')}</div><div class="row"><button data-pr="reset">Volver a los precios de partida</button></div>`;
+  h+=`<div class="bt"><button data-pr="${edit?'ok':'edit'}">${edit?'Ocultar precios':'Cambiar precios…'}</button><button data-pr="csv">Guardar en hoja de cálculo</button><button data-pr="x" class="pri">Cerrar</button></div>`;
+  box.innerHTML=h;box.scrollTop=sc;D.dataset.edit=edit?1:''}
+function presCSV(){const R=presCalc(),rows=[['Capítulo','Concepto','Medición','Unidad','Precio','Importe']],n=v=>String(Math.round(v*100)/100).replace('.',',');
+  R.S.forEach(x=>rows.push(['Solar',x[0],'','','',n(x[1])]));R.L.forEach(c=>c.ls.forEach(x=>rows.push([c.t,x[0],n(x[1]),x[3],n(x[2]),n(x[1]*x[2])])));rows.push(['','Ejecución material','','','',n(R.pem)]);R.G.forEach(x=>rows.push(['Gastos',x[0],'','','',n(x[1])]));rows.push(['','TOTAL con IVA y todos los gastos','','','',n(R.total)]);
+  return '﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\r\n')}
+document.addEventListener('click',async e=>{const t=e.target;if(!t||!t.closest||!t.closest('#presP'))return;if(t.id==='presP'){t.remove();return}const b=t.closest('button');if(!b)return;const D=$('#presP'),ed=!!(D&&D.dataset.edit);
+  if(b.dataset.prq){push();presCfg().q=b.dataset.prq;done();presBody(ed);return}const a=b.dataset.pr;if(a==='x'){D.remove();return}if(a==='edit'){presBody(true);return}if(a==='ok'){presBody(false);return}
+  if(a==='reset'){push();presCfg().p={};done();presBody(true);return}
+  if(a==='csv'){try{const dl=await getDL();if(!dl)return;await dl.save({filename:'Presupuesto_'+((PJ.p[PJ.cur]||{}).name||'Trazo').replace(/[^\wáéíóúñ -]/gi,'')+'.csv',data:presCSV()});note='Presupuesto guardado: se abre con Excel o Hojas de cálculo';render()}catch(er){note='No se pudo guardar el presupuesto'}}});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#presP'))return;const P=presCfg(),v=parseFloat(String(t.value).replace(',','.')),ed=!!$('#presP').dataset.edit;push();
+  if(t.dataset.prs==='solar')P.solar=v>0?v:0;else if(t.dataset.prs==='solarIva')P.solarIva=t.checked?1:0;else if(t.dataset.prp){if(!isNaN(v)&&v>=0)P.p[t.dataset.prp]=v}else if(t.dataset.prk){if(!isNaN(v)&&v>=0)P[t.dataset.prk]=v}done();presBody(ed)});
+/* accesos: menú Proyecto, paso 1 (compra del solar) y cada fase del paso 3 */
+(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-preso]'))return;const b=document.createElement('button');b.dataset.preso='1';b.textContent='€ Presupuesto';m.pop.insertBefore(b,m.pop.children[1]||null)}catch(e){}})();
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-preso]');if(!b)return;try{closeMenus()}catch(er){}presOpen()});
+{const _pw1P=pw1;pw1=function(){let h=_pw1P.apply(this,arguments);try{const P=presCfg();h=h.replace('<h3>El solar y la calle</h3>','<h3>El solar y la calle</h3>'+pwRow(+P.solar>0,'Precio del solar',+P.solar>0?`${presE(+P.solar)} · con impuestos y gastos de compra: ${presE(presCalc().tSol)}`:'Para el presupuesto: lo que cuesta comprarlo','<button data-preso="1">'+(+P.solar>0?'Cambiar…':'Poner el precio…')+'</button>'))}catch(er){}return h}}
+{const _pw4P=pw4;pw4=function(){let h=_pw4P.apply(this,arguments);try{const{F:Fz}=faseCur(),R=presCalc(),k=Fz.k==='exc'?'tie':Fz.k==='cim'?'cim':Fz.k==='pla'?null:'est',c=k&&R.L.find(x=>x.k===k);
+  const row=c?pwRow(c.tot>0,'Coste de '+(k==='est'?'toda la estructura':c.t.toLowerCase()),`${presE(c.tot)} de ejecución material · con IVA y gastos de constructor, unos ${presE(c.tot*(1+(presCfg().ess+presCfg().gg+presCfg().bi)/100)*(1+presCfg().iva/100))}`,'<button data-preso="1">Presupuesto…</button>'):pwRow(true,'Presupuesto de toda la obra',`${presE(R.total)} con IVA y todos los gastos`,'<button data-preso="1" class="pri">Ver el presupuesto…</button>');
+  h=h.replace('<div class="fsB">',row+'<div class="fsB">')}catch(er){}return h}}
+{const cs=document.createElement('style');cs.textContent=`#presP{position:fixed;inset:0;z-index:85;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px}
+#presP .card{max-width:680px;width:100%;max-height:92vh;overflow:auto;font-size:16px;line-height:1.45;padding:0 18px 16px}
+#presP .prH{position:sticky;top:0;background:var(--panel);display:flex;align-items:center;gap:8px;padding:14px 0 10px;font-size:19px;border-bottom:1px solid var(--line);z-index:1}#presP .prH button{margin-left:auto}
+#presP .prT{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}#presP .prT div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}#presP .prT div:first-child{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+#presP .prT small{display:block;color:var(--mute);font-size:13px}#presP .prT b{font-size:19px;font-variant-numeric:tabular-nums}
+#presP .prQ{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}#presP .prQ span{color:var(--mute);margin-right:4px}#presP .prQ button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#presP h3{font-size:17px;margin:16px 0 6px}#presP .prG{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}#presP .prG label{margin:0;font-size:14px}#presP .prG input[type=number]{width:180px;font-size:16px}#presP .prC{display:flex!important;gap:6px;align-items:center}#presP .prC input{width:auto}
+#presP details{border:1px solid var(--line);border-radius:10px;margin:6px 0;padding:0 10px}#presP summary{display:flex;justify-content:space-between;gap:8px;padding:9px 0;cursor:pointer;font-weight:600}
+#presP .prL{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed var(--line);font-size:15px}#presP .prL small{display:block;color:var(--mute);font-size:13px}#presP .prL b,#presP summary b{font-variant-numeric:tabular-nums;white-space:nowrap}
+#presP .prS{border-top:2px solid var(--ink);font-weight:700;font-size:17px;margin-top:6px}
+#presP .prE{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}#presP .prE label{margin:0;font-size:13px}#presP .prE input{font-size:15px}
+#presP .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}#presP .bt .pri{margin-left:auto;background:var(--acc);border-color:var(--acc);color:#fff}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
