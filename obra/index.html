@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · app separada de la finca</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · los cuatro pasos: solar, contornos, dibujar y estructura</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12361,6 +12361,194 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 try{done()}catch(e){}
 
 new MutationObserver(()=>{const b=document.querySelector('[data-inik="moderna"]');if(b&&b.getAttribute('aria-pressed')!=='true'&&!b._auto){b._auto=1;b.click()}}).observe(document.documentElement,{childList:true,subtree:true});
+
+/* ===================== OBRA NUEVA · LOS CUATRO PASOS ===================== */
+/* 1 Solar → 2 Contornos → 3 Dibujar → 4 Cimentación y estructura. Cada cosa se pregunta una sola vez. */
+const PASOS=[[1,'Solar'],[2,'Contornos'],[3,'Dibujar'],[4,'Estructura']];
+const pasoCur=()=>{try{return (st&&st.paso)||1}catch(e){return 1}};
+const pf1=v=>fmt(Math.round(v*10)/10);
+const CTRK={agua:{t:'Contador de agua',w:.6,h:.5,z:.4},elec:{t:'Caja de protección y contador de luz',w:.7,h:1,z:.4},gas:{t:'Armario del gas',w:.6,h:.6,z:.4},tel:{t:'Registro de teléfono y fibra',w:.45,h:.6,z:.6}};
+/* ---------- estado de cada paso ---------- */
+function pasoHecho(n){try{const o=OB();if(n===1)return !!SOL()&&!!(o.calle&&o.calle.lado)&&(o.acom||[]).length>0;
+  if(n===2){for(let f=pbF();f<F();f++)if(!contOf(f))return false;return !!contOf(pbF())&&(!st.sot||!!contOf(0))}
+  if(n===3)return items.some(i=>i.t==='room');if(n===4)return items.some(i=>i.t==='pilar')}catch(e){}return false}
+/* ---------- barra de pasos ---------- */
+function pasosBar(){if(!isMod())return;let b=$('#pasos');if(!b){$('#cvw').insertAdjacentHTML('beforeend','<nav id="pasos" aria-label="Pasos del proyecto"></nav>');b=$('#pasos')}const c=pasoCur();
+  b.innerHTML=PASOS.map(([n,t])=>`<button data-paso="${n}" class="${n===c?'on':''}${pasoHecho(n)?' ok':''}" aria-current="${n===c?'step':'false'}"><span>${pasoHecho(n)&&n!==c?'✓':n}</span>${t}</button>`).join('<i>›</i>')}
+{const _rPA=render;render=function(){const r=_rPA.apply(this,arguments);try{pasosBar()}catch(e){}return r}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-paso]');if(!b)return;const n=+b.dataset.paso;try{closeMenus()}catch(er){}pasoOpen(n)});
+/* ---------- ventana de cada paso ---------- */
+function pasoOpen(n){st.paso=n;save();['#solP','#obraP','#ccP','#rfP','#sotCP'].forEach(q=>{const e=$(q);if(e)e.remove()});let P=$('#pwP');if(!P){document.body.insertAdjacentHTML('beforeend','<div id="pwP" class="dlgw" role="dialog" aria-modal="true"><div class="card"></div></div>');P=$('#pwP')}P.dataset.n=n;pasoBody();render()}
+function pasoClose(){const P=$('#pwP');if(P)P.remove()}
+function pasoBody(){const P=$('#pwP');if(!P)return;const n=+P.dataset.n,box=P.querySelector('.card'),sc=box.scrollTop;let h=`<div class="pwH"><b>Paso ${n} de 4</b> · ${PASOS[n-1][1]}<button data-pw="x" aria-label="Cerrar">✕</button></div>`;
+  try{h+=[0,pw1,pw2,pw3,pw4][n]()}catch(e){console.warn(e);h+='<p>No se pudo mostrar este paso.</p>'}
+  h+=`<div class="bt">${n>1?`<button data-paso="${n-1}">‹ Paso ${n-1}</button>`:''}${n<4?`<button data-paso="${n+1}" class="pri">Siguiente: ${PASOS[n][1]} ›</button>`:`<button data-pw="x" class="pri">Terminar</button>`}</div>`;box.innerHTML=h;box.scrollTop=sc}
+const pwRow=(ok,t,sub,btns)=>`<div class="pwR${ok?' ok':''}"><span class="pwI">${ok?'✓':'○'}</span><div class="pwT"><b>${t}</b>${sub?`<small>${sub}</small>`:''}</div><div class="pwB">${btns}</div></div>`;
+const pwBtn=(a,t,pri,extra)=>`<button data-pw="${a}"${pri?' class="pri"':''}${extra||''}>${t}</button>`;
+/* paso 1: solar, calle, terreno, cierre, servicios y contadores */
+function pw1(){const s=SOL(),o=OB(),k=o.calle||{},L={n:'norte',s:'sur',e:'este',o:'oeste'};let h=`<p class="pwS">Primero el terreno tal como es: el solar, la calle, los desniveles y por dónde entran los servicios.</p>`;
+  h+=`<h3>El solar y la calle</h3>`;
+  h+=pwRow(!!s,'Forma, medidas y lindes',s?(()=>{try{const P=solPts(s),xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);return `${pf1(Math.max(...xs)-Math.min(...xs))} × ${pf1(Math.max(...ys)-Math.min(...ys))} m · separaciones a los lindes y zona edificable`}catch(e){return ''}})():'Todavía sin solar',pwBtn('sol',s?'Cambiar…':'Definir el solar',!s));
+  h+=pwRow(!!k.lado,'La calle',k.lado?`Al ${L[k.lado]||k.lado} · ${pf1(k.ancho??8)} m de ancho · acera de ${pf1(k.acera??1.5)} m${k.cota?` · a ${fmtZ(k.cota)} m`:''}`:'Elige en el solar qué lado da a la calle',pwBtn('sol',k.lado?'Cambiar…':'Elegir la calle',!k.lado&&!!s));
+  h+=`<h3>Cotas y desniveles</h3>`;const th=(()=>{try{return exHas()}catch(e){return false}})();
+  h+=pwRow(th,'El terreno',th?'Con cotas o pendientes: se ven las curvas de nivel':'Llano por ahora',pwBtn('med','Por medidas…',!th)+pwBtn('pend','Pendiente…')+pwBtn('ter','Cotas a mano…'));
+  h+=`<h3>Cierre del solar</h3>`;const nc=(o.cerr||[]).length;
+  h+=pwRow(nc>0,'Muro o valla a la calle',nc?`${nc} tramo${nc>1?'s':''} de cierre`:'Sin cierre: los contadores irán en la fachada',pwBtn('cerrS','Rodear el solar')+pwBtn('cerrD','Dibujarlo'));
+  h+=`<h3>Servicios: por dónde entran</h3><p class="hint">Toca primero en la calle, luego cada giro y por último donde entra en la casa.</p>`;
+  Object.entries(ACK).forEach(([kk,v])=>{const A=(o.acom||[]).filter(a=>a.k===kk),len=A.reduce((s2,a)=>s2+a.pts.reduce((t,p,i)=>i?t+Math.hypot(p[0]-a.pts[i-1][0],p[1]-a.pts[i-1][1]):t,0),0);
+    h+=pwRow(A.length>0,`<span style="color:${v[1]}">●</span> ${esc(v[0])}`,A.length?`${pf1(len)} m · ${esc(v[2])}`:esc(v[2]),pwBtn('acom',A.length?'Otra':'Dibujar',false,` data-v="${kk}"`))});
+  const C=ctrList();h+=`<h3>Puertas de los contadores</h3>`;
+  if(!C.length)h+=`<p class="hint">Cuando dibujes el agua, la luz, el gas o el teléfono, su armario aparece solo en el cierre del solar o, si no hay cierre, en la fachada que da a la calle.</p>`;
+  else{h+=`<label class="pwL">Dónde van<select data-pwc="on"><option value="auto"${(o.ctrOn||'auto')==='auto'?' selected':''}>Automático: en el cierre si lo hay, si no en la fachada</option><option value="cerr"${o.ctrOn==='cerr'?' selected':''}>En el cierre del solar</option><option value="fach"${o.ctrOn==='fach'?' selected':''}>En la fachada del edificio</option></select></label>`;
+    C.forEach(q=>{h+=pwRow(!!q.seg,esc(CTRK[q.k].t),q.seg?`${q.seg.on==='cerr'?'En el cierre':'En la fachada'} · ${fmt(CTRK[q.k].w)} × ${fmt(CTRK[q.k].h)} m · a ${pf1(q.u)} m de la esquina`:'No hay dónde ponerlo: falta el cierre o la fachada a la calle',
+      `<span class="pwN"><button data-pwm="${q.k}" data-d="-0.5" aria-label="Mover a un lado">◀</button><button data-pwm="${q.k}" data-d="0.5" aria-label="Mover al otro lado">▶</button></span>`)});
+    h+=`<p class="hint">Siempre quedan en el muro que da a la calle, para que se puedan leer desde fuera. Se ven en el plano y en el 3D.</p>`}
+  return h}
+/* paso 2: sótanos (todos iguales) y plantas */
+function pw2(){const nS=st.sot?(s2On()&&UGL().length?2:1):0,nP=Math.max(1,(st.n||1)-(st.sot?1:0)),c0=st.sot?contOf(0):null,r=RF();let h=`<p class="pwS">Primero los sótanos, todos iguales. Luego las plantas: cada una puede ser más pequeña o más grande que la de abajo.</p>`;
+  h+=`<h3>Sótanos</h3><div class="pwSeg">${[0,1,2].map(k=>`<button data-pws="${k}"${k===nS?' class="on"':''}>${k===0?'Sin sótano':k===1?'1 sótano':'2 sótanos'}</button>`).join('')}</div>`;
+  if(nS){h+=`<div class="pwG"><label>Altura de cada sótano (m)<input type="number" step="0.1" min="2.2" inputmode="decimal" data-pwh="0" value="${r2(floorH(0))}"></label></div>`;
+    h+=pwRow(!!c0,'Contorno de los sótanos',c0?`${pf1(c0.w)} × ${pf1(c0.h)} m${nS>1?' · el sótano 2 es igual':''}`:'Sin contorno',pwBtn('cs:pb','Igual que la planta baja')+pwBtn('cs:sol','Todo el solar')+pwBtn('cs:mano','Dibujarlo'));
+    h+=`<div class="pwG"><label>Ancho (m)<input id="pwSW" type="number" step="0.1" inputmode="decimal" value="${c0?c0.w:''}"></label><label>Largo (m)<input id="pwSH" type="number" step="0.1" inputmode="decimal" value="${c0?c0.h:''}"></label><button data-pw="cs:med">Aplicar medidas</button></div>`;
+    const I=(()=>{try{const A=[0,...(s2On()?s2Levels():[])].map(f=>ugExpo(f)).filter(Boolean);return{sides:A.flatMap(x=>x.sides)}}catch(e){return null}})(),md=r.modo;
+    h+=pwRow(!!md,'La parte que queda al aire',md==='relleno'?`Rellena con tierra del desmonte, hasta ${fmtZ(rfZ(r))} m, ${r.borde==='muro'?'con muro de contención':'en talud'}`:md==='vista'?'A la vista, con fachada hacia donde baja el terreno':(I&&I.sides.length?'Con el terreno de ahora, asoma por algún lado: elige qué hacer':'Con el terreno de ahora no asoma'),pwBtn('rf',md?'Cambiar…':'Elegir…',!md&&!!(I&&I.sides.length)))}
+  h+=`<h3>Plantas sobre el terreno</h3><div class="pwSeg">${[1,2,3,4].map(k=>`<button data-pwp="${k}"${k===nP?' class="on"':''}>${k}</button>`).join('')}</div>`;
+  for(let f=pbF();f<F();f++){if(typeof isGolf==='function'&&isGolf(f))continue;const c=contOf(f),dn=f===pbF()?(st.sot?contOf(0):null):contOf(f-1),nm=fname(f);
+    h+=pwRow(!!c,nm,c?`${pf1(c.w)} × ${pf1(c.h)} m · ${fmt(Math.round(c.w*c.h))} m²${dn&&(Math.abs(dn.w-c.w)>.05||Math.abs(dn.h-c.h)>.05)?(c.w*c.h>dn.w*dn.h?' · más grande que la de abajo':' · más pequeña que la de abajo'):''}`:'Sin contorno',
+      (dn?pwBtn('cp:'+f+':dn','Igual que la de abajo'):'')+pwBtn('cp:'+f+':mano','Dibujarla'));
+    h+=`<div class="pwG pwG2"><label>Ancho (m)<input id="pwW${f}" type="number" step="0.1" inputmode="decimal" value="${c?c.w:''}"></label><label>Largo (m)<input id="pwH${f}" type="number" step="0.1" inputmode="decimal" value="${c?c.h:''}"></label><button data-pw="cp:${f}:med">Aplicar</button></div>`}
+  h+=pwRow(true,'Cubierta y alturas de las plantas','Tejado o azotea, y las medidas habituales',pwBtn('casa','Abrir…'));return h}
+/* paso 3: dibujar en cada contorno */
+function pw3(){let h=`<p class="pwS">Elige una planta y dibuja dentro de su contorno lo que quieras: paredes, habitaciones, puertas, ventanas, escaleras… En el parking también puedes hacer cuartos, por ejemplo un trastero.</p><h3>¿En qué planta?</h3>`;
+  const L=[...(s2On()?s2Levels().slice().reverse():[]),...Array.from({length:F()},(_,i)=>i)].filter(f=>!(typeof isGolf==='function'&&isGolf(f)));
+  L.forEach(f=>{const c=contOf(f),nR=items.filter(i=>i.f===f&&i.t==='room').length,nPz=items.filter(i=>i.f===f&&i.t==='plaza').length,ug=f<=-10||(st.sot&&f===0);
+    h+=pwRow(nR>0||nPz>0,fname(f),c?`${pf1(c.w)} × ${pf1(c.h)} m · ${nR} habitaci${nR===1?'ón':'ones'}${nPz?` · ${nPz} plaza${nPz>1?'s':''}`:''}`:'Sin contorno: hazlo en el paso 2',
+      c?(pwBtn('go:'+f+':room','Habitación')+pwBtn('go:'+f+':wall','Pared')+(ug?pwBtn('go:'+f+':plaza','Plaza')+pwBtn('go:'+f+':tras','Trastero'):pwBtn('go:'+f+':door','Puerta'))):'')});
+  h+=`<p class="hint">Todo lo demás está en los menús de arriba: Dibujar, Huecos, Elementos, Instalaciones y Bajo tierra.</p>`;return h}
+/* paso 4: cimentación y estructura */
+function pw4(){const nPi=items.filter(i=>i.t==='pilar').length,o=OB();let C=null;try{C=cimCalc()}catch(e){}let h=`<p class="pwS">La app calcula la estructura a partir de los contornos. Puedes mover un pilar a mano en el plano y lo demás se ajusta.</p>`;
+  h+=`<h3>Estructura</h3>`+pwRow(nPi>0,'Pilares, vigas y forjados',nPi?`${nPi} pilar${nPi>1?'es':''} en total${(o.vig||[]).length?` · ${(o.vig||[]).length} vigas`:''}`:'Sin calcular',pwBtn('ea',nPi?'Volver a calcular…':'Calcular…',!nPi));
+  h+=`<h3>Cimentación</h3>`+pwRow(!!(C&&(C.zap.length||C.corr.length)),'Zapatas, losa y desmonte',C?(o.cim==='losa'&&C.losa?`Losa de ${pf1(C.losa.h)} m de canto`:`${C.zap.length} zapatas aisladas · ${C.corr.length} zapatas corridas · ${pf1(C.tot)} m³ de hormigón`):'Dibuja primero los contornos',pwBtn('cim','Ver el cálculo…'));
+  h+=`<h3>Ver y sacar los planos</h3>`+pwRow(true,'Estructura en 3D','Solo el esqueleto: cimentación, muros de sótano, pilares, vigas y forjados, planta por planta',pwBtn('e3','Ver en 3D',true))+pwRow(true,'Planos en papel','Cotas y replanteo, desmonte, cimentación y estructura de cada planta',pwBtn('sh','Abrir los planos…'));return h}
+/* ---------- acciones ---------- */
+/* sin contorno de referencia: en el centro de la zona edificable del solar */
+function pwBase(w,h){try{const R=sotInRect();if(R)return{x:(R.x0+R.x1)/2-w/2,y:(R.y0+R.y1)/2-h/2,w,h}}catch(e){}return{x:0,y:0,w,h}}
+function pwTool(f,t,msg){pasoClose();fl=f;try{tabs()}catch(e){}tool=t;sel=null;try{toolsUI()}catch(e){}note=msg||'';render()}
+function tcSet(nP,nS){/* plantas y sótanos con la lógica de «Tu casa» */dlgOpen();const dn=$('#dn'),ds=$('#dsot');if(!dn||!ds){$('#dlg').hidden=true;return}dn.value=nP;ds.value=nS===2?'sotano2':nS===1?'sotano':'';$('#dok').click();const d=$('#dlg');if(d&&$('#s2warn'))return;if(d)d.hidden=true;try{tabs()}catch(e){}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#pwP'))return;if(t.id==='pwP'){pasoClose();return}const b=t.closest('button');if(!b)return;
+  if(b.dataset.pws!=null){const k=+b.dataset.pws,cur=st.sot?(s2On()&&UGL().length?2:1):0;if(k===cur)return;
+    if(k<cur){const gone=k===0?[0,-10]:[-10];const busy=items.some(i=>gone.includes(i.f)&&i.t!=='cont');if(busy&&!b._sure){b._sure=1;note='Ese sótano tiene cosas dibujadas: al quitarlo se borran. Vuelve a pulsar para quitarlo';b.textContent='¿Seguro? Pulsa otra vez';render();return}
+      if(busy){push();items=items.filter(i=>!(gone.includes(i.f)&&i.t!=='cont'))}window._s2ok=1}
+    tcSet(Math.max(1,(st.n||1)-(st.sot?1:0)),k);window._s2ok=0;done();pasoBody();return}
+  if(b.dataset.pwp!=null){const k=+b.dataset.pwp,cur=Math.max(1,(st.n||1)-(st.sot?1:0));if(k===cur)return;if(k<cur){const top=k+(st.sot?1:0);const busy=items.some(i=>i.f>=top&&i.f<F()&&i.t!=='cont');if(busy&&!b._sure){b._sure=1;b.textContent='¿Seguro?';note='Las plantas que quitas tienen cosas dibujadas: se borran. Pulsa otra vez';render();return}}
+    tcSet(k,st.sot?(s2On()&&UGL().length?2:1):0);for(let f=pbF()+1;f<F();f++)if(!contOf(f)&&contOf(f-1)){const q=contOf(f-1);sotSet(f,q.x,q.y,q.w,q.h)}done();pasoBody();return}
+  if(b.dataset.pwm){const o=OB();o.ctrU=o.ctrU||{};const q=ctrList().find(x=>x.k===b.dataset.pwm);if(!q||!q.seg)return;push();o.ctrU[q.k]=r2(Math.max(.2,Math.min(q.seg.L-.2,q.u+(+b.dataset.d))));done();pasoBody();return}
+  const a=b.dataset.pw;if(!a)return;
+  if(a==='x'){pasoClose();return}
+  if(a==='sol'){pasoClose();if(!SOL()){push();st.solar=solNew();solSync();done()}solOpen();return}
+  if(a==='med'){pasoClose();exOpen();EX.tool='med';EX.sel=null;exUI();exRender();return}
+  if(a==='pend'){pasoClose();exOpen();EX.tool='pend';EX.sel=null;exUI();exRender();return}
+  if(a==='ter'){pasoClose();exOpen();return}
+  if(a==='cerrS'){cerrSolar('murete');pasoBody();return}
+  if(a==='cerrD'){pasoClose();obTool('cerr','murete');return}
+  if(a==='acom'){pasoClose();fl=pbF();try{tabs()}catch(er){}obTool('acom',b.dataset.v);return}
+  if(a==='rf'){pasoClose();rfOpen();return}
+  if(a==='casa'){pasoClose();dlgOpen();return}
+  if(a==='ea'){pasoClose();eaOpen();return}if(a==='cim'){pasoClose();cimCalcOpen();return}if(a==='sh'){pasoClose();shOpen();return}if(a==='e3'){pasoClose();stOpen3D();return}
+  if(a.startsWith('cs:')){const k=a.slice(3);if(k==='pb'){const q=contOf(pbF());if(q)sotSet(0,q.x,q.y,q.w,q.h)}else if(k==='sol'){const R=sotInRect(),E=(SD().ext||.3)/2;if(R)sotSet(0,R.x0+E,R.y0+E,R.x1-R.x0-2*E,R.y1-R.y0-2*E)}else if(k==='med'){const w=+String($('#pwSW').value).replace(',','.'),hh=+String($('#pwSH').value).replace(',','.');if(!(w>0&&hh>0))return;const c=contOf(0)||contOf(pbF())||pwBase(w,hh);sotSet(0,c.x+(c.w-w)/2,c.y+(c.h-hh)/2,w,hh)}
+    else if(k==='mano'){pasoClose();push();items=items.filter(i=>!(i.t==='cont'&&(i.f===0||i.f<=-10)));fl=0;tabs();tool='cont';sel=null;note='Arrastra en el plano para dibujar el contorno de los sótanos (el sótano 2 será igual)';try{toolsUI()}catch(er){}done();return}
+    st.s2link=true;done();pasoBody();return}
+  if(a.startsWith('cp:')){const[,fs,k]=a.split(':'),f=+fs;if(k==='dn'){const q=f===pbF()?contOf(0):contOf(f-1);if(q)sotSet(f,q.x,q.y,q.w,q.h)}else if(k==='med'){const w=+String($('#pwW'+f).value).replace(',','.'),hh=+String($('#pwH'+f).value).replace(',','.');if(!(w>0&&hh>0))return;const c=contOf(f)||contOf(f-1)||contOf(0)||pwBase(w,hh);sotSet(f,c.x+(c.w-w)/2,c.y+(c.h-hh)/2,w,hh)}
+    else if(k==='mano'){pasoClose();push();items=items.filter(i=>!(i.t==='cont'&&i.f===f));fl=f;tabs();tool='cont';sel=null;note='Arrastra en el plano para dibujar el contorno de '+fname(f).toLowerCase();try{toolsUI()}catch(er){}done();return}pasoBody();return}
+  if(a.startsWith('go:')){const[,fs,k]=a.split(':'),f=+fs;if(k==='tras'){pwTool(f,'room','Dibuja el trastero arrastrando dentro del parking; luego ponle el nombre «Trastero» en el panel');window._pwTras={f,n0:nid};return}
+    pwTool(f,k,{room:'Arrastra para dibujar la habitación',wall:'Toca el principio y el final de la pared',plaza:'Toca donde va cada plaza',door:'Toca una pared para poner la puerta'}[k]);return}});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#pwP'))return;
+  if(t.dataset.pwh!=null){const v=parseFloat(String(t.value).replace(',','.'));if(!(v>=2.2&&v<=6)){pasoBody();return}push();if(!st.fhs)st.fhs={};st.fhs[0]=r2(v);done();pasoBody();return}
+  if(t.dataset.pwc==='on'){push();OB().ctrOn=t.value;done();pasoBody()}});
+/* el trastero sale con su nombre */
+{const _doneTR=done;done=function(){try{if(window._pwTras){const T=window._pwTras,R=items.filter(i=>i.f===T.f&&i.t==='room'&&i.id>=T.n0);if(R.length){R[R.length-1].name='Trastero';window._pwTras=null}}}catch(e){}return _doneTR.apply(this,arguments)}}
+/* ---------- los contadores en el muro de la calle ---------- */
+function ctrSegs(){const o=OB(),on=o.ctrOn||'auto',S=[];const near=(x,y)=>{try{return rxCalleD(x,y)}catch(e){return 99}};
+  const fromCerr=()=>{(o.cerr||[]).forEach(c=>{try{cerrSegs(c).forEach(([a,b],i)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<1)return;S.push({on:'cerr',a,b,L,d:near((a[0]+b[0])/2,(a[1]+b[1])/2),th:((CERR[c.t]||[])[2])||.2,c:c.id,i})})}catch(e){}})};
+  const fromFach=()=>{const c=contOf(pbF());if(!c)return;const E=(SD().ext||.3)/2,x0=c.x-E,y0=c.y-E,x1=c.x+c.w+E,y1=c.y+c.h+E;[[[x0,y0],[x1,y0]],[[x1,y0],[x1,y1]],[[x1,y1],[x0,y1]],[[x0,y1],[x0,y0]]].forEach(([a,b])=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]);S.push({on:'fach',a,b,L,d:near((a[0]+b[0])/2,(a[1]+b[1])/2),th:0})})};
+  if(on==='cerr'||(on==='auto'&&(o.cerr||[]).length))fromCerr();if(on==='fach'||(on==='auto'&&!S.length))fromFach();
+  const m=Math.min(...S.map(s=>s.d));return S.filter(s=>s.d<=m+.5).sort((p,q)=>p.d-q.d)}
+function ctrList(){const o=OB(),ks=['elec','agua','gas','tel'].filter(k=>(o.acom||[]).some(a=>a.k===k));if(!ks.length)return[];const S=ctrSegs(),seg=S[0]||null;if(!seg)return ks.map(k=>({k,seg:null,u:0}));
+  const ux=(seg.b[0]-seg.a[0])/seg.L,uy=(seg.b[1]-seg.a[1])/seg.L;let used=[];return ks.map(k=>{const a=(o.acom||[]).find(q=>q.k===k),p=a.pts[0];let u=(o.ctrU&&o.ctrU[k]!=null)?o.ctrU[k]:((p[0]-seg.a[0])*ux+(p[1]-seg.a[1])*uy);const w=CTRK[k].w;u=Math.max(w/2+.1,Math.min(seg.L-w/2-.1,u));
+    if(!(o.ctrU&&o.ctrU[k]!=null)){let t=0;while(used.some(([c,ww])=>Math.abs(c-u)<(ww+w)/2+.15)&&t<40){u=Math.min(seg.L-w/2-.1,u+.2);t++}}used.push([u,w]);return{k,seg,u,ux,uy}})}
+/* en el plano */
+{const _obPlanCT=obPlanSVG;obPlanSVG=function(){let h=_obPlanCT.apply(this,arguments);try{if(!isMod()||!(fl===pbF()||fl===0||fl===-2))return h;const S=view.s,o=OB();ctrList().forEach(q=>{if(!q.seg)return;const K=CTRK[q.k],col=(ACK[q.k]||ACK.agua)[1],cx=q.seg.a[0]+q.ux*q.u,cy=q.seg.a[1]+q.uy*q.u,ang=Math.atan2(q.uy,q.ux)*180/Math.PI,w=K.w*S,d=Math.max(6,.3*S);
+  h+=`<g pointer-events="none" transform="translate(${cx*S} ${cy*S}) rotate(${ang})"><rect x="${-w/2}" y="${-d/2}" width="${w}" height="${d}" fill="#fff" stroke="${col}" stroke-width="2"/><text y="3" text-anchor="middle" style="font-size:9px;font-weight:700;fill:${col}">${(ACK[q.k]||ACK.agua)[3]}</text></g>`;
+  h+=`<text class="dm" x="${cx*S}" y="${cy*S-d-4}" text-anchor="middle" style="fill:${col};font-size:10px;paint-order:stroke;stroke:var(--bg);stroke-width:3px">${esc(K.t.split(' ')[0]==='Caja'?'Contador de luz':K.t)}</text>`})}catch(e){console.warn(e)}return h}}
+/* en el 3D del edificio */
+{const _bldCT=bldAll3;bldAll3=function(){const B=_bldCT.apply(this,arguments);try{if(!isMod()||!window.THREE||!B||!B.sc)return B;const T=THREE,zg=st.sot?rasante():0;ctrList().forEach(q=>{if(!q.seg)return;const K=CTRK[q.k],cx=q.seg.a[0]+q.ux*q.u,cz=q.seg.a[1]+q.uy*q.u;let nx=-q.uy,nz=q.ux;try{if(rxCalleD(cx+nx*.5,cz+nz*.5)>rxCalleD(cx-nx*.5,cz-nz*.5)){nx=-nx;nz=-nz}}catch(e){}
+  const off=(q.seg.th||.3)/2+.02,g=new T.Group(),fr=new T.Mesh(new T.BoxGeometry(K.w+.06,K.h+.06,.04),new T.MeshLambertMaterial({color:'#8d9499'})),dr=new T.Mesh(new T.BoxGeometry(K.w,K.h,.05),new T.MeshPhongMaterial({color:'#d9dcdf',shininess:30}));dr.position.z=.01;g.add(fr);g.add(dr);
+  const lb=new T.Mesh(new T.BoxGeometry(K.w*.35,.06,.06),new T.MeshLambertMaterial({color:(ACK[q.k]||ACK.agua)[1]}));lb.position.set(0,K.h*.3,.04);g.add(lb);g.position.set(cx+nx*off,zg+K.z+K.h/2,cz+nz*off);g.rotation.y=Math.atan2(nx,nz);B.sc.add(g)})}catch(e){console.warn('ctr3D',e)}return B}}
+
+/* ---------- la estructura sola en 3D ---------- */
+let STB3=null;
+function stBuild3(){const T=THREE,sc=new T.Scene();sc.background=new T.Color('#eef1f4');sc.add(new T.HemisphereLight(0xffffff,0x8a8f96,.9));const dl=new T.DirectionalLight(0xffffff,.8);dl.position.set(30,60,20);sc.add(dl);
+  const o=OB(),E=SD().ext||.3,M={hor:new T.MeshLambertMaterial({color:'#b9bcbf'}),cim:new T.MeshLambertMaterial({color:'#8f8a80'}),pil:new T.MeshLambertMaterial({color:'#a6a9ad'}),vig:new T.MeshLambertMaterial({color:'#9aa0a6'}),forj:new T.MeshLambertMaterial({color:'#cfd2d5',transparent:true,opacity:.85}),muro:new T.MeshLambertMaterial({color:'#b3b0a8',transparent:true,opacity:.55}),gr:new T.MeshLambertMaterial({color:'#7cb342',transparent:true,opacity:.18,side:T.DoubleSide})};
+  const G={},grp=k=>{if(!G[k]){G[k]=new T.Group();G[k].userData.lv=k;sc.add(G[k])}return G[k]};
+  const box=(g,w,h,d,m,x,y,z,ry)=>{if(w<=0||h<=0||d<=0)return;const me=new T.Mesh(new T.BoxGeometry(w,h,d),m);me.position.set(x,y,z);if(ry)me.rotation.y=ry;g.add(me);const ed=new T.LineSegments(new T.EdgesGeometry(me.geometry),new T.LineBasicMaterial({color:'#5f646a'}));ed.position.copy(me.position);ed.rotation.copy(me.rotation);g.add(ed)};
+  const bar=(g,x1,y1,x2,y2,w,h,zt,m)=>{const L=Math.hypot(x2-x1,y2-y1);if(L<.05)return;box(g,L,h,w,m,(x1+x2)/2,zt-h/2,(y1+y2)/2,-Math.atan2(y2-y1,x2-x1))};
+  const L=(typeof f3List==='function'?f3List(F()):Array.from({length:F()},(_,i)=>i)).filter(f=>contOf(f)&&!(typeof isGolf==='function'&&isGolf(f)));let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9,zMax=0,zMin=0;
+  /* cimentación bajo el nivel más bajo */
+  try{const zt=zFoundTop(),g=grp('cim');(cimEls()||[]).forEach(e=>{const h=Math.max(.25,e.c||.5);if(e.k==='losa'||e.k==='zap')box(g,e.w,h,e.h,M.cim,e.x+e.w/2,zt-h/2,e.y+e.h/2);else bar(g,e.x1,e.y1,e.x2,e.y2,e.w,h,zt,M.cim)});zMin=Math.min(zMin,zt-1)}catch(e){console.warn('cim3',e)}
+  L.forEach((f,i)=>{const c=contOf(f),z0=floorZ(f),H=floorH(f),g=grp(f),ug=f<=-10||(st.sot&&f===0),fj=(o.forj||{})[f],cf=(fj&&fj.c)||(FJT&&FJT[(fj&&fj.t)||'viguetas']?FJT[(fj&&fj.t)||'viguetas'][1]:.3);
+    bx0=Math.min(bx0,c.x-E);by0=Math.min(by0,c.y-E);bx1=Math.max(bx1,c.x+c.w+E);by1=Math.max(by1,c.y+c.h+E);zMax=Math.max(zMax,z0+H);zMin=Math.min(zMin,z0);
+    if(i===0)box(g,c.w+E,.15,c.h+E,M.hor,c.x+c.w/2,z0-.075,c.y+c.h/2);
+    if(ug){const t=Math.max(.25,E);[[c.x-t/2,c.y-t/2,c.x+c.w+t/2,c.y-t/2],[c.x-t/2,c.y+c.h+t/2,c.x+c.w+t/2,c.y+c.h+t/2],[c.x-t/2,c.y-t/2,c.x-t/2,c.y+c.h+t/2],[c.x+c.w+t/2,c.y-t/2,c.x+c.w+t/2,c.y+c.h+t/2]].forEach(([a,b2,d,e2])=>bar(g,a,b2,d,e2,t,H-cf,z0+H-cf,M.muro))}
+    items.filter(p=>p.t==='pilar'&&p.f===f).forEach(p=>box(g,p.w||.3,H-cf,p.h||.3,M.pil,p.x+(p.w||.3)/2,z0+(H-cf)/2,p.y+(p.h||.3)/2));
+    (o.vig||[]).filter(v=>v.f===f).forEach(v=>bar(g,v.x1,v.y1,v.x2,v.y2,v.b||.3,v.c||cf,z0+H,M.vig));
+    box(g,c.w+E,cf,c.h+E,M.forj,c.x+c.w/2,z0+H-cf/2,c.y+c.h/2)});
+  if(bx0>bx1){bx0=0;by0=0;bx1=10;by1=10}
+  /* el nivel del terreno, transparente */try{const zg=st.sot?rasante():0,m=4,pl=new T.Mesh(new T.PlaneGeometry(bx1-bx0+2*m,by1-by0+2*m),M.gr);pl.rotation.x=-Math.PI/2;pl.position.set((bx0+bx1)/2,zg-.01,(by0+by1)/2);pl.userData.lv='terr';sc.add(pl)}catch(e){}
+  const B={sc,I:{x0:bx0-2,y0:by0-2,x1:bx1+2,y1:by1+2},H:zMax-zMin,G,levels:L,stView:1};STB3=B;return B}
+{const _b3ST=build3;build3=function(R){if(R&&R.stView&&window.THREE)return stBuild3(R);return _b3ST.apply(this,arguments)}}
+function stOpen3D(){if(!contOf(pbF())&&!contOf(0)){note='Dibuja primero los contornos (paso 2)';return render()}open3D({stView:1,name:'Estructura'});const tryB=n=>{const fb=$('#v3d .fb');if(!STB3||!fb){if(n<60)setTimeout(()=>tryB(n+1),150);return}$('#v3st')&&$('#v3st').remove();
+  const L=STB3.levels||[];fb.insertAdjacentHTML('beforeend',`<span id="v3st" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button data-v3s="all" aria-pressed="true">Todo</button><button data-v3s="cim">Solo cimentación</button>${L.map(f=>`<button data-v3s="${f}">${esc(fname(f))}</button>`).join('')}</span>`);['#v3eye','#v3roof'].forEach(q=>{const b=$(q);if(b)b.hidden=true})};setTimeout(()=>tryB(0),200)}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-v3s]');if(!b||!STB3)return;const k=b.dataset.v3s,G=STB3.G,L=STB3.levels||[];
+  document.querySelectorAll('[data-v3s]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  if(k==='all')Object.values(G).forEach(g=>g.visible=true);else if(k==='cim')Object.entries(G).forEach(([kk,g])=>g.visible=kk==='cim');else{const f=+k,ix=L.indexOf(f);Object.entries(G).forEach(([kk,g])=>{g.visible=kk==='cim'||(L.indexOf(+kk)>-1&&L.indexOf(+kk)<=ix)})}});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'){STB3=null;const s=$('#v3st');if(s)s.remove();['#v3eye','#v3roof'].forEach(q=>{const b=$(q);if(b)b.hidden=false})}},true);
+
+/* ---------- quitar lo repetido ---------- */
+/* el sótano ya no se pregunta en «Tu casa», ni en el panel, ni en el menú: está en el paso 2 */
+{const cs=document.createElement('style');cs.textContent=`#sotChip,#sotPB,#dsotl,#dbig{display:none!important}label:has(>#dn){display:none!important}label:has(>#dbig),label:has(>#dg){display:none!important}
+.pop button[data-sotco],.pop button[data-rfo]{display:none!important}
+#pasos{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:0 2px 10px #0002;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
+#pasos button{display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:9px;padding:6px 10px;font-size:14px;white-space:nowrap;color:var(--ink)}
+#pasos button span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);font-size:12px;font-weight:700}
+#pasos button.ok span{background:#3a8a5a;border-color:#3a8a5a;color:#fff}#pasos button.on{background:var(--acc);color:#fff}#pasos button.on span{border-color:#fff;color:#fff;background:transparent}#pasos i{color:var(--mute);font-style:normal}
+@media (max-width:560px){#pasos button{padding:6px 7px;font-size:13px;gap:4px}#pasos i{display:none}}
+#pwP{position:fixed;inset:0;z-index:80;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px}
+#pwP .card{max-width:620px;width:100%;max-height:92vh;overflow:auto;font-size:16px;line-height:1.45;padding:0 18px 16px}
+#pwP .pwH{position:sticky;top:0;background:var(--panel);display:flex;align-items:center;gap:8px;padding:14px 0 10px;font-size:18px;border-bottom:1px solid var(--line);z-index:1}#pwP .pwH b{color:var(--acc)}#pwP .pwH button{margin-left:auto;font-size:16px;padding:4px 10px}
+#pwP h3{font-size:17px;margin:16px 0 6px}#pwP .pwS{margin:10px 0 0;color:var(--mute)}#pwP .hint{font-size:14px}
+#pwP .pwR{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin:6px 0;flex-wrap:wrap}#pwP .pwR.ok{border-left:5px solid #3a8a5a}
+#pwP .pwI{font-weight:700;width:18px;color:var(--mute)}#pwP .pwR.ok .pwI{color:#3a8a5a}#pwP .pwT{flex:1;min-width:180px}#pwP .pwT small{display:block;color:var(--mute);font-size:14px}
+#pwP .pwB{display:flex;gap:6px;flex-wrap:wrap}#pwP button{font-size:15px;padding:7px 12px}#pwP button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+#pwP .pwSeg{display:flex;gap:6px;flex-wrap:wrap}#pwP .pwSeg button{min-width:56px}#pwP .pwSeg button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#pwP .pwG{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:4px 0 8px 28px}#pwP .pwG label{margin:0;font-size:14px}#pwP .pwG input{width:110px;font-size:16px}#pwP .pwL{font-size:15px}#pwP .pwL select{font-size:15px}
+#pwP .pwN{display:flex;gap:4px}#pwP .bt{display:flex;justify-content:space-between;gap:8px;margin-top:16px;flex-wrap:wrap}#pwP .bt .pri{margin-left:auto}`;document.head.appendChild(cs)}
+/* «Tu casa» pasa a ser «Cubierta y alturas» */
+(function(){const b=$('#casa');if(b)b.textContent='Cubierta y alturas';const h=$('#dlg h2');if(h)h.textContent='Cubierta y alturas';const p=$('#dlg .hint');if(p)p.textContent='Cuántas plantas y sótanos hay se elige en el paso 2 · Contornos.'})();
+{const _dlgOpenPW=dlgOpen;dlgOpen=function(){const r=_dlgOpenPW.apply(this,arguments);try{const h=$('#dlg h2');if(h)h.textContent='Cubierta y alturas'}catch(e){}return r}}
+/* en el panel Obra, el sótano tampoco se pregunta */
+{const _obraHTMLPW=obraHTML;obraHTML=function(){let h=_obraHTMLPW.apply(this,arguments);try{if(!isMod())return h;h=h.replace(/<label>Bajo la planta baja<select data-ob="apoyo"[\s\S]*?<\/select><\/label>/,st.sot?'<p class="hint"><b>Con sótano.</b> Los sótanos se eligen en el paso 2 · Contornos.</p>':m=>m.replace(/<option value="sotano"[^>]*>[^<]*<\/option>/,'')+'<p class="hint">Para poner sótano, ve al paso 2 · Contornos.</p>')}catch(e){}return h}}
+/* «Sótanos y terreno»: ya no pregunta si son iguales (lo son siempre) */
+{const _rfBodyPW=rfBody;rfBody=function(){_rfBodyPW.apply(this,arguments);try{const P=$('#rfP');if(!P)return;const c=P.querySelector('.card');const ck=c.querySelector('[data-rf="link"]');if(ck){const op=ck.closest('.op'),h3=op&&op.previousElementSibling,hn=op&&op.nextElementSibling;[h3,op,hn].forEach(x=>{if(x&&(x.tagName==='H3'||x===op||(x.classList&&x.classList.contains('hint'))))x.remove()})}
+  c.querySelectorAll('h3').forEach(h=>{h.textContent=h.textContent.replace(/^\d+\.\s*/,'')});const h2=c.querySelector('h2');if(h2)h2.textContent='La parte del sótano que queda al aire';const ok=c.querySelector('[data-rf="ok"]');if(ok&&!c.querySelector('[data-paso="2"]'))ok.insertAdjacentHTML('afterend','<button data-paso="2">Volver al paso 2</button>')}catch(e){}}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#rfP [data-paso]');if(b){const P=$('#rfP');if(P)P.remove()}},true);
+/* el aviso del sótano lleva al paso 2 */
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#ugw [data-rfo]');if(!b)return;e.stopImmediatePropagation();pasoOpen(2)},true);
+/* siempre iguales */
+try{if(st&&st.s2link===false)st.s2link=true}catch(e){}
+{const _lpPW=loadProj;loadProj=function(){const r=_lpPW.apply(this,arguments);try{if(st.s2link===false)st.s2link=true}catch(e){}return r}}
+/* proyecto nuevo: empieza por el paso 1 en vez de «Tu casa» */
+document.addEventListener('click',e=>{const g=e.target&&e.target.closest&&e.target.closest('#iniGo');if(!g)return;setTimeout(()=>{try{if(!isMod())return;const d=$('#dlg');if(d)d.hidden=true;st.paso=1;save();pasoOpen(1)}catch(er){}},700)},true);
+try{render()}catch(e){}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
