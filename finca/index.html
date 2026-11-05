@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Finca · versión 5 nov 2026 · app separada de la obra nueva</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Finca · versión 5 nov 2026 · solo lo de época, sin lo de obra nueva</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12359,6 +12359,10 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 (function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-rfo]'))return;const b=document.createElement('button');b.className='ug';b.dataset.rfo='1';b.textContent='Sótanos y terreno: a la vista o relleno…';const ref=m.pop.querySelector('[data-sotco]');if(ref&&ref.nextSibling)m.pop.insertBefore(b,ref.nextSibling);else m.pop.appendChild(b)}catch(e){}})();
 {const _rRFm=render;render=function(){const r=_rRFm.apply(this,arguments);try{document.querySelectorAll('button[data-rfo]').forEach(b=>{if(b.closest('#ugw')||b.closest('#sotCP'))return;b.style.display=isSotF(fl)?'':'none'})}catch(e){}return r}}
 try{done()}catch(e){}
+
+/* ---------- solo lo de Finca: fuera lo de obra nueva ---------- */
+{const cs=document.createElement('style');cs.textContent=`[data-pso],[data-tool="plaza"],[data-tool="rampa"],[data-tool="monta"],[data-rxo],[data-sotco],[data-rfo]{display:none!important}`;document.head.appendChild(cs)}
+{const _obraHTMLFI=obraHTML;obraHTML=function(){let h=_obraHTMLFI.apply(this,arguments);try{h=h.replace(/<label>[^<]*<select data-ob="epoca"[\s\S]*?<\/select><\/label>/,'')}catch(e){}return h}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
