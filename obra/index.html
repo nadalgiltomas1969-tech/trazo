@@ -306,6 +306,9 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
   <div id="pio" hidden style="margin-top:10px"><label>Texto del proyecto (copia este texto para guardarlo, o pega aquí uno para importarlo)<textarea id="ptxt" rows="5" style="width:100%;box-sizing:border-box;font:12px monospace;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px"></textarea></label><div class="row"><button id="pcopy">Copiar</button><button id="ptxtimp">Importar este texto</button></div></div>
   <div class="row"><button id="pimpt">Importar pegando texto</button><button id="pclose">Cerrar</button></div>
 </div></div>
+<script>/* aviso de errores: si algo falla, se ve el motivo para poder arreglarlo */
+(function(){const L=[];function show(m){try{L.push(String(m).slice(0,300));let b=document.getElementById('errBox');if(!b){b=document.createElement('div');b.id='errBox';b.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:999;background:#fdecea;color:#8a1c14;border:2px solid #c0392b;border-radius:10px;padding:10px 12px;font:14px/1.4 system-ui;max-height:40vh;overflow:auto';document.body.appendChild(b)}b.innerHTML='<b>Trazo ha tenido un fallo.</b> Haz una captura de este recuadro y mándasela a Claude.<pre style="white-space:pre-wrap;font:12px monospace;margin:6px 0 0">'+L.slice(-6).map(x=>x.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c])).join('\n')+'</pre><button onclick="this.parentNode.remove()" style="margin-top:6px">Cerrar</button>'}catch(e){}}
+addEventListener('error',e=>show((e.message||'error')+' · línea '+(e.lineno||'?')+(e.error&&e.error.stack?'\n'+String(e.error.stack).split('\n').slice(0,3).join('\n'):'')));addEventListener('unhandledrejection',e=>show('Promesa: '+(e.reason&&(e.reason.message||e.reason))));const ow=console.warn;console.warn=function(...a){try{const er=a.find(x=>x instanceof Error);if(er&&!/IDB|IndexedDB|quota/i.test(String(er.message)))show((a.find(x=>typeof x==='string')||'')+' '+er.message+'\n'+String(er.stack||'').split('\n').slice(0,3).join('\n'))}catch(e){}return ow.apply(console,a)}})();</script>
 <script>
 const $=s=>document.querySelector(s),svg=$('#cv');
 let st={n:0,golfas:false,mode:'uno',mat:'teja'},items=[],rp={},sel=null,tool='cont',fl=0,view={s:60,ox:30,oy:30},draft=null,drag=null,undo=[],nid=1,note='',warn=0;
@@ -12546,7 +12549,7 @@ document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'){STB3=nul
 
 /* ---------- quitar lo repetido ---------- */
 /* el sótano ya no se pregunta en «Tu casa», ni en el panel, ni en el menú: está en el paso 2 */
-{const cs=document.createElement('style');cs.textContent=`#sotChip,#sotPB,#dsotl,#dbig{display:none!important}label:has(>#dn){display:none!important}label:has(>#dbig),label:has(>#dg){display:none!important}
+{const cs=document.createElement('style');cs.textContent=`#sotChip,#sotPB,#dsotl,#dbig,#alasDock{display:none!important}label:has(>#dn){display:none!important}label:has(>#dbig),label:has(>#dg){display:none!important}
 .pop button[data-sotco],.pop button[data-rfo]{display:none!important}
 #pasos{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:0 2px 10px #0002;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
 #pasos button{display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:9px;padding:6px 10px;font-size:14px;white-space:nowrap;color:var(--ink)}
