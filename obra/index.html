@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · los cuatro pasos: solar, contornos, dibujar y estructura</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · tabiques con la cruz, flechas e Intro</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12549,6 +12549,81 @@ try{if(st&&st.s2link===false)st.s2link=true}catch(e){}
 /* proyecto nuevo: empieza por el paso 1 en vez de «Tu casa» */
 document.addEventListener('click',e=>{const g=e.target&&e.target.closest&&e.target.closest('#iniGo');if(!g)return;setTimeout(()=>{try{if(!isMod())return;const d=$('#dlg');if(d)d.hidden=true;st.paso=1;save();pasoOpen(1)}catch(er){}},700)},true);
 try{render()}catch(e){}
+
+/* ===================== TABIQUES Y MUROS CON LA CRUZ ===================== */
+/* tocas para poner la cruz, la mueves con las flechas, Intro fija el inicio, Intro otra vez crea el tabique y sigue desde su final */
+let XW=null;
+const XWT=[['tab','Tabique'],['int','Muro interior'],['ext','Muro exterior'],['otro','Otro grosor']];
+const XWD={e:[1,0,'→ derecha'],w:[-1,0,'← izquierda'],s:[0,1,'↓ abajo'],n:[0,-1,'↑ arriba']};
+function xwTh(){const k=XW.tk||'tab';if(k==='otro')return Math.max(.03,(+XW.thc||10)/100);return SD()[k]||.1}
+/* caras de paredes alrededor de un punto: contorno, habitaciones y muros */
+function xwFaces(f){const V=[],H=[];const c=contOf(f);const addR=(x,y,w,h)=>{V.push([x,y,y+h],[x+w,y,y+h]);H.push([y,x,x+w],[y+h,x,x+w])};if(c)addR(c.x,c.y,c.w,c.h);
+  items.forEach(it=>{if(it.f!==f)return;if(it.t==='room')addR(it.x,it.y,it.w,it.h);else if(it.t==='wall'){const t=(it.th||.1)/2;if(Math.abs(it.x1-it.x2)<.01){const y0=Math.min(it.y1,it.y2),y1=Math.max(it.y1,it.y2);V.push([it.x1-t,y0,y1],[it.x1+t,y0,y1])}else if(Math.abs(it.y1-it.y2)<.01){const x0=Math.min(it.x1,it.x2),x1=Math.max(it.x1,it.x2);H.push([it.y1-t,x0,x1],[it.y1+t,x0,x1])}}});return{V,H}}
+function xwDist(f,x,y){const{V,H}=xwFaces(f),e=1e-3;let L=null,R=null,U=null,D=null;
+  V.forEach(([vx,a,b])=>{if(y<a-e||y>b+e)return;if(vx<x-e&&(L==null||x-vx<L))L=x-vx;if(vx>x+e&&(R==null||vx-x<R))R=vx-x});
+  H.forEach(([hy,a,b])=>{if(x<a-e||x>b+e)return;if(hy<y-e&&(U==null||y-hy<U))U=y-hy;if(hy>y+e&&(D==null||hy-y<D))D=hy-y});return{L,R,U,D}}
+function xwStart(){if(XW)return;const c=contOf(fl);let p;try{const q=center();p=[r2(q.x),r2(q.y)]}catch(e){p=c?[c.x+c.w/2,c.y+c.h/2]:[0,0]}if(c){p[0]=Math.max(c.x,Math.min(c.x+c.w,p[0]));p[1]=Math.max(c.y,Math.min(c.y+c.h,p[1]))}
+  XW={f:fl,p,s:null,step:.1,tk:'tab',thc:10};document.body.classList.add('xwon');try{KB.on=false}catch(e){}note='Toca donde empieza el tabique, ajusta con las flechas y pulsa Intro';xwUI()}
+function xwStop(){XW=null;document.body.classList.remove('xwon');const w=$('#xwP');if(w)w.remove()}
+function xwLen(){return XW.s?Math.hypot(XW.p[0]-XW.s[0],XW.p[1]-XW.s[1]):0}
+function xwDir(){if(!XW.s)return 'e';const dx=XW.p[0]-XW.s[0],dy=XW.p[1]-XW.s[1];if(Math.abs(dx)<1e-6&&Math.abs(dy)<1e-6)return XW.dir||'e';if(Math.abs(dy)<1e-6)return dx>0?'e':'w';if(Math.abs(dx)<1e-6)return dy>0?'s':'n';return 'ang'}
+function xwAng(){if(!XW.s)return 0;return Math.round(Math.atan2(XW.p[1]-XW.s[1],XW.p[0]-XW.s[0])*1800/Math.PI)/10}
+function xwSetLD(L,dir,ang){const s=XW.s;if(!s)return;let ux,uy;if(dir==='ang'){const a=(ang||0)*Math.PI/180;ux=Math.cos(a);uy=Math.sin(a)}else{[ux,uy]=XWD[dir];XW.dir=dir}XW.p=[r2(s[0]+ux*L),r2(s[1]+uy*L)]}
+function xwMove(dx,dy){XW.p=[Math.round((XW.p[0]+dx)*100)/100,Math.round((XW.p[1]+dy)*100)/100];if(XW.s){const d=xwDir();if(d!=='ang')XW.dir=d}xwUI();render()}
+function xwFix(){if(!XW.s){XW.s=XW.p.slice();XW.dir=XW.dir||'e';xwSetLD(1,XW.dir);note='Inicio fijado. Ahora el largo y la dirección: flechas o la ventana, e Intro para crear';xwUI();render();return}
+  const L=xwLen();if(L<.05){note='El tabique necesita un largo mayor que 0';render();return}
+  const it={id:nid,t:'wall',f:XW.f,x1:r2(XW.s[0]),y1:r2(XW.s[1]),x2:r2(XW.p[0]),y2:r2(XW.p[1]),th:r2(xwTh())};
+  {const c=contOf(XW.f),o=(x,y)=>c&&(x<c.x-.01||x>c.x+c.w+.01||y<c.y-.01||y>c.y+c.h+.01);if(o(it.x1,it.y1)||o(it.x2,it.y2)){const D=xwDist(XW.f,XW.s[0],XW.s[1]),d=xwDir(),mx={e:D.R,w:D.L,s:D.D,n:D.U}[d];note='El tabique se sale del contorno'+(mx!=null?`: en esa dirección caben como mucho ${fmt(r2(mx))} m`:'');render();return}}
+  if(viol(it)){note=lastWhy;render();return}push();nid++;items.push(it);note=`${XW.tk==='tab'?'Tabique':'Muro'} de ${fmt(r2(L))} m creado. Sigue desde su final, o Esc para terminar`;
+  const d=XW.dir;XW.s=XW.p.slice();xwSetLD(1,d==='e'||d==='w'?'s':'e');done();xwUI()}
+function xwBack(){if(XW.s){XW.p=XW.s.slice();XW.s=null;note='Mueve otra vez el inicio';xwUI();render()}else{xwStop();tool='select';toolsUI();render()}}
+/* ventana */
+function xwUI(){if(!XW)return;let w=$('#xwP');if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="xwP" role="dialog" aria-label="Tabique con la cruz"></div>');w=$('#xwP')}const D=xwDist(XW.f,XW.p[0],XW.p[1]),fv=v=>v==null?'—':fmt(r2(v)),st2=XW.step;
+  const arrows=`<div class="xwA"><span></span><button data-xwk="ArrowUp" aria-label="Arriba">▲</button><span></span><button data-xwk="ArrowLeft" aria-label="Izquierda">◀</button><button data-xwk="ArrowDown" aria-label="Abajo">▼</button><button data-xwk="ArrowRight" aria-label="Derecha">▶</button></div>
+    <div class="xwSt">Paso <button data-xws=".01"${st2===.01?' class="on"':''}>1 cm</button><button data-xws=".1"${st2===.1?' class="on"':''}>10 cm</button><button data-xws="1"${st2===1?' class="on"':''}>1 m</button></div>`;
+  let h=`<div class="xwH"><b>${XW.s?'2 · Largo y dirección':'1 · Dónde empieza'}</b><button data-xw="x" aria-label="Terminar">✕</button></div>`;
+  if(!XW.s){h+=`<p class="xwP">Toca en el plano para poner la cruz y ajústala con las flechas.</p><div class="xwG"><label>Desde la pared de la izquierda (m)<input data-xwi="L" type="number" step="0.01" inputmode="decimal" value="${D.L==null?'':r2(D.L)}"${D.L==null?' disabled':''}></label><label>Desde la pared de arriba (m)<input data-xwi="U" type="number" step="0.01" inputmode="decimal" value="${D.U==null?'':r2(D.U)}"${D.U==null?' disabled':''}></label></div>
+    <p class="xwD">A la derecha: <b>${fv(D.R)} m</b> · abajo: <b>${fv(D.D)} m</b></p>${arrows}<div class="xwB"><button data-xw="fix" class="pri">Fijar el inicio <kbd>Intro</kbd></button></div>`}
+  else{const L=xwLen(),d=xwDir();h+=`<div class="xwG"><label>Largo (m)<input data-xwi="len" type="number" step="0.01" min="0" inputmode="decimal" value="${r2(L)}"></label><label>Dirección<select data-xwi="dir">${Object.entries(XWD).map(([k,v])=>`<option value="${k}"${d===k?' selected':''}>${v[2]}</option>`).join('')}<option value="ang"${d==='ang'?' selected':''}>Con ángulo</option></select></label>${d==='ang'?`<label>Ángulo (°)<input data-xwi="ang" type="number" step="0.5" inputmode="decimal" value="${xwAng()}"></label>`:''}</div>
+    <div class="xwG"><label>Grosor<select data-xwi="tk">${XWT.map(([k,t])=>`<option value="${k}"${XW.tk===k?' selected':''}>${t}${k!=='otro'?' · '+Math.round((SD()[k]||.1)*100)+' cm':''}</option>`).join('')}</select></label>${XW.tk==='otro'?`<label>Grosor (cm)<input data-xwi="thc" type="number" step="1" min="3" inputmode="decimal" value="${XW.thc}"></label>`:''}</div>
+    <p class="xwD">Del final a la pared de la derecha: <b>${fv(D.R)} m</b> · a la de abajo: <b>${fv(D.D)} m</b></p>${arrows}<div class="xwB"><button data-xw="back">Mover el inicio <kbd>Esc</kbd></button><button data-xw="fix" class="pri">Crear <kbd>Intro</kbd></button></div>`}
+  w.innerHTML=h}
+/* dibujo en el plano: la cruz, las cotas y el tabique de muestra */
+{const _rXW=render;render=function(){const r=_rXW.apply(this,arguments);try{if(!isMod())return r;if(tool==='wall'&&!XW&&contOf(fl))xwStart();if(XW&&(tool!=='wall'||fl!==XW.f)){xwStop()}if(!XW)return r;
+  const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s,[x,y]=XW.p,col='#d35400';let h='<g id="xwG" pointer-events="none">';
+  if(XW.s){const[a,b]=XW.s,L=xwLen(),t=xwTh();if(L>.01){const ux=(x-a)/L,uy=(y-b)/L,nx=-uy*t/2,ny=ux*t/2;h+=`<path d="M${(a+nx)*S} ${(b+ny)*S}L${(x+nx)*S} ${(y+ny)*S}L${(x-nx)*S} ${(y-ny)*S}L${(a-nx)*S} ${(b-ny)*S}Z" fill="${col}" fill-opacity=".35" stroke="${col}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+      h+=`<text x="${(a+x)/2*S+(-uy)*16}" y="${(b+y)/2*S+ux*16+4}" text-anchor="middle" style="font-size:13px;font-weight:700;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:4px">${fmt(r2(L))} m</text>`}
+    h+=`<circle cx="${a*S}" cy="${b*S}" r="5" fill="${col}"/>`}
+  const D=xwDist(XW.f,x,y),dim=(x1,y1,x2,y2,v)=>{if(v==null||v<.01)return '';const mx=(x1+x2)/2*S,my=(y1+y2)/2*S;return `<line x1="${x1*S}" y1="${y1*S}" x2="${x2*S}" y2="${y2*S}" stroke="${col}" stroke-width="1" stroke-dasharray="3 3"/><text x="${mx}" y="${my-4}" text-anchor="middle" style="font-size:11px;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(r2(v))}</text>`};
+  h+=dim(x-(D.L||0),y,x,y,D.L)+dim(x,y,x+(D.R||0),y,D.R)+dim(x,y-(D.U||0),x,y,D.U)+dim(x,y,x,y+(D.D||0),D.D);
+  const k=14;h+=`<path d="M${x*S-k} ${y*S}H${x*S+k}M${x*S} ${y*S-k}V${y*S+k}" stroke="${col}" stroke-width="2.5"/><circle cx="${x*S}" cy="${y*S}" r="3.5" fill="none" stroke="${col}" stroke-width="1.5"/></g>`;
+  g.insertAdjacentHTML('beforeend',h)}catch(e){console.warn('cruz',e)}return r}}
+/* tocar el plano pone la cruz (y no dibuja arrastrando) */
+svg.addEventListener('pointerdown',e=>{if(!XW||tool!=='wall'||!e.isPrimary||e.button>0)return;e.stopImmediatePropagation();e.preventDefault();const r=svg.getBoundingClientRect();let x=(e.clientX-r.left-view.ox)/view.s,y=(e.clientY-r.top-view.oy)/view.s;
+  if(!e.shiftKey){try{[x,y]=snapPtEdges(x,y,XW.f)}catch(er){}}XW.p=[r2(x),r2(y)];if(XW.s){const d=xwDir();if(d!=='ang')XW.dir=d}xwUI();render()},true);
+/* teclado: flechas, Intro y Esc */
+window.addEventListener('keydown',e=>{if(!XW)return;try{if(KB.on){KB.on=false;KB.down=false;KB.last=null}}catch(er){}const ae=document.activeElement,inW=ae&&ae.closest&&ae.closest('#xwP');if(/INPUT|TEXTAREA|SELECT/.test(ae&&ae.tagName||'')&&!inW)return;
+  if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();if(inW&&ae.tagName!=='BUTTON'){ae.dispatchEvent(new Event('change',{bubbles:true}))}setTimeout(()=>{xwFix();const b=$('#xwP [data-xw="fix"]');b&&b.focus()},0);return}
+  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();xwBack();return}
+  const A={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!A)return;if(inW&&ae.tagName==='INPUT')return;if(inW&&ae.tagName==='SELECT')ae.blur();
+  e.preventDefault();e.stopImmediatePropagation();const s=e.altKey?.01:e.shiftKey?1:XW.step;xwMove(A[0]*s,A[1]*s)},true);
+document.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('#xwP button');if(!t||!XW)return;
+  if(t.dataset.xwk){const A={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[t.dataset.xwk];xwMove(A[0]*XW.step,A[1]*XW.step);return}
+  if(t.dataset.xws){XW.step=+t.dataset.xws;xwUI();return}const a=t.dataset.xw;if(a==='fix')xwFix();else if(a==='back')xwBack();else if(a==='x'){xwStop();tool='select';toolsUI();render()}});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#xwP')||!XW)return;const k=t.dataset.xwi,v=parseFloat(String(t.value).replace(',','.'));
+  if(k==='L'||k==='U'){if(isNaN(v)||v<0)return xwUI();const D=xwDist(XW.f,XW.p[0],XW.p[1]);if(k==='L'&&D.L!=null)XW.p[0]=r2(XW.p[0]-D.L+v);if(k==='U'&&D.U!=null)XW.p[1]=r2(XW.p[1]-D.U+v)}
+  else if(k==='len'){if(!(v>=0))return xwUI();const d=xwDir();xwSetLD(v,d==='ang'?'ang':d,xwAng())}
+  else if(k==='dir'){const L=xwLen()||1;if(t.value==='ang')xwSetLD(L,'ang',45);else xwSetLD(L,t.value)}
+  else if(k==='ang'){if(isNaN(v))return xwUI();xwSetLD(xwLen()||1,'ang',v)}
+  else if(k==='tk')XW.tk=t.value;else if(k==='thc'){if(v>=3)XW.thc=v}xwUI();render()});
+{const cs=document.createElement('style');cs.textContent=`#xwP{position:absolute;left:10px;top:56px;z-index:8;width:min(340px,calc(100% - 90px));max-height:calc(100% - 70px);overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:6px solid #d35400;border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.4;box-shadow:0 4px 16px #0003}
+#xwP .xwH{display:flex;align-items:center;gap:8px;font-size:16px}#xwP .xwH button{margin-left:auto;padding:2px 9px}#xwP .xwP{margin:6px 0;color:var(--mute);font-size:14px}#xwP .xwD{margin:6px 0;font-size:14px}
+#xwP .xwG{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}#xwP .xwG label{flex:1;min-width:120px;margin:0;font-size:13px}#xwP .xwG input,#xwP .xwG select{font-size:16px}
+#xwP .xwA{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,40px);gap:4px;justify-content:center;margin:6px 0}#xwP .xwA button{font-size:16px;padding:0}
+#xwP .xwSt{display:flex;gap:4px;align-items:center;justify-content:center;font-size:13px;color:var(--mute)}#xwP .xwSt button{padding:3px 8px;font-size:13px}#xwP .xwSt button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#xwP .xwB{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#xwP .xwB button{font-size:15px;padding:7px 12px}#xwP .xwB .pri{margin-left:auto;background:#d35400;border-color:#d35400;color:#fff}#xwP kbd{font:11px/1 inherit;border:1px solid currentColor;border-radius:3px;padding:1px 3px;margin-left:4px;opacity:.8}
+@media (max-width:560px){#xwP{top:auto;bottom:10px;left:8px;width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:55%;box-sizing:border-box}#pasos{max-width:calc(100vw - 20px)}}
+body.xwon #dock section:has(#addWall),body.xwon section:has(#addWall){display:none!important}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
