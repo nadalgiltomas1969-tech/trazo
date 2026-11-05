@@ -311,12 +311,26 @@ const $=s=>document.querySelector(s),svg=$('#cv');
 let st={n:0,golfas:false,mode:'uno',mat:'teja'},items=[],rp={},sel=null,tool='cont',fl=0,view={s:60,ox:30,oy:30},draft=null,drag=null,undo=[],nid=1,note='',warn=0;
 let PJ={cur:null,p:{}};
 const pid=()=>'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-try{if(!localStorage.getItem('trazoObraP')){const o=JSON.parse(localStorage.getItem('trazoP')||'null');if(o&&o.p){const n={cur:null,p:{}};Object.entries(o.p).forEach(([id,q])=>{if((q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')))n.p[id]=q});const ids=Object.keys(n.p).sort((a,b)=>(n.p[b].upd||0)-(n.p[a].upd||0));if(ids.length){n.cur=n.p[o.cur]?o.cur:ids[0];localStorage.setItem('trazoObraP',JSON.stringify(n))}}['Lbl','Pan','Lay','UI'].forEach(k=>{const v=localStorage.getItem('trazo'+k);if(v!=null&&localStorage.getItem('trazoObra'+k)==null)localStorage.setItem('trazoObra'+k,v)})}}catch(e){}
-try{PJ=JSON.parse(localStorage.getItem('trazoObraP')||'null')||PJ}catch(e){}
+/* Un solo almacén de proyectos para las dos apps (no se duplica: el navegador tiene poco sitio).
+   Cada app ve solo los suyos: los modernos en Obra nueva y el resto en Finca. */
+const PJAPP='obra';let PJX={},PJXM={},PJXD=0;
+function pjIsMod(q){return !!(q&&(q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')))}
+function pjMine(q){if(!q)return false;if(q.app)return q.app===PJAPP;return PJAPP==='obra'?pjIsMod(q):!pjIsMod(q)}
+function pjRead(){let A=null;try{A=JSON.parse(localStorage.getItem('trazoP')||'null')}catch(e){}return A&&A.p?A:{cur:null,p:{}}}
+function pjLoad(){const A=pjRead();
+  ['trazoObraP','trazoFincaP'].forEach(k=>{try{const o=JSON.parse(localStorage.getItem(k)||'null');if(o&&o.p)Object.entries(o.p).forEach(([id,q])=>{if(A.p[id]||!q)return;const n=((q.data&&q.data.items)||[]).length;if(n<=1&&/^Plano \d+$/.test(q.name||''))return;q.app=k==='trazoObraP'?'obra':'finca';A.p[id]=q})}catch(e){}});
+  const mine={},other={};Object.entries(A.p).forEach(([id,q])=>{(pjMine(q)?mine:other)[id]=q});PJX=other;PJXM={...A};delete PJXM.p;
+  const c=A['cur_'+PJAPP];const cur=(c&&mine[c])?c:(mine[A.cur]?A.cur:(Object.keys(mine).sort((a,b)=>(mine[b].upd||0)-(mine[a].upd||0))[0]||null));return{cur,p:mine}}
+addEventListener('storage',e=>{if(e.key==='trazoP')PJXD=1});
+function pjSave(){if(PJXD){const A=pjRead();const o={};Object.entries(A.p).forEach(([id,q])=>{if(!PJ.p[id]&&!pjMine(q))o[id]=q});PJX=o;PJXD=0}
+  const A={...PJXM,p:{...PJX}};Object.entries(PJ.p).forEach(([id,q])=>{if(!q.app)q.app=PJAPP;A.p[id]=q});A['cur_'+PJAPP]=PJ.cur;localStorage.setItem('trazoP',JSON.stringify(A));PJXM=Object.assign(PJXM,{['cur_'+PJAPP]:PJ.cur});
+  try{localStorage.removeItem('trazoObraP');localStorage.removeItem('trazoFincaP')}catch(e){}}
+try{PJ=pjLoad()}catch(e){}
+
 if(!PJ.cur||!PJ.p||!PJ.p[PJ.cur]){PJ={cur:null,p:{}};let d=null;try{d=JSON.parse(localStorage.getItem('trazo3')||localStorage.getItem('trazo2')||'null')}catch(e){}
   const id=pid();PJ.cur=id;PJ.p[id]={name:'Plano 1',upd:Date.now(),data:d&&d.st?{st:d.st,items:d.items||[],rp:d.rp||{},nid:d.nid||1}:null}}
 {const d=PJ.p[PJ.cur].data;if(d&&d.st){st=d.st;items=d.items||[];rp=d.rp||{};nid=d.nid||1}}
-const save=()=>{try{const q=PJ.p[PJ.cur];q.data={st,items,rp,nid};q.upd=Date.now();localStorage.setItem('trazoObraP',JSON.stringify(PJ))}catch(e){}};
+const save=()=>{try{const q=PJ.p[PJ.cur];q.data={st,items,rp,nid};q.upd=Date.now();pjSave()}catch(e){}};
 const snap=v=>Math.round(v*10)/10,r2=v=>Math.round(v*100)/100,fmt=v=>String(r2(v)).replace('.',',');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const F=()=>st.n+(st.golfas?1:0),fname=i=>i===-2?'Subsuelo':i<=-10?((typeof ugName2==='function'&&ugName2(i))||ugName(i)):i<st.n?(st.sot?(i===0?'Sótano':i===1?'Planta baja':'Planta '+(i-1)):(i?'Planta '+i:'Planta baja')):'Golfas';
@@ -11142,7 +11156,7 @@ const TRASH_DIAS=30;
 function trashGet(){let t=[];try{t=JSON.parse(localStorage.getItem('trazoObraTrash')||'[]')||[]}catch(e){t=[]}const lim=Date.now()-TRASH_DIAS*864e5;return t.filter(x=>x&&x.del>lim)}
 function trashSet(t){t=t.slice(0,20);while(t.length){try{localStorage.setItem('trazoObraTrash',JSON.stringify(t));return true}catch(e){t.pop()}}try{localStorage.removeItem('trazoObraTrash')}catch(e){}return false}
 function trashPut(id){const q=PJ.p[id];if(!q)return;if(id===PJ.cur)try{save()}catch(e){}const t=trashGet();t.unshift({id,name:q.name,data:q.data||null,mod:q.mod,mdest:q.mdest,dest:q.dest,del:Date.now()});trashSet(t)}
-function trashRec(i){const t=trashGet(),x=t[i];if(!x)return;save();const nm=new Set(Object.values(PJ.p).map(q=>q.name));const id=pid();PJ.p[id]={name:nm.has(x.name)?x.name+' (recuperado)':x.name,upd:Date.now(),data:x.data};['mod','mdest','dest'].forEach(k=>{if(x[k]!=null)PJ.p[id][k]=x[k]});t.splice(i,1);trashSet(t);try{localStorage.setItem('trazoObraP',JSON.stringify(PJ))}catch(e){}note='Proyecto «'+PJ.p[id].name+'» recuperado';plist();render()}
+function trashRec(i){const t=trashGet(),x=t[i];if(!x)return;save();const nm=new Set(Object.values(PJ.p).map(q=>q.name));const id=pid();PJ.p[id]={name:nm.has(x.name)?x.name+' (recuperado)':x.name,upd:Date.now(),data:x.data};['mod','mdest','dest'].forEach(k=>{if(x[k]!=null)PJ.p[id][k]=x[k]});t.splice(i,1);trashSet(t);try{pjSave()}catch(e){}note='Proyecto «'+PJ.p[id].name+'» recuperado';plist();render()}
 function trashHTML(){const t=trashGet();if(!t.length)return `<div id="trashBox" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px"><b>Papelera</b><p class="hint" style="margin:4px 0 0">Vacía. Los proyectos que borres se quedan aquí ${TRASH_DIAS} días.</p></div>`;
   const dd=x=>{const n=Math.max(0,TRASH_DIAS-Math.floor((Date.now()-x.del)/864e5));return 'borrado el '+new Date(x.del).toLocaleDateString('es-ES')+' · se borra del todo en '+n+' día'+(n===1?'':'s')};
   return `<div id="trashBox" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px"><b>Papelera (${t.length})</b><p class="hint" style="margin:4px 0 6px">Proyectos borrados en los últimos ${TRASH_DIAS} días. Al recuperarlo vuelve a la lista.</p>${t.map((x,i)=>{const d=x.data,n=d&&d.items?d.items.filter(o=>o.t==='room').length:0;return `<div class="prj"><b>${esc(x.name)}</b><p class="hint" style="margin:2px 0 0">${d&&d.st?d.st.n+' planta'+(d.st.n===1?'':'s')+', '+n+' habitaciones · ':''}${dd(x)}</p><div class="row"><button data-ptr="${i}">Recuperar</button><button data-ptk="${i}" class="dng">Borrar del todo</button></div></div>`}).join('')}</div>`}
@@ -12668,26 +12682,17 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dat
 {const cs=document.createElement('style');cs.textContent=`#ptTool,[data-tool="pujador"],[data-tool="estufa"],[data-tool="anilla"],[data-tool="camp"],[data-tool="cruz"],[data-tool="mirador"],#finBtn,#gemBtn,#grokBtn{display:none!important}`;document.head.appendChild(cs)}
 {const _obraHTMLSEP=obraHTML;obraHTML=function(){let h=_obraHTMLSEP.apply(this,arguments);try{h=h.replace(/<label>[^<]*<select data-ob="epoca"[\s\S]*?<\/select><\/label>/,'')}catch(e){}return h}}
 
-/* ===================== RECUPERAR PROYECTOS DE LA VERSIÓN ANTERIOR ===================== */
-const REC_KEY='trazoObraP',REC_APP='obra';
-function recOld(){try{return JSON.parse(localStorage.getItem('trazoP')||'null')}catch(e){return null}}
-const recMod=q=>!!(q&&(q.mod||q.mdest||(q.data&&q.data.st&&q.data.st.epoca==='moderna')));
-function recList(){const o=recOld();if(!o||!o.p)return[];return Object.entries(o.p).filter(([id,q])=>q&&!PJ.p[id]).map(([id,q])=>({id,q,mod:recMod(q),n:((q.data&&q.data.items)||[]).length})).sort((a,b)=>(b.q.upd||0)-(a.q.upd||0))}
-function recOpen(){$('#recP')&&$('#recP').remove();const L=recList(),mine=L.filter(x=>REC_APP==='obra'?x.mod:!x.mod),other=L.filter(x=>!(REC_APP==='obra'?x.mod:!x.mod));
-  const row=x=>`<div class="recR"><div><b>${esc(x.q.name||'Sin nombre')}</b><small>${x.mod?'Vivienda moderna':'De época'} · ${x.n} elemento${x.n===1?'':'s'}${x.q.upd?' · '+new Date(x.q.upd).toLocaleDateString('es-ES'):''}</small></div><button data-rec="${esc(x.id)}">Traer aquí</button></div>`;
-  let h=`<h2>Proyectos de la versión anterior</h2><p class="hint">Son los que tenías en Trazo antes de separarlo en dos apps. Traerlos aquí hace una copia: no se borra nada.</p>`;
-  if(!L.length)h+=`<p>No queda ninguno por traer: ya están todos en esta app o en la otra, o en este Chrome no había proyectos de la versión anterior.</p>`;
-  else{h+=`<h3>${REC_APP==='obra'?'De obra nueva':'De la finca y de época'}</h3>${mine.length?mine.map(row).join(''):'<p class="hint">Ninguno.</p>'}${mine.length>1?`<button data-rec="*mine" class="pri">Traer todos estos (${mine.length})</button>`:''}`;
-    if(other.length)h+=`<h3>${REC_APP==='obra'?'Los de época (van mejor en Trazo · Finca)':'Los de obra nueva (van mejor en Trazo · Obra nueva)'}</h3>${other.map(row).join('')}`}
-  h+=`<div class="row" style="margin-top:12px"><button data-rec="x">Cerrar</button></div>`;
+/* ===================== PROYECTOS DE LA OTRA APP ===================== */
+function recList(){return Object.entries(PJX).filter(([id,q])=>q).map(([id,q])=>({id,q,n:((q.data&&q.data.items)||[]).length})).sort((a,b)=>(b.q.upd||0)-(a.q.upd||0))}
+function recOpen(){$('#recP')&&$('#recP').remove();const L=recList();
+  const row=x=>`<div class="recR"><div><b>${esc(x.q.name||'Sin nombre')}</b><small>${x.n} elemento${x.n===1?'':'s'}${x.q.upd?' · '+new Date(x.q.upd).toLocaleDateString('es-ES'):''}</small></div><button data-rec="${esc(x.id)}">Pasar a esta app</button></div>`;
+  let h=`<h2>Proyectos que están en Trazo · Finca</h2><p class="hint">Tus proyectos están todos a salvo y en un solo sitio: cada app enseña los suyos. Si alguno debería estar aquí, pásalo: dejará de salir en la otra app.</p>`;
+  h+=L.length?L.map(row).join(''):'<p>No hay ninguno.</p>';h+=`<div class="row" style="margin-top:12px"><button data-rec="x">Cerrar</button></div>`;
   document.body.insertAdjacentHTML('beforeend',`<div id="recP" class="dlgw" style="position:fixed;inset:0;z-index:95;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;font-size:16px;line-height:1.45">${h}</div></div>`)}
-function recTake(ids){const o=recOld();if(!o||!o.p||!ids.length)return;try{save()}catch(e){}ids.forEach(id=>{if(o.p[id])PJ.p[id]=JSON.parse(JSON.stringify(o.p[id]))});PJ.cur=ids[0];try{localStorage.setItem(REC_KEY,JSON.stringify(PJ))}catch(e){alert('No cabe en la memoria del navegador: borra algún proyecto que no uses y vuelve a probar');return}location.reload()}
-document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rec]');if(!b)return;const k=b.dataset.rec;if(k==='x'){$('#recP')&&$('#recP').remove();return}if(k==='open'){recOpen();return}
-  if(k==='*mine'){recTake(recList().filter(x=>REC_APP==='obra'?x.mod:!x.mod).map(x=>x.id));return}recTake([k])});
-/* el botón aparece en la pantalla de inicio y en el menú Proyecto */
-new MutationObserver(()=>{const ini=$('#ini');if(!ini||ini.querySelector('[data-rec="open"]'))return;const n=recList().length;if(!n)return;const card=ini.firstElementChild;if(card)card.insertAdjacentHTML('beforeend',`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><button data-rec="open" style="font-size:15px;padding:8px 14px;background:var(--acc);border-color:var(--acc);color:#fff">↺ Recuperar proyectos de la versión anterior (${n})</button></div>`)}).observe(document.body,{childList:true});
-(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-rec]'))return;const b=document.createElement('button');b.dataset.rec='open';b.textContent='Recuperar proyectos anteriores';m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
-{const cs=document.createElement('style');cs.textContent=`#recP h3{font-size:17px;margin:14px 0 6px}#recP .recR{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}#recP .recR>div{flex:1}#recP .recR small{display:block;color:var(--mute);font-size:14px}#recP button{font-size:15px;padding:7px 12px}#recP .pri{background:var(--acc);border-color:var(--acc);color:#fff;margin-top:6px}`;document.head.appendChild(cs)}
+function recTake(id){const q=PJX[id];if(!q)return;try{save()}catch(e){}q.app=PJAPP;PJ.p[id]=q;delete PJX[id];PJ.cur=id;try{pjSave()}catch(e){alert('No se pudo guardar: el navegador está lleno. Borra algún proyecto que no uses.');return}location.reload()}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rec]');if(!b)return;const k=b.dataset.rec;if(k==='x'){$('#recP')&&$('#recP').remove();return}if(k==='open'){try{closeMenus()}catch(er){}recOpen();return}recTake(k)});
+(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-rec]'))return;const b=document.createElement('button');b.dataset.rec='open';b.textContent='Proyectos de Trazo · Finca…';m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
+{const cs=document.createElement('style');cs.textContent=`#recP .recR{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}#recP .recR>div{flex:1}#recP .recR small{display:block;color:var(--mute);font-size:14px}#recP button{font-size:15px;padding:7px 12px}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
