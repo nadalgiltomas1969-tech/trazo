@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · tabiques con la cruz, flechas e Intro</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · tabiques y habitaciones con la cruz, flechas e Intro</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -10424,7 +10424,7 @@ function roomSnap(R){const msg=[];WSIDES.forEach(([k])=>{const L=sideL(R,k),ok=W
     if(!best)return;const d=best.d;if(Math.abs(d)>.005){if(k==='o'){R.x=r2(best.M.c);R.w=r2(R.w+d)}else if(k==='e'){R.w=r2(R.w+d)}else if(k==='n'){R.y=r2(best.M.c);R.h=r2(R.h+d)}else{R.h=r2(R.h+d)}msg.push(best.q.name||'la de al lado')}
     const cur={};WSIDES.forEach(([kk])=>cur[kk]=thS(R,kk));cur[k]=thS(best.q,ok);R.ths=cur;R.th=Math.max(...Object.values(cur))});
   if(R.ths){const v=Object.values(R.ths);if(v.every(x=>Math.abs(x-v[0])<1e-6)){R.th=v[0];delete R.ths}}return msg}
-const _doneTHS=done;done=function(){try{if(!RKN)rknInit();const nw=items.filter(R=>R.t==='room'&&!RKN.has(R.id)),drawn=tool==='room'||window._SNAPNEXT;window._SNAPNEXT=0;nw.forEach(R=>{RKN.add(R.id);if(!drawn||R.th===0||R.patio||R.ala||R._c)return;const m=roomSnap(R);if(m.length)note='Pegada a la pared de «'+[...new Set(m)].join('», «')+'»: la medianera es una sola'})}catch(e){console.warn(e)}return _doneTHS.apply(this,arguments)};
+const _doneTHS=done;done=function(){try{if(!RKN)rknInit();const nw=items.filter(R=>R.t==='room'&&!RKN.has(R.id)),drawn=(tool==='room'&&!window._XWNS)||window._SNAPNEXT;window._SNAPNEXT=0;nw.forEach(R=>{RKN.add(R.id);if(!drawn||R.th===0||R.patio||R.ala||R._c)return;const m=roomSnap(R);if(m.length)note='Pegada a la pared de «'+[...new Set(m)].join('», «')+'»: la medianera es una sola'})}catch(e){console.warn(e)}return _doneTHS.apply(this,arguments)};
 setTimeout(()=>{try{rknInit()}catch(e){}},0);const _loadProjTHS=loadProj;loadProj=function(){const r=_loadProjTHS.apply(this,arguments);try{rknInit()}catch(e){}return r};
 /* revisión: paredes dobles entre habitaciones que no llegan a tocarse */
 function dblWalls(){const P=[],rs=items.filter(r=>realRoom(r)&&r.th!==0&&!r.patio&&!r.ala);rs.forEach(R=>rs.forEach(Q=>{if(R===Q||R.f!==Q.f)return;[['o','e'],['n','s']].forEach(([k,ok])=>{const L=sideL(R,k),M=sideL(Q,ok),g=L.c-M.c,ov=Math.min(L.a1,M.a1)-Math.max(L.a0,M.a0);const tR=thS(R,k),tQ=thS(Q,ok);if(ov>.5&&g>.02&&g<=Math.max(tR,tQ)+.45)P.push({R,Q,k,ok,g,tR,tQ})})}));return P}
@@ -12460,7 +12460,7 @@ document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||!t.clo
     st.s2link=true;done();pasoBody();return}
   if(a.startsWith('cp:')){const[,fs,k]=a.split(':'),f=+fs;if(k==='dn'){const q=f===pbF()?contOf(0):contOf(f-1);if(q)sotSet(f,q.x,q.y,q.w,q.h)}else if(k==='med'){const w=+String($('#pwW'+f).value).replace(',','.'),hh=+String($('#pwH'+f).value).replace(',','.');if(!(w>0&&hh>0))return;const c=contOf(f)||contOf(f-1)||contOf(0)||pwBase(w,hh);sotSet(f,c.x+(c.w-w)/2,c.y+(c.h-hh)/2,w,hh)}
     else if(k==='mano'){pasoClose();push();items=items.filter(i=>!(i.t==='cont'&&i.f===f));fl=f;tabs();tool='cont';sel=null;note='Arrastra en el plano para dibujar el contorno de '+fname(f).toLowerCase();try{toolsUI()}catch(er){}done();return}pasoBody();return}
-  if(a.startsWith('go:')){const[,fs,k]=a.split(':'),f=+fs;if(k==='tras'){pwTool(f,'room','Dibuja el trastero arrastrando dentro del parking; luego ponle el nombre «Trastero» en el panel');window._pwTras={f,n0:nid};return}
+  if(a.startsWith('go:')){const[,fs,k]=a.split(':'),f=+fs;if(k==='tras'){pwTool(f,'room','Pon la cruz en una esquina del trastero, Intro, y luego ancho y largo');try{if(XW)XW.nm='Trastero',xwUI()}catch(er){}window._pwTras={f,n0:nid};return}
     pwTool(f,k,{room:'Arrastra para dibujar la habitación',wall:'Toca el principio y el final de la pared',plaza:'Toca donde va cada plaza',door:'Toca una pared para poner la puerta'}[k]);return}});
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#pwP'))return;
   if(t.dataset.pwh!=null){const v=parseFloat(String(t.value).replace(',','.'));if(!(v>=2.2&&v<=6)){pasoBody();return}push();if(!st.fhs)st.fhs={};st.fhs[0]=r2(v);done();pasoBody();return}
@@ -12562,36 +12562,50 @@ function xwFaces(f){const V=[],H=[];const c=contOf(f);const addR=(x,y,w,h)=>{V.p
 function xwDist(f,x,y){const{V,H}=xwFaces(f),e=1e-3;let L=null,R=null,U=null,D=null;
   V.forEach(([vx,a,b])=>{if(y<a-e||y>b+e)return;if(vx<x-e&&(L==null||x-vx<L))L=x-vx;if(vx>x+e&&(R==null||vx-x<R))R=vx-x});
   H.forEach(([hy,a,b])=>{if(x<a-e||x>b+e)return;if(hy<y-e&&(U==null||y-hy<U))U=y-hy;if(hy>y+e&&(D==null||hy-y<D))D=hy-y});return{L,R,U,D}}
-function xwStart(){if(XW)return;const c=contOf(fl);let p;try{const q=center();p=[r2(q.x),r2(q.y)]}catch(e){p=c?[c.x+c.w/2,c.y+c.h/2]:[0,0]}if(c){p[0]=Math.max(c.x,Math.min(c.x+c.w,p[0]));p[1]=Math.max(c.y,Math.min(c.y+c.h,p[1]))}
-  XW={f:fl,p,s:null,step:.1,tk:'tab',thc:10};document.body.classList.add('xwon');try{KB.on=false}catch(e){}note='Toca donde empieza el tabique, ajusta con las flechas y pulsa Intro';xwUI()}
+function xwStart(m){if(XW)return;m=m||'wall';const c=contOf(fl);let p;try{const q=center();p=[r2(q.x),r2(q.y)]}catch(e){p=c?[c.x+c.w/2,c.y+c.h/2]:[0,0]}if(c){p[0]=Math.max(c.x,Math.min(c.x+c.w,p[0]));p[1]=Math.max(c.y,Math.min(c.y+c.h,p[1]))}
+  XW={m,f:fl,p,s:null,step:.1,tk:'tab',thc:10,q:'se',nm:'Habitación'};document.body.classList.add('xwon');try{KB.on=false}catch(e){}note=m==='room'?'Toca en una esquina de la habitación, ajusta con las flechas y pulsa Intro':'Toca donde empieza el tabique, ajusta con las flechas y pulsa Intro';xwUI()}
 function xwStop(){XW=null;document.body.classList.remove('xwon');const w=$('#xwP');if(w)w.remove()}
 function xwLen(){return XW.s?Math.hypot(XW.p[0]-XW.s[0],XW.p[1]-XW.s[1]):0}
 function xwDir(){if(!XW.s)return 'e';const dx=XW.p[0]-XW.s[0],dy=XW.p[1]-XW.s[1];if(Math.abs(dx)<1e-6&&Math.abs(dy)<1e-6)return XW.dir||'e';if(Math.abs(dy)<1e-6)return dx>0?'e':'w';if(Math.abs(dx)<1e-6)return dy>0?'s':'n';return 'ang'}
 function xwAng(){if(!XW.s)return 0;return Math.round(Math.atan2(XW.p[1]-XW.s[1],XW.p[0]-XW.s[0])*1800/Math.PI)/10}
 function xwSetLD(L,dir,ang){const s=XW.s;if(!s)return;let ux,uy;if(dir==='ang'){const a=(ang||0)*Math.PI/180;ux=Math.cos(a);uy=Math.sin(a)}else{[ux,uy]=XWD[dir];XW.dir=dir}XW.p=[r2(s[0]+ux*L),r2(s[1]+uy*L)]}
 function xwMove(dx,dy){XW.p=[Math.round((XW.p[0]+dx)*100)/100,Math.round((XW.p[1]+dy)*100)/100];if(XW.s){const d=xwDir();if(d!=='ang')XW.dir=d}xwUI();render()}
-function xwFix(){if(!XW.s){XW.s=XW.p.slice();XW.dir=XW.dir||'e';xwSetLD(1,XW.dir);note='Inicio fijado. Ahora el largo y la dirección: flechas o la ventana, e Intro para crear';xwUI();render();return}
+function xwFix(){if(XW.m==='room')return xwFixR();if(!XW.s){XW.s=XW.p.slice();XW.dir=XW.dir||'e';xwSetLD(1,XW.dir);note='Inicio fijado. Ahora el largo y la dirección: flechas o la ventana, e Intro para crear';xwUI();render();return}
   const L=xwLen();if(L<.05){note='El tabique necesita un largo mayor que 0';render();return}
   const it={id:nid,t:'wall',f:XW.f,x1:r2(XW.s[0]),y1:r2(XW.s[1]),x2:r2(XW.p[0]),y2:r2(XW.p[1]),th:r2(xwTh())};
   {const c=contOf(XW.f),o=(x,y)=>c&&(x<c.x-.01||x>c.x+c.w+.01||y<c.y-.01||y>c.y+c.h+.01);if(o(it.x1,it.y1)||o(it.x2,it.y2)){const D=xwDist(XW.f,XW.s[0],XW.s[1]),d=xwDir(),mx={e:D.R,w:D.L,s:D.D,n:D.U}[d];note='El tabique se sale del contorno'+(mx!=null?`: en esa dirección caben como mucho ${fmt(r2(mx))} m`:'');render();return}}
   if(viol(it)){note=lastWhy;render();return}push();nid++;items.push(it);note=`${XW.tk==='tab'?'Tabique':'Muro'} de ${fmt(r2(L))} m creado. Sigue desde su final, o Esc para terminar`;
-  const d=XW.dir;XW.s=XW.p.slice();xwSetLD(1,d==='e'||d==='w'?'s':'e');done();xwUI()}
+  const d=XW.dir;XW.s=XW.p.slice();xwSetLD(1,d==='e'||d==='w'?'s':'e');sel=null;done();xwUI();xwFocus()}
+const XWQ={se:[1,1,'↘ hacia la derecha y abajo'],sw:[-1,1,'↙ hacia la izquierda y abajo'],ne:[1,-1,'↗ hacia la derecha y arriba'],nw:[-1,-1,'↖ hacia la izquierda y arriba']};
+function xwRect(){const[a,b]=XW.s,[x,y]=XW.p;return{x:Math.min(a,x),y:Math.min(b,y),w:Math.abs(x-a),h:Math.abs(y-b)}}
+function xwQ(){if(!XW.s)return XW.q;const dx=XW.p[0]-XW.s[0],dy=XW.p[1]-XW.s[1];return (dy<0?'n':'s')+(dx<0?'w':'e')}
+function xwSetWH(w,h,q){const[sx,sy]=XWQ[q]||XWQ.se;XW.q=q;XW.p=[r2(XW.s[0]+sx*w),r2(XW.s[1]+sy*h)]}
+function xwFixR(){if(!XW.s){XW.s=XW.p.slice();const D=xwDist(XW.f,XW.s[0],XW.s[1]);const q=(D.D!=null&&D.U!=null&&D.U>D.D?'n':'s')+(D.R!=null&&D.L!=null&&D.L>D.R?'w':'e');xwSetWH(Math.min(3,{e:D.R,w:D.L}[q[1]]||3),Math.min(3,{s:D.D,n:D.U}[q[0]]||3),q);note='Esquina fijada. Ahora el ancho, el largo y hacia dónde: flechas o la ventana, e Intro para crear';xwUI();render();return}
+  const R=xwRect();if(R.w<.3||R.h<.3){note='La habitación necesita al menos 30 cm de ancho y de largo';render();return}
+  const it={id:nid,t:'room',f:XW.f,x:r2(R.x),y:r2(R.y),w:r2(R.w),h:r2(R.h),name:XW.nm||'Habitación',th:SD().int};
+  const c=contOf(XW.f);if(c&&(it.x<c.x-.01||it.y<c.y-.01||it.x+it.w>c.x+c.w+.01||it.y+it.h>c.y+c.h+.01)){note='La habitación se sale del contorno: hazla más pequeña o mueve la esquina';render();return}
+  if(viol(it)){note=lastWhy;render();return}push();nid++;items.push(it);window._XWNS=1;note=`Habitación de ${fmt(it.w)} × ${fmt(it.h)} m creada. La cruz pasa al lado para la siguiente, o Esc para terminar`;
+  const t=it.th||SD().int||.1;XW.s=null;XW.p=[r2(it.x+it.w+t),r2(it.y)];XW.nm='Habitación';sel=null;try{done()}finally{window._XWNS=0}xwUI();xwFocus()}
+function xwFocus(){setTimeout(()=>{try{const a=document.activeElement;if(a&&a.blur&&!(a.closest&&a.closest('#xwP')))a.blur();const b=$('#xwP [data-xw="fix"]');if(b)b.focus()}catch(e){}},60)}
 function xwBack(){if(XW.s){XW.p=XW.s.slice();XW.s=null;note='Mueve otra vez el inicio';xwUI();render()}else{xwStop();tool='select';toolsUI();render()}}
 /* ventana */
 function xwUI(){if(!XW)return;let w=$('#xwP');if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="xwP" role="dialog" aria-label="Tabique con la cruz"></div>');w=$('#xwP')}const D=xwDist(XW.f,XW.p[0],XW.p[1]),fv=v=>v==null?'—':fmt(r2(v)),st2=XW.step;
   const arrows=`<div class="xwA"><span></span><button data-xwk="ArrowUp" aria-label="Arriba">▲</button><span></span><button data-xwk="ArrowLeft" aria-label="Izquierda">◀</button><button data-xwk="ArrowDown" aria-label="Abajo">▼</button><button data-xwk="ArrowRight" aria-label="Derecha">▶</button></div>
     <div class="xwSt">Paso <button data-xws=".01"${st2===.01?' class="on"':''}>1 cm</button><button data-xws=".1"${st2===.1?' class="on"':''}>10 cm</button><button data-xws="1"${st2===1?' class="on"':''}>1 m</button></div>`;
-  let h=`<div class="xwH"><b>${XW.s?'2 · Largo y dirección':'1 · Dónde empieza'}</b><button data-xw="x" aria-label="Terminar">✕</button></div>`;
-  if(!XW.s){h+=`<p class="xwP">Toca en el plano para poner la cruz y ajústala con las flechas.</p><div class="xwG"><label>Desde la pared de la izquierda (m)<input data-xwi="L" type="number" step="0.01" inputmode="decimal" value="${D.L==null?'':r2(D.L)}"${D.L==null?' disabled':''}></label><label>Desde la pared de arriba (m)<input data-xwi="U" type="number" step="0.01" inputmode="decimal" value="${D.U==null?'':r2(D.U)}"${D.U==null?' disabled':''}></label></div>
-    <p class="xwD">A la derecha: <b>${fv(D.R)} m</b> · abajo: <b>${fv(D.D)} m</b></p>${arrows}<div class="xwB"><button data-xw="fix" class="pri">Fijar el inicio <kbd>Intro</kbd></button></div>`}
+  let h=`<div class="xwH"><b>${XW.m==='room'?(XW.s?'2 · Ancho y largo':'1 · Una esquina'):(XW.s?'2 · Largo y dirección':'1 · Dónde empieza')}</b><button data-xw="x" aria-label="Terminar">✕</button></div>`;
+  if(XW.m==='room'&&XW.s){const R=xwRect(),q=xwQ();h+=`<div class="xwG"><label>Ancho (m)<input data-xwi="rw" type="number" step="0.01" min="0" inputmode="decimal" value="${r2(R.w)}"></label><label>Largo (m)<input data-xwi="rh" type="number" step="0.01" min="0" inputmode="decimal" value="${r2(R.h)}"></label></div><div class="xwG"><label>Hacia dónde<select data-xwi="rq">${Object.entries(XWQ).map(([k,v])=>`<option value="${k}"${q===k?' selected':''}>${v[2]}</option>`).join('')}</select></label></div>
+    <p class="xwD">${fmt(r2(R.w*R.h))} m² · medidas por dentro. Del lado libre a la pared: <b>${fv({e:D.R,w:D.L}[q[1]])} m</b> y <b>${fv({s:D.D,n:D.U}[q[0]])} m</b></p>${arrows}<div class="xwB"><button data-xw="back">Mover la esquina <kbd>Esc</kbd></button><button data-xw="fix" class="pri">Crear <kbd>Intro</kbd></button></div>`}
+  else if(!XW.s){h+=`<p class="xwP">Toca en el plano para poner la cruz${XW.m==='room'?' en una esquina de la habitación':''} y ajústala con las flechas.</p><div class="xwG"><label>Desde la pared de la izquierda (m)<input data-xwi="L" type="number" step="0.01" inputmode="decimal" value="${D.L==null?'':r2(D.L)}"${D.L==null?' disabled':''}></label><label>Desde la pared de arriba (m)<input data-xwi="U" type="number" step="0.01" inputmode="decimal" value="${D.U==null?'':r2(D.U)}"${D.U==null?' disabled':''}></label></div>
+    <p class="xwD">A la derecha: <b>${fv(D.R)} m</b> · abajo: <b>${fv(D.D)} m</b></p>${arrows}<div class="xwB"><button data-xw="fix" class="pri">${XW.m==='room'?'Fijar la esquina':'Fijar el inicio'} <kbd>Intro</kbd></button></div>`}
   else{const L=xwLen(),d=xwDir();h+=`<div class="xwG"><label>Largo (m)<input data-xwi="len" type="number" step="0.01" min="0" inputmode="decimal" value="${r2(L)}"></label><label>Dirección<select data-xwi="dir">${Object.entries(XWD).map(([k,v])=>`<option value="${k}"${d===k?' selected':''}>${v[2]}</option>`).join('')}<option value="ang"${d==='ang'?' selected':''}>Con ángulo</option></select></label>${d==='ang'?`<label>Ángulo (°)<input data-xwi="ang" type="number" step="0.5" inputmode="decimal" value="${xwAng()}"></label>`:''}</div>
     <div class="xwG"><label>Grosor<select data-xwi="tk">${XWT.map(([k,t])=>`<option value="${k}"${XW.tk===k?' selected':''}>${t}${k!=='otro'?' · '+Math.round((SD()[k]||.1)*100)+' cm':''}</option>`).join('')}</select></label>${XW.tk==='otro'?`<label>Grosor (cm)<input data-xwi="thc" type="number" step="1" min="3" inputmode="decimal" value="${XW.thc}"></label>`:''}</div>
     <p class="xwD">Del final a la pared de la derecha: <b>${fv(D.R)} m</b> · a la de abajo: <b>${fv(D.D)} m</b></p>${arrows}<div class="xwB"><button data-xw="back">Mover el inicio <kbd>Esc</kbd></button><button data-xw="fix" class="pri">Crear <kbd>Intro</kbd></button></div>`}
   w.innerHTML=h}
 /* dibujo en el plano: la cruz, las cotas y el tabique de muestra */
-{const _rXW=render;render=function(){const r=_rXW.apply(this,arguments);try{if(!isMod())return r;if(tool==='wall'&&!XW&&contOf(fl))xwStart();if(XW&&(tool!=='wall'||fl!==XW.f)){xwStop()}if(!XW)return r;
+{const _rXW=render;render=function(){const r=_rXW.apply(this,arguments);try{if(!isMod())return r;if((tool==='wall'||tool==='room')&&!XW&&contOf(fl)&&!draft)xwStart(tool);if(XW&&(tool!==XW.m||fl!==XW.f)){xwStop()}if(!XW)return r;
   const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s,[x,y]=XW.p,col='#d35400';let h='<g id="xwG" pointer-events="none">';
-  if(XW.s){const[a,b]=XW.s,L=xwLen(),t=xwTh();if(L>.01){const ux=(x-a)/L,uy=(y-b)/L,nx=-uy*t/2,ny=ux*t/2;h+=`<path d="M${(a+nx)*S} ${(b+ny)*S}L${(x+nx)*S} ${(y+ny)*S}L${(x-nx)*S} ${(y-ny)*S}L${(a-nx)*S} ${(b-ny)*S}Z" fill="${col}" fill-opacity=".35" stroke="${col}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+  if(XW.s&&XW.m==='room'){const R=xwRect(),t=SD().int||.3;h+=`<rect x="${(R.x-t)*S}" y="${(R.y-t)*S}" width="${(R.w+2*t)*S}" height="${(R.h+2*t)*S}" fill="${col}" fill-opacity=".18" stroke="${col}" stroke-width="1" stroke-dasharray="4 3"/><rect x="${R.x*S}" y="${R.y*S}" width="${R.w*S}" height="${R.h*S}" fill="var(--bg)" fill-opacity=".6" stroke="${col}" stroke-width="2"/><text x="${(R.x+R.w/2)*S}" y="${(R.y+R.h/2)*S}" text-anchor="middle" style="font-size:13px;font-weight:700;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:4px">${esc(XW.nm||'Habitación')} · ${fmt(r2(R.w))} × ${fmt(r2(R.h))} m</text><circle cx="${XW.s[0]*S}" cy="${XW.s[1]*S}" r="5" fill="${col}"/>`}
+  else if(XW.s){const[a,b]=XW.s,L=xwLen(),t=xwTh();if(L>.01){const ux=(x-a)/L,uy=(y-b)/L,nx=-uy*t/2,ny=ux*t/2;h+=`<path d="M${(a+nx)*S} ${(b+ny)*S}L${(x+nx)*S} ${(y+ny)*S}L${(x-nx)*S} ${(y-ny)*S}L${(a-nx)*S} ${(b-ny)*S}Z" fill="${col}" fill-opacity=".35" stroke="${col}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
       h+=`<text x="${(a+x)/2*S+(-uy)*16}" y="${(b+y)/2*S+ux*16+4}" text-anchor="middle" style="font-size:13px;font-weight:700;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:4px">${fmt(r2(L))} m</text>`}
     h+=`<circle cx="${a*S}" cy="${b*S}" r="5" fill="${col}"/>`}
   const D=xwDist(XW.f,x,y),dim=(x1,y1,x2,y2,v)=>{if(v==null||v<.01)return '';const mx=(x1+x2)/2*S,my=(y1+y2)/2*S;return `<line x1="${x1*S}" y1="${y1*S}" x2="${x2*S}" y2="${y2*S}" stroke="${col}" stroke-width="1" stroke-dasharray="3 3"/><text x="${mx}" y="${my-4}" text-anchor="middle" style="font-size:11px;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(r2(v))}</text>`};
@@ -12599,11 +12613,11 @@ function xwUI(){if(!XW)return;let w=$('#xwP');if(!w){$('#cvw').insertAdjacentHTM
   const k=14;h+=`<path d="M${x*S-k} ${y*S}H${x*S+k}M${x*S} ${y*S-k}V${y*S+k}" stroke="${col}" stroke-width="2.5"/><circle cx="${x*S}" cy="${y*S}" r="3.5" fill="none" stroke="${col}" stroke-width="1.5"/></g>`;
   g.insertAdjacentHTML('beforeend',h)}catch(e){console.warn('cruz',e)}return r}}
 /* tocar el plano pone la cruz (y no dibuja arrastrando) */
-svg.addEventListener('pointerdown',e=>{if(!XW||tool!=='wall'||!e.isPrimary||e.button>0)return;e.stopImmediatePropagation();e.preventDefault();const r=svg.getBoundingClientRect();let x=(e.clientX-r.left-view.ox)/view.s,y=(e.clientY-r.top-view.oy)/view.s;
+svg.addEventListener('pointerdown',e=>{if(!XW||tool!==XW.m||!e.isPrimary||e.button>0)return;e.stopImmediatePropagation();e.preventDefault();const r=svg.getBoundingClientRect();let x=(e.clientX-r.left-view.ox)/view.s,y=(e.clientY-r.top-view.oy)/view.s;
   if(!e.shiftKey){try{[x,y]=snapPtEdges(x,y,XW.f)}catch(er){}}XW.p=[r2(x),r2(y)];if(XW.s){const d=xwDir();if(d!=='ang')XW.dir=d}xwUI();render()},true);
 /* teclado: flechas, Intro y Esc */
-window.addEventListener('keydown',e=>{if(!XW)return;try{if(KB.on){KB.on=false;KB.down=false;KB.last=null}}catch(er){}const ae=document.activeElement,inW=ae&&ae.closest&&ae.closest('#xwP');if(/INPUT|TEXTAREA|SELECT/.test(ae&&ae.tagName||'')&&!inW)return;
-  if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();if(inW&&ae.tagName!=='BUTTON'){ae.dispatchEvent(new Event('change',{bubbles:true}))}setTimeout(()=>{xwFix();const b=$('#xwP [data-xw="fix"]');b&&b.focus()},0);return}
+window.addEventListener('keydown',e=>{if(!XW)return;if(document.querySelector('#useDlg,#winDlg,#rdBox,#v2ask,#nestdlg:not([hidden]),#pwP,#rfP'))return;try{if(KB.on){KB.on=false;KB.down=false;KB.last=null}}catch(er){}const ae=document.activeElement,inW=ae&&ae.closest&&ae.closest('#xwP');if(/INPUT|TEXTAREA|SELECT/.test(ae&&ae.tagName||'')&&!inW)return;
+  if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();if(inW&&ae.tagName!=='BUTTON'){ae.dispatchEvent(new Event('change',{bubbles:true}))}setTimeout(()=>{xwFix();xwFocus()},0);return}
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();xwBack();return}
   const A={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!A)return;if(inW&&ae.tagName==='INPUT')return;if(inW&&ae.tagName==='SELECT')ae.blur();
   e.preventDefault();e.stopImmediatePropagation();const s=e.altKey?.01:e.shiftKey?1:XW.step;xwMove(A[0]*s,A[1]*s)},true);
@@ -12615,6 +12629,9 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.cl
   else if(k==='len'){if(!(v>=0))return xwUI();const d=xwDir();xwSetLD(v,d==='ang'?'ang':d,xwAng())}
   else if(k==='dir'){const L=xwLen()||1;if(t.value==='ang')xwSetLD(L,'ang',45);else xwSetLD(L,t.value)}
   else if(k==='ang'){if(isNaN(v))return xwUI();xwSetLD(xwLen()||1,'ang',v)}
+  else if(k==='rw'||k==='rh'){if(!(v>=0))return xwUI();const R=xwRect();xwSetWH(k==='rw'?v:R.w,k==='rh'?v:R.h,xwQ())}
+  else if(k==='rq'){const R=xwRect();xwSetWH(R.w,R.h,t.value)}
+  else if(k==='rn'){XW.nm=t.value||'Habitación';return}
   else if(k==='tk')XW.tk=t.value;else if(k==='thc'){if(v>=3)XW.thc=v}xwUI();render()});
 {const cs=document.createElement('style');cs.textContent=`#xwP{position:absolute;left:10px;top:56px;z-index:8;width:min(340px,calc(100% - 90px));max-height:calc(100% - 70px);overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:6px solid #d35400;border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.4;box-shadow:0 4px 16px #0003}
 #xwP .xwH{display:flex;align-items:center;gap:8px;font-size:16px}#xwP .xwH button{margin-left:auto;padding:2px 9px}#xwP .xwP{margin:6px 0;color:var(--mute);font-size:14px}#xwP .xwD{margin:6px 0;font-size:14px}
@@ -12623,7 +12640,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.cl
 #xwP .xwSt{display:flex;gap:4px;align-items:center;justify-content:center;font-size:13px;color:var(--mute)}#xwP .xwSt button{padding:3px 8px;font-size:13px}#xwP .xwSt button.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #xwP .xwB{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#xwP .xwB button{font-size:15px;padding:7px 12px}#xwP .xwB .pri{margin-left:auto;background:#d35400;border-color:#d35400;color:#fff}#xwP kbd{font:11px/1 inherit;border:1px solid currentColor;border-radius:3px;padding:1px 3px;margin-left:4px;opacity:.8}
 @media (max-width:560px){#xwP{top:auto;bottom:10px;left:8px;width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:55%;box-sizing:border-box}#pasos{max-width:calc(100vw - 20px)}}
-body.xwon #dock section:has(#addWall),body.xwon section:has(#addWall){display:none!important}`;document.head.appendChild(cs)}
+body.xwon #dock section:has(#addWall),body.xwon section:has(#addWall),body.xwon section:has(#addRoom){display:none!important}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
