@@ -892,7 +892,7 @@ function build3(R){const T=THREE,sc=new T.Scene();sc.background=new T.Color('#e9
     if(items.some(c=>c.t==='cruz'&&(c.pos||'campanario')==='campanario'&&nearCamp(c)===q)){const top=H+al+(tw?w*.6:.1),cm=M('#1c1c1c'),v=new T.Mesh(new T.BoxGeometry(.08,1,.08),cm),hb=new T.Mesh(new T.BoxGeometry(.6,.08,.08),cm);v.position.set(q.x,top+.5,q.y);hb.position.set(q.x,top+.72,q.y);sc.add(v);sc.add(hb)}});
   try{cutRoof(roof,R,I,H,T,M)}catch(e){console.warn(e)}roof.visible=false;sc.add(roof);return{sc,I,H,roof}}
 function open3D(R){const ov=$('#v3d');ov.hidden=false;$('#v3t').textContent=R.name||'Estancia';$('#v3m').textContent='Cargando el visor 3D…';
-  load3().then(()=>start3(R)).catch(()=>{$('#v3m').textContent='No se pudo cargar el visor 3D: hace falta conexión a internet la primera vez.'})}
+  load3().then(()=>start3(R)).catch(e=>{if(window.THREE){console.warn('Visor 3D',e);$('#v3m').textContent='No se pudo dibujar este 3D: '+(e&&e.message||e)}else $('#v3m').textContent='No se pudo cargar el visor 3D: hace falta conexión a internet la primera vez.'})}
 function start3(R){const T=THREE,box=$('#v3c');box.innerHTML='';const B=build3(R),rd=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});rd.setPixelRatio(Math.min(2,devicePixelRatio||1));box.appendChild(rd.domElement);
   const cam=new T.PerspectiveCamera(55,1,.05,200),I=B.I,cx=(I.x0+I.x1)/2,cz=(I.y0+I.y1)/2,span=Math.max(I.x1-I.x0,I.y1-I.y0);
   const st3={mode:'orbit',tx:cx,ty:B.H*.3,tz:cz,dist:span*1.4+3,yaw:.8,pitch:.75,px:cx,pz:cz,lyaw:0,lpitch:0,keys:{},raf:0};
@@ -12536,7 +12536,7 @@ function stBuild3(){const T=THREE,sc=new T.Scene();sc.background=new T.Color('#e
     STK='forj';box(g,c.w+E,cf,c.h+E,M.forj,c.x+c.w/2,z0+H-cf/2,c.y+c.h/2)});
   if(bx0>bx1){bx0=0;by0=0;bx1=10;by1=10}
   /* el nivel del terreno, transparente */try{const zg=st.sot?rasante():0,m=4,pl=new T.Mesh(new T.PlaneGeometry(bx1-bx0+2*m,by1-by0+2*m),M.gr);pl.rotation.x=-Math.PI/2;pl.position.set((bx0+bx1)/2,zg-.01,(by0+by1)/2);pl.userData.lv='terr';pl.userData.k='terr';sc.add(pl)}catch(e){}
-  const B={sc,I:{x0:bx0-2,y0:by0-2,x1:bx1+2,y1:by1+2},H:zMax-zMin,G,levels:L,stView:1};STB3=B;stSk(STSK);return B}
+  const roof=new T.Group();sc.add(roof);const B={sc,roof,walk:[],I:{x0:bx0-2,y0:by0-2,x1:bx1+2,y1:by1+2},H:zMax-zMin,G,levels:L,stView:1};STB3=B;stSk(STSK);return B}
 let STSK=1;function stSk(on){STSK=on?1:0;if(!STB3)return;const hide=new Set(['muro','viga','hor','terr']);STB3.sc.traverse(o=>{if(o.userData&&o.userData.k&&hide.has(o.userData.k))o.visible=!STSK})}
 {const _b3ST=build3;build3=function(R){if(R&&R.stView&&window.THREE)return stBuild3(R);return _b3ST.apply(this,arguments)}}
 function stOpen3D(){if(!contOf(pbF())&&!contOf(0)){note='Dibuja primero los contornos (paso 2)';return render()}open3D({stView:1,name:'Estructura'});const tryB=n=>{const fb=$('#v3d .fb');if(!STB3||!fb){if(n<60)setTimeout(()=>tryB(n+1),150);return}$('#v3st')&&$('#v3st').remove();

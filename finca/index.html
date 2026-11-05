@@ -892,7 +892,7 @@ function build3(R){const T=THREE,sc=new T.Scene();sc.background=new T.Color('#e9
     if(items.some(c=>c.t==='cruz'&&(c.pos||'campanario')==='campanario'&&nearCamp(c)===q)){const top=H+al+(tw?w*.6:.1),cm=M('#1c1c1c'),v=new T.Mesh(new T.BoxGeometry(.08,1,.08),cm),hb=new T.Mesh(new T.BoxGeometry(.6,.08,.08),cm);v.position.set(q.x,top+.5,q.y);hb.position.set(q.x,top+.72,q.y);sc.add(v);sc.add(hb)}});
   try{cutRoof(roof,R,I,H,T,M)}catch(e){console.warn(e)}roof.visible=false;sc.add(roof);return{sc,I,H,roof}}
 function open3D(R){const ov=$('#v3d');ov.hidden=false;$('#v3t').textContent=R.name||'Estancia';$('#v3m').textContent='Cargando el visor 3D…';
-  load3().then(()=>start3(R)).catch(()=>{$('#v3m').textContent='No se pudo cargar el visor 3D: hace falta conexión a internet la primera vez.'})}
+  load3().then(()=>start3(R)).catch(e=>{if(window.THREE){console.warn('Visor 3D',e);$('#v3m').textContent='No se pudo dibujar este 3D: '+(e&&e.message||e)}else $('#v3m').textContent='No se pudo cargar el visor 3D: hace falta conexión a internet la primera vez.'})}
 function start3(R){const T=THREE,box=$('#v3c');box.innerHTML='';const B=build3(R),rd=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});rd.setPixelRatio(Math.min(2,devicePixelRatio||1));box.appendChild(rd.domElement);
   const cam=new T.PerspectiveCamera(55,1,.05,200),I=B.I,cx=(I.x0+I.x1)/2,cz=(I.y0+I.y1)/2,span=Math.max(I.x1-I.x0,I.y1-I.y0);
   const st3={mode:'orbit',tx:cx,ty:B.H*.3,tz:cz,dist:span*1.4+3,yaw:.8,pitch:.75,px:cx,pz:cz,lyaw:0,lpitch:0,keys:{},raf:0};
