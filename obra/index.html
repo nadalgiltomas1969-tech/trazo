@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · rampa de entrada y terreno con desnivel en 3D</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · rellenos bajo la rampa, piscina y frente</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -11010,10 +11010,10 @@ svg.addEventListener('pointerdown',e=>{if(!OBT||(OBT.k!=='cerr'&&OBT.k!=='ppar')
 svg.addEventListener('dblclick',e=>{if(OBT&&OBT.k==='cerr'){e.stopImmediatePropagation();cerrEnd(0)}},true);
 function cerrEnd(cl){if(OBT&&OBT.pts.length>1){push();const o=OB();o.cerr=o.cerr||[];o.cerr.push({id:OBID(),t:OBT.sub||'murete',cl:cl?1:0,pts:OBT.pts.map(p=>[r2(p[0]),r2(p[1])])});note='Cerramiento dibujado'}OBT=null;done();if($('#obraP'))obraOpen()}
 /* 3D del cerramiento y de sus puertas */
-const _bldAll3CE=bldAll3;bldAll3=function(){const B=_bldAll3CE.apply(this,arguments);try{const o=OB();if(!o.cerr||!o.cerr.length||!window.THREE)return B;const T=THREE,zg=st.sot?rasante():0,G=new T.Group();B.sc.add(G);
+const _bldAll3CE=bldAll3;bldAll3=function(){const B=_bldAll3CE.apply(this,arguments);try{const o=OB();if(!o.cerr||!o.cerr.length||!window.THREE)return B;const T=THREE,zg=st.sot?rasante():0,G=new T.Group();G.userData.cerr=1;B.sc.add(G);
   const M={white:(typeof wallMat3==='function')?new T.MeshLambertMaterial({map:calTex(),color:'#ffffff'}):new T.MeshLambertMaterial({color:'#f2f0ea'}),met:new T.MeshPhongMaterial({color:'#37474f',shininess:40}),alu:new T.MeshPhongMaterial({color:'#78909c',shininess:50}),green:new T.MeshLambertMaterial({color:'#3f7f3a'}),mesh:new T.MeshLambertMaterial({color:'#7cb342',transparent:true,opacity:.35,side:T.DoubleSide}),stone:(typeof stoneM3==='function')?stoneM3():new T.MeshLambertMaterial({color:'#a1887f'})};
   const box=(w,h,d,m,x,y,z,ry)=>{const me=new T.Mesh(new T.BoxGeometry(w,h,d),m);me.position.set(x,y,z);me.rotation.y=ry||0;me.castShadow=true;me.receiveShadow=true;G.add(me);return me};const M0={...M},cMat=c=>{M.stone=c.t==='piedra'&&c.pd?stoneM3({k:'trad',...c.pd}):M0.stone;M.white=c.col&&(c.t==='bloque'||c.t==='murete')?new T.MeshLambertMaterial({color:c.col}):M0.white;M.green=c.col&&c.t==='seto'?new T.MeshLambertMaterial({color:c.col}):M0.green;M.alu=c.col&&c.t==='lamas'?new T.MeshPhongMaterial({color:c.col,shininess:50}):(c.cm&&c.t==='lamas'?new T.MeshPhongMaterial({color:c.cm,shininess:50}):M0.alu);M.met=c.cm?new T.MeshPhongMaterial({color:c.cm,shininess:40}):M0.met;M.mesh=c.col&&c.t==='malla'?new T.MeshLambertMaterial({color:c.col,transparent:true,opacity:.4,side:T.DoubleSide}):M0.mesh};
-  const fence=(t,x0,y0,x1,y1,H)=>{const L=Math.hypot(x1-x0,y1-y0);if(L<.02)return;const ry=-Math.atan2(y1-y0,x1-x0),cx=(x0+x1)/2,cz=(y0+y1)/2,ux=(x1-x0)/L,uz=(y1-y0)/L;
+  const fence=(t,x0,y0,x1,y1,H)=>{const L=Math.hypot(x1-x0,y1-y0);if(L<.02)return;if(L>2.6){const np=Math.ceil(L/2.5);for(let k=0;k<np;k++)fence(t,x0+(x1-x0)*k/np,y0+(y1-y0)*k/np,x0+(x1-x0)*(k+1)/np,y0+(y1-y0)*(k+1)/np,H);return}const ry=-Math.atan2(y1-y0,x1-x0),cx=(x0+x1)/2,cz=(y0+y1)/2,ux=(x1-x0)/L,uz=(y1-y0)/L;
     if(t==='bloque'){box(L,H,.2,M.white,cx,zg+H/2,cz,ry);box(L+.04,.05,.26,M.white,cx,zg+H+.025,cz,ry)}
     else if(t==='piedra'){box(L,H,.5,M.stone,cx,zg+H/2,cz,ry)}
     else if(t==='seto'){const me=box(L,H,.6,M.green,cx,zg+H/2,cz,ry)}
@@ -13305,6 +13305,32 @@ function ter3(T,B){const s=SOL();if(!s)return;const P=solPts(s),c=contOf(0)||con
   /* linderos: una línea para ver el solar */const lp=[];P.forEach((p,i)=>{const q=P[(i+1)%P.length],n=Math.max(1,Math.ceil(Math.hypot(q[0]-p[0],q[1]-p[1])/1));for(let k=0;k<n;k++){const x=p[0]+(q[0]-p[0])*k/n,y=p[1]+(q[1]-p[1])*k/n,x2=p[0]+(q[0]-p[0])*(k+1)/n,y2=p[1]+(q[1]-p[1])*(k+1)/n;let z1=0,z2=0;try{z1=tzAt(x,y);z2=tzAt(x2,y2)}catch(e){}lp.push(x,base+z1+.05,y,x2,base+z2+.05,y2)}});
   try{const lg=new T.BufferGeometry();lg.setAttribute('position',new T.Float32BufferAttribute(lp,3));const ln=new T.LineSegments(lg,new T.LineBasicMaterial({color:'#8d5a2b'}));ln.userData.terr=1;B.sc.add(ln)}catch(e){}}
 {const _bTER=bldAll3;bldAll3=function(){const B=_bTER.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return B;ter3(THREE,B)}catch(e){console.warn('terreno 3D',e)}return B}}
+
+/* ===================== RELLENOS LOCALES: BAJO LA RAMPA, LA PISCINA, EL FRENTE Y EL EDIFICIO ===================== */
+/* aunque no se rellene el solar entero, lo que se construye no puede quedar en el aire */
+let LFC=null,_lfIn=0;const LFT=1.5;
+function lfCtx(){const k=RXV+'|'+((typeof EX!=='undefined'&&EX)?EX.ver:0);if(LFC&&LFC.k===k)return LFC;const C={k,R:[],P:[],F:null,B:null};_lfIn++;
+  try{if(!isMod()||!SOL())return LFC=C;
+    items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(G)C.R.push({G,hw:Math.max(G.w,G.wr||0,G.g||0)/2+.3})});
+    items.filter(o=>o.t==='pisc').forEach(o=>{const N=psN(o),b={x0:o.x-.8,y0:o.y-.8,x1:o.x+o.w+.8,y1:o.y+o.h+.8};C.P.push({b,z:N.zc})});
+    if(OB().rellF!==0){const F=rxFrame();if(F)C.F={F,zc:zCalle()}}
+    const c=contOf(0)||contOf(aljFG());if(c){const E=(SD().ext||.3)/2;let zb=0;try{zb=st.sot?rxZB({f:cimF()}):0}catch(e){}C.B={x0:c.x-E,y0:c.y-E,x1:c.x+c.w+E,y1:c.y+c.h+E,z:zb-.5}}}catch(e){console.warn('rellenos',e)}finally{_lfIn--}return LFC=C}
+function lfAt(x,y,z){if(_lfIn||_rxIn)return z;const C=lfCtx();let out=z;
+  C.R.forEach(({G,hw})=>{let best=-1e9;G.seg.forEach(q=>{const dx=x-q.a[0],dy=y-q.a[1];let t=dx*q.d[0]+dy*q.d[1];const tc=Math.max(-G.g/2,Math.min(q.L+G.g/2,t)),v=Math.hypot(dx-q.d[0]*tc,dy-q.d[1]*tc),s=Math.max(0,Math.min(G.Lt,q.s0+tc)),zr=G.zs(s)-.25,d=Math.max(0,v-hw);const cand=zr-d/LFT;if(cand>best)best=cand});if(best>out)out=best});
+  C.P.forEach(({b,z:zp})=>{const d=Math.hypot(Math.max(0,b.x0-x,x-b.x1),Math.max(0,b.y0-y,y-b.y1)),cand=zp-.05-d/LFT;if(cand>out)out=cand});
+  if(C.F){const F=C.F.F,u=(x-F.xy(0,0)[0]),w=0;const a0=F.xy(0,0),a1=F.xy(1,0),a2=F.xy(0,1),d=[a1[0]-a0[0],a1[1]-a0[1]],n=[a2[0]-a0[0],a2[1]-a0[1]],vv=(x-a0[0])*n[0]+(y-a0[1])*n[1],uu=(x-a0[0])*d[0]+(y-a0[1])*d[1];
+    if(vv>=-.5&&uu>=F.su0-.5&&uu<=F.su1+.5){const cand=C.F.zc-Math.max(0,vv-F.cv0)/LFT;if(cand>out)out=cand}}
+  return out}
+{const _tzLF=tzAt;tzAt=function(x,y){const z=_tzLF.apply(this,arguments);try{return lfAt(x,y,z)}catch(e){return z}}}
+/* el hueco del edificio en el 3D: el terreno sube por debajo hasta el fondo del edificio (sin ver el cielo por debajo) */
+{const _ter3B=ter3;ter3=function(T,B){const r=_ter3B.apply(this,arguments);try{const C=lfCtx();if(!C.B)return r;const bb=C.B,base=st.sot?rasante():0,me=new T.Mesh(new T.BoxGeometry(bb.x1-bb.x0,.1,bb.y1-bb.y0),new T.MeshLambertMaterial({color:'#9c8458'}));me.position.set((bb.x0+bb.x1)/2,base+bb.z,(bb.y0+bb.y1)/2);me.userData.terr=1;B.sc.add(me);
+  /* faldón de tierra alrededor, del terreno hasta el fondo del edificio */const pos=[],idx=[],ring=[[bb.x0,bb.y0],[bb.x1,bb.y0],[bb.x1,bb.y1],[bb.x0,bb.y1]];ring.forEach((p,i)=>{const q=ring[(i+1)%4],L=Math.hypot(q[0]-p[0],q[1]-p[1]),n=Math.max(1,Math.ceil(L/.5));for(let k=0;k<n;k++){const xa=p[0]+(q[0]-p[0])*k/n,ya=p[1]+(q[1]-p[1])*k/n,xb=p[0]+(q[0]-p[0])*(k+1)/n,yb=p[1]+(q[1]-p[1])*(k+1)/n;let za=0,zb2=0;try{za=tzAt(xa,ya);zb2=tzAt(xb,yb)}catch(e){}const o=pos.length/3;pos.push(xa,base+za,ya,xb,base+zb2,yb,xb,base+bb.z,yb,xa,base+bb.z,ya);idx.push(o,o+1,o+2,o,o+2,o+3)}});
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();const sk=new T.Mesh(g,new T.MeshLambertMaterial({color:'#9c8458',side:T.DoubleSide}));sk.userData.terr=1;B.sc.add(sk);
+  /* el cierre del solar sigue el terreno */B.sc.children.forEach(G=>{if(!G.userData||!G.userData.cerr)return;G.children.forEach(m=>{let t=0;try{t=tzAt(m.position.x,m.position.z)}catch(e){}m.position.y+=t})})}catch(e){console.warn('relleno 3D',e)}return r}}
+/* paso 2: elegir si se rellena el frente hasta la calle */
+{const _pw2LF=pw2;pw2=function(){let h=_pw2LF.apply(this,arguments);try{if(!SOL())return h;h+=`<h3>Rellenos</h3><p class="hint" style="margin:2px 0">Aunque no rellenes el solar entero, bajo la rampa, alrededor de la piscina y bajo el edificio siempre se rellena con tierra compactada.</p><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-lff="1"${OB().rellF!==0?' checked':''} style="width:auto"> Rellenar el frente, de la calle a la fachada, a la altura de la calle</label>`}catch(e){}return h}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.lff)return;push();OB().rellF=t.checked?1:0;LFC=null;done();try{pasoBody()}catch(er){}});
+let LFSIG='';{const _doneLF=done;done=function(){LFC=null;try{const sg=JSON.stringify([items.filter(o=>o.t==='rampx'||o.t==='pisc'||(o.t==='cont'&&o.f<=1)),OB().rellF]);if(sg!==LFSIG){LFSIG=sg;if(typeof EX!=='undefined'&&EX){EX.ver++;EX.grid=null}}}catch(e){}return _doneLF.apply(this,arguments)}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
