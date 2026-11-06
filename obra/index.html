@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 5 nov 2026 · presupuesto con IVA y todos los gastos</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · relleno y pozos en la parte baja del solar</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -895,7 +895,7 @@ function open3D(R){const ov=$('#v3d');ov.hidden=false;$('#v3t').textContent=R.na
   load3().then(()=>start3(R)).catch(e=>{if(window.THREE){console.warn('Visor 3D',e);$('#v3m').textContent='No se pudo dibujar este 3D: '+(e&&e.message||e)}else $('#v3m').textContent='No se pudo cargar el visor 3D: hace falta conexión a internet la primera vez.'})}
 function start3(R){const T=THREE,box=$('#v3c');box.innerHTML='';const B=build3(R),rd=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});rd.setPixelRatio(Math.min(2,devicePixelRatio||1));box.appendChild(rd.domElement);
   const cam=new T.PerspectiveCamera(55,1,.05,200),I=B.I,cx=(I.x0+I.x1)/2,cz=(I.y0+I.y1)/2,span=Math.max(I.x1-I.x0,I.y1-I.y0);
-  const st3={mode:'orbit',tx:cx,ty:B.H*.3,tz:cz,dist:span*1.4+3,yaw:.8,pitch:.75,px:cx,pz:cz,lyaw:0,lpitch:0,keys:{},raf:0};
+  const st3={mode:'orbit',tx:cx,ty:B.H*.3,tz:cz,dist:B.stView?span*.9+1.5:span*1.4+3,yaw:.8,pitch:.75,px:cx,pz:cz,lyaw:0,lpitch:0,keys:{},raf:0};
   const preset=k=>{if(k==='top'){st3.mode='orbit';st3.yaw=0;st3.pitch=1.45;st3.dist=span*1.3+3}else if(k==='corner'){st3.mode='orbit';st3.yaw=.8;st3.pitch=.6;st3.dist=span*1.2+2}else{st3.mode='walk';{const e=eyeSpot(R,I);st3.px=e[0];st3.pz=e[1];st3.h=0;st3.ey=0}st3.lyaw=(I.x1-I.x0)>=(I.y1-I.y0)?-Math.PI/2:Math.PI;st3.lpitch=0}msg3()};
   const msg3=()=>{$('#v3m').textContent=st3.mode==='walk'?'Flechas: avanzar, retroceder y girar · Mayúsculas + flechas: paso lateral · arrastra para mirar':'Arrastra para girar · rueda o dos dedos para acercar · flechas para recorrer'};
   const size=()=>{const w=box.clientWidth,h=box.clientHeight;rd.setSize(w,h);cam.aspect=w/Math.max(1,h);cam.updateProjectionMatrix()};size();
@@ -12790,14 +12790,17 @@ let STUP=null;
       const pitS=(x,y)=>{const d=Math.max(0,P.x0-x)*inv(ts.o),e2=Math.max(0,x-P.x1)*inv(ts.e),n=Math.max(0,P.y0-y)*inv(ts.n),so=Math.max(0,y-P.y1)*inv(ts.s);return zb+Math.max(d,e2,n,so)};
       const mt=Math.max(ts.o||0,ts.e||0,ts.n||0,ts.s||0),ext=P.dep*mt+12;let X0=P.x0-ext,X1=P.x1+ext,Y0=P.y0-ext,Y1=P.y1+ext;
       try{const S0=SOL();if(S0){const Q=solPts(S0),xs=Q.map(q=>q[0]),ys=Q.map(q=>q[1]);X0=Math.max(X0,Math.min(...xs)-3);X1=Math.min(X1,Math.max(...xs)+3);Y0=Math.max(Y0,Math.min(...ys)-3);Y1=Math.min(Y1,Math.max(...ys)+3)}}catch(e){}
-      const stp=Math.max(.4,Math.sqrt((X1-X0)*(Y1-Y0)/16000)),nx=Math.max(2,Math.ceil((X1-X0)/stp)+1),ny=Math.max(2,Math.ceil((Y1-Y0)/stp)+1),pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[];
-      const cG=new T.Color('#9cbf6a'),cC=new T.Color('#a8825a'),cD=new T.Color('#7c5b3c');
-      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=X0+(X1-X0)*i/(nx-1),y=Y0+(Y1-Y0)*j/(ny-1);let tz=0;try{tz=tzAt(x,y)}catch(e){}const zt=zg+tz,zp=pitS(x,y),z=Math.min(zt,zp),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=z;pos[k+2]=y;
-        const cc=zt-z>.05?(z<=zb+.05?cD:cC):cG;col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
+      /* rejilla fina alrededor del hueco, alineada con sus bordes: cortes rectos */
+      let Q0=null;try{Q0=bajoCalc()}catch(e){}const reach=P.dep*mt+((Q0&&Q0.dmx)||0)*BAJO_TF+1.5,fine=.3,crs=Math.max(.8,Math.sqrt((X1-X0)*(Y1-Y0)/6000));
+      const axis=(A0,A1,p0,p1)=>{const S=new Set([A0,A1,p0,p1]);for(let v=A0;v<A1;v+=crs)S.add(v);for(let v=Math.max(A0,p0-reach);v<=Math.min(A1,p1+reach);v+=fine)S.add(v);return [...S].filter(v=>v>=A0&&v<=A1).sort((a,b)=>a-b).filter((v,k,a)=>k===0||v-a[k-1]>.02)};
+      const XS=axis(X0,X1,P.x0,P.x1),YS=axis(Y0,Y1,P.y0,P.y1),nx=XS.length,ny=YS.length,pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[];
+      const cG=new T.Color('#b5c98a'),cC=new T.Color('#6e4a2c'),cD=new T.Color('#4f3420'),cF=new T.Color('#9c8458');
+      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=XS[i],y=YS[j];let tz=0;try{tz=tzAt(x,y)}catch(e){}const zt=zg+tz,zp=pitS(x,y),z0b=Math.min(zt,zp),zf=bajoFillS(P,x,y),z=Math.max(z0b,zf),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=z;pos[k+2]=y;
+        const cc=z-zt>.03?cF:(zt-z>.03?(z<=zb+.03?cD:cC):cG);col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
       for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d)}
       const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
       const terr=new T.Mesh(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));B.sc.add(terr);
-      B.I={x0:Math.min(B.I.x0,X0),y0:Math.min(B.I.y0,Y0),x1:Math.max(B.I.x1,X1),y1:Math.max(B.I.y1,Y1)}}}catch(e){console.warn('fases3D',e)}return B}}
+      }}catch(e){console.warn('fases3D',e)}return B}}
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'&&STUP){STUP=null;setTimeout(()=>pasoOpen(3),50)}},true);
 /* una ventana cada vez */
 {const _pasoOpenF=pasoOpen;pasoOpen=function(){['#eaP','#ccP','#shP','#destBox','#recP'].forEach(q=>{const x=$(q);if(x)x.remove()});return _pasoOpenF.apply(this,arguments)}}
@@ -12826,7 +12829,7 @@ destAsk=function(){const q=PJ.p[PJ.cur];if(!q)return;$('#destBox')&&$('#destBox'
 /* Precios de partida para Mallorca, noviembre de 2026. Todos se pueden cambiar en «Precios…». */
 const PRES_D={
   exc:['Excavación del vaciado con máquina','m³',9],tra:['Carga, transporte y vertedero de tierras','m³ esponjado',16],rel:['Relleno con tierra de la obra, compactado','m³',12],pan:['Muro pantalla o entibación donde no cabe el talud','m²',220],
-  lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
+  mcon:['Muro de contención en la parte baja, hormigón armado con su zapata','m²',280],poz:['Pozos de hormigón bajo las zapatas, hasta el terreno firme','m³',115],lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
   pil:['Pilares de hormigón armado','m³',750],vig:['Vigas de hormigón armado','m³',620],muro:['Muro de sótano de hormigón, impermeabilizado y con drenaje','m²',230],sol:['Solera del sótano','m²',45],
   fj_viguetas:['Forjado de viguetas y bovedillas','m²',78],fj_losa:['Forjado de losa maciza','m²',112],fj_reticular:['Forjado reticular','m²',98],fj_madera:['Forjado de madera','m²',140],fj_chapa:['Forjado de chapa colaborante','m²',90],
   c_bloque:['Muro de bloque enfoscado y pintado','m',125],c_murete:['Murete con reja metálica','m',150],c_lamas:['Valla de lamas de aluminio','m',185],c_malla:['Malla metálica sobre postes','m',38],c_piedra:['Muro de piedra en seco','m',360],c_seto:['Seto vegetal','m',45],
@@ -12847,7 +12850,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* 1 tierras */let X=null;try{X=exc()}catch(e){}
   if(X&&X.kind){const Pt=X.pit;let pan=0;(X.pan||[]).forEach(s=>{if(Pt)pan+=((s==='n'||s==='s')?(Pt.x1-Pt.x0):(Pt.y1-Pt.y0))*Pt.dep});cap('tie','Excavación y tierras',[ln('exc',X.V),ln('tra',(X.sale||0)*(X.esp||1.25)),ln('rel',X.rel||0),ln('pan',pan)])}
   /* 2 cimentación */let C=null;try{C=cimCalc()}catch(e){}
-  if(C){if(o.cim==='losa'&&C.losa)cap('cim','Cimentación',[ln('losa',C.losa.V),ln('lim',C.losa.A)]);else{const A=C.zap.reduce((s,z)=>s+z.B*z.B,0)+C.corr.reduce((s,z)=>s+z.B*z.L,0);cap('cim','Cimentación',[ln('zap',C.tot),ln('lim',A)])}}
+  if(C){if(o.cim==='losa'&&C.losa)cap('cim','Cimentación',[ln('losa',C.losa.V),ln('lim',C.losa.A)]);else{const A=C.zap.reduce((s,z)=>s+z.B*z.B,0)+C.corr.reduce((s,z)=>s+z.B*z.L,0);cap('cim','Cimentación',[ln('zap',C.tot),ln('lim',A),...(()=>{const Q=bajoCalc();return Q?[...(Q.Vp>.05?[ln('poz',Q.Vp)]:[]),...(Q.Am>.05?[ln('mcon',Q.Am)]:[])]:[]})()])}}
   /* 3 estructura */const lv=(typeof f3List==='function'?f3List(F()):Array.from({length:F()},(_,i)=>i)).filter(f=>contOf(f)&&!(typeof isGolf==='function'&&isGolf(f)));const fjA={};let pV=0,vV=0,mA=0,sA=0;
   lv.forEach((f,i)=>{const c=contOf(f),fj=(o.forj||{})[f]||(f<=-10?(o.forj||{})[0]:null)||{t:'viguetas'},t=FJT[fj.t]?fj.t:'viguetas',cf=fj.c||FJT[t][1],H=floorH(f);fjA[t]=(fjA[t]||0)+(c.w+E)*(c.h+E);
     items.filter(p=>p.t==='pilar'&&p.f===f).forEach(p=>{pV+=(p.w||.3)*(p.h||.3)*Math.max(.5,H-cf)});(o.vig||[]).filter(v=>v.f===f).forEach(v=>{vV+=(v.b||.3)*(v.c||.3)*Math.hypot(v.x2-v.x1,v.y2-v.y1)});
@@ -12912,6 +12915,42 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 #presP .prS{border-top:2px solid var(--ink);font-weight:700;font-size:17px;margin-top:6px}
 #presP .prE{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}#presP .prE label{margin:0;font-size:13px}#presP .prE input{font-size:15px}
 #presP .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}#presP .bt .pri{margin-left:auto;background:var(--acc);border-color:var(--acc);color:#fff}`;document.head.appendChild(cs)}
+
+/* ===================== PARTE BAJA DEL SOLAR: RELLENO Y POZOS ===================== */
+/* donde el terreno natural queda por debajo del fondo del vaciado, el edificio no puede quedar al aire:
+   se rellena con tierra compactada hasta el fondo y las zapatas bajan con pozos de hormigón hasta el terreno firme */
+const BAJO_TF=1.5;/* talud del relleno: 1,5 m en horizontal por metro de alto */
+const bajoM=()=>OB().bajoM==='muro'?'muro':'zap';
+function bajoRect(){const c=contOf(0),E=SD().ext||.3;return c?{x0:c.x-E/2,y0:c.y-E/2,x1:c.x+c.w+E/2,y1:c.y+c.h+E/2}:null}
+function bajoFillS(P,x,y){const zb=P.z-P.dep;if(bajoM()==='muro'){const R=bajoRect();return R&&x>=R.x0-.01&&x<=R.x1+.01&&y>=R.y0-.01&&y<=R.y1+.01?zb:-1e9}const d=Math.max(P.x0-x,x-P.x1,P.y0-y,y-P.y1,0);return zb-d/BAJO_TF}
+function bajoNat(P,x,y){let t=0;try{t=tzAt(x,y)}catch(e){}return P.z+t}
+function bajoFrom(X){if(!X||X.kind!=='vaciado'||!X.pit)return null;const P=X.pit,zb=P.z-P.dep,s=.5;let V=0,A=0,dmx=0;
+  const MU=bajoM()==='muro',R=MU?bajoRect():P;
+  for(let x=P.x0+s/2;x<P.x1;x+=s)for(let y=P.y0+s/2;y<P.y1;y+=s){const d=zb-bajoNat(P,x,y);if(d>.02){dmx=Math.max(dmx,d);if(R&&x>=R.x0&&x<=R.x1&&y>=R.y0&&y<=R.y1){V+=d*s*s;A+=s*s}}}
+  if(!(dmx>0))return null;
+  if(MU){/* muro de contención por el borde bajo, desde el terreno firme hasta el suelo del sótano */const t=Math.max(.25,SD().ext||.3),top=zFoundTop(),mur=[];let Am=0;
+    const edges=[[R.x0,R.y0,R.x1,R.y0,0,-1],[R.x0,R.y1,R.x1,R.y1,0,1],[R.x0,R.y0,R.x0,R.y1,-1,0],[R.x1,R.y0,R.x1,R.y1,1,0]];
+    edges.forEach(([a1,b1,a2,b2,nx,ny])=>{const L=Math.hypot(a2-a1,b2-b1),n=Math.max(1,Math.round(L/.5)),ux=(a2-a1)/L,uy=(b2-b1)/L;for(let i=0;i<n;i++){const t0=L*i/n,t1=L*(i+1)/n,mx=a1+ux*(t0+t1)/2+nx*(t/2+.3),my=b1+uy*(t0+t1)/2+ny*(t/2+.3),z0=bajoNat(P,mx,my)-.5;if(z0<zb-.05){mur.push({x1:a1+ux*t0+nx*t/2,y1:b1+uy*t0+ny*t/2,x2:a1+ux*t1+nx*t/2,y2:b1+uy*t1+ny*t/2,w:t,z0,z1:top});Am+=(t1-t0)*(top-z0)}}});
+    return {mu:1,V,A,dmx,poz:mur,Vp:0,Am}}
+  /* el talud del relleno alrededor */const per=[];for(let x=P.x0;x<P.x1;x+=1)per.push([x+.5,P.y0],[x+.5,P.y1]);for(let y=P.y0;y<P.y1;y+=1)per.push([P.x0,y+.5],[P.x1,y+.5]);per.forEach(([x,y])=>{const d=zb-bajoNat(P,x,y);if(d>0)V+=BAJO_TF*d*d/2});
+  /* pozos bajo zapatas y zanjas bajo las corridas */const poz=[];let Vp=0;let els=[];try{els=cimEls()||[]}catch(e){}const zt=zFoundTop();
+  els.forEach(e=>{const c=Math.max(.25,e.c||.5),bot=zt-c;if(e.k==='zap'){const d=bot-bajoNat(P,e.x+e.w/2,e.y+e.h/2)+.5;if(d>.55){poz.push({x:e.x,y:e.y,w:e.w,h:e.h,z1:bot,z0:bot-d});Vp+=e.w*e.h*d}}
+    else if(e.k!=='atado'&&e.k!=='losa'&&e.x1!=null){const L=Math.hypot(e.x2-e.x1,e.y2-e.y1);if(L<.1)return;const n=Math.max(1,Math.round(L)),ux=(e.x2-e.x1)/L,uy=(e.y2-e.y1)/L;for(let i=0;i<n;i++){const t0=L*i/n,t1=L*(i+1)/n,mx=e.x1+ux*(t0+t1)/2,my=e.y1+uy*(t0+t1)/2,d=bot-bajoNat(P,mx,my)+.5;if(d>.55){poz.push({x1:e.x1+ux*t0,y1:e.y1+uy*t0,x2:e.x1+ux*t1,y2:e.y1+uy*t1,w:e.w,z1:bot,z0:bot-d});Vp+=e.w*(t1-t0)*d}}}});
+  return {mu:0,V,A,dmx,poz,Vp,Am:0}}
+function bajoCalc(){try{return bajoFrom(exc())}catch(e){return null}}
+{const _excBJ=exc;exc=function(){const X=_excBJ.apply(this,arguments);try{if(X&&X.kind==='vaciado'&&isMod()){const Q=bajoFrom(X);X.bajo=Q;if(Q)X.rel=(X.rel||0)+Q.V}}catch(e){}return X}}
+{const _dhBJ=desmonteHTML;desmonteHTML=function(){let h=_dhBJ.apply(this,arguments);try{const Q=bajoCalc();if(Q){const f1=v=>fmt(Math.round(v*10)/10),np=Q.poz.filter(p=>p.x!=null).length;h+=Q.mu?`<p class="hint">En la parte baja del solar el terreno queda hasta ${f1(Q.dmx)} m por debajo del fondo: <b>muro de contención</b> de ${f1(Q.Am)} m² por el borde bajo, hasta el terreno firme, y por dentro <b>${f1(Q.V)} m³</b> de relleno compactado. Así el edificio no queda al aire.</p>`:`<p class="hint">En la parte baja del solar el terreno queda hasta ${f1(Q.dmx)} m por debajo del fondo: se rellena con <b>${f1(Q.V)} m³</b> de tierra compactada por tongadas${Q.Vp>.05?` y la cimentación baja hasta el terreno firme con <b>${f1(Q.Vp)} m³</b> de pozos de hormigón${np?` (${np} bajo zapatas)`:''}`:''}. Así el edificio no queda al aire.</p>`}}catch(e){}return h}}
+/* en el 3D: los pozos de hormigón bajo la cimentación */
+{const _stBJ=stBuild3;stBuild3=function(){const B=_stBJ.apply(this,arguments);try{const Q=bajoCalc();if(!Q||!Q.poz.length||!B.G||!B.G.cim)return B;const T=THREE,g=B.G.cim,m=new T.MeshLambertMaterial({color:'#9e9a92'}),lm=new T.LineBasicMaterial({color:'#5f646a'});
+  const put=(geo,x,y,z,ry)=>{const me=new T.Mesh(geo,m);me.position.set(x,y,z);if(ry)me.rotation.y=ry;me.userData.k='cim';g.add(me);const ed=new T.LineSegments(new T.EdgesGeometry(geo),lm);ed.position.copy(me.position);ed.rotation.copy(me.rotation);ed.userData.k='cim';g.add(ed)};
+  Q.poz.forEach(p=>{const H=p.z1-p.z0;if(H<=0)return;if(p.x!=null)put(new T.BoxGeometry(p.w,H,p.h),p.x+p.w/2,p.z0+H/2,p.y+p.h/2);else{const L=Math.hypot(p.x2-p.x1,p.y2-p.y1);put(new T.BoxGeometry(L,H,p.w),(p.x1+p.x2)/2,p.z0+H/2,(p.y1+p.y2)/2,-Math.atan2(p.y2-p.y1,p.x2-p.x1))}})}catch(e){console.warn('pozos3D',e)}return B}}
+
+/* elegir: muro de contención o zapatas hasta el terreno firme */
+{const _pw4BJ=pw4;pw4=function(){let h=_pw4BJ.apply(this,arguments);try{if(faseCur().F.k!=='exc')return h;const Q=bajoCalc();if(!Q)return h;const f1=v=>fmt(Math.round(v*10)/10),m=bajoM();
+  const r=`<h3>La parte baja del solar</h3><p>Allí el terreno queda hasta <b>${f1(Q.dmx)} m</b> por debajo del fondo de la excavación. Para que el edificio no quede al aire, elige:</p><div class="pwSeg"><button data-bjm="zap" class="${m==='zap'?'on':''}">Zapatas hasta el terreno firme</button><button data-bjm="muro" class="${m==='muro'?'on':''}">Muro de contención</button></div>
+  <p class="hint">${m==='zap'?`Las zapatas bajan con pozos de hormigón (${f1(Q.Vp)} m³) y se rellena con ${f1(Q.V)} m³ de tierra compactada, con talud por fuera.`:`Un muro de ${f1(Q.Am)} m² cierra el borde bajo desde el terreno firme hasta el suelo del sótano, y por dentro se rellenan ${f1(Q.V)} m³ de tierra compactada.`}</p>`;
+  const k='<div class="bt3">';h=h.includes(k)?h.replace(k,r+k):h+r}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-bjm]');if(!b)return;e.stopImmediatePropagation();push();OB().bajoM=b.dataset.bjm;done();try{pasoBody()}catch(er){}try{if($('#ccP'))cimCalcOpen()}catch(er){}},true);
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
