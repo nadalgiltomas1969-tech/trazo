@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · relleno y pozos en la parte baja del solar</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · aljibe y exportar a Trazo · Maquetas</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12792,10 +12792,10 @@ let STUP=null;
       try{const S0=SOL();if(S0){const Q=solPts(S0),xs=Q.map(q=>q[0]),ys=Q.map(q=>q[1]);X0=Math.max(X0,Math.min(...xs)-3);X1=Math.min(X1,Math.max(...xs)+3);Y0=Math.max(Y0,Math.min(...ys)-3);Y1=Math.min(Y1,Math.max(...ys)+3)}}catch(e){}
       /* rejilla fina alrededor del hueco, alineada con sus bordes: cortes rectos */
       let Q0=null;try{Q0=bajoCalc()}catch(e){}const reach=P.dep*mt+((Q0&&Q0.dmx)||0)*BAJO_TF+1.5,fine=.3,crs=Math.max(.8,Math.sqrt((X1-X0)*(Y1-Y0)/6000));
-      const axis=(A0,A1,p0,p1)=>{const S=new Set([A0,A1,p0,p1]);for(let v=A0;v<A1;v+=crs)S.add(v);for(let v=Math.max(A0,p0-reach);v<=Math.min(A1,p1+reach);v+=fine)S.add(v);return [...S].filter(v=>v>=A0&&v<=A1).sort((a,b)=>a-b).filter((v,k,a)=>k===0||v-a[k-1]>.02)};
-      const XS=axis(X0,X1,P.x0,P.x1),YS=axis(Y0,Y1,P.y0,P.y1),nx=XS.length,ny=YS.length,pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[];
+      const axis=(A0,A1,p0,p1,ex)=>{const S=new Set([A0,A1,p0,p1]);for(let v=A0;v<A1;v+=crs)S.add(v);for(let v=Math.max(A0,p0-reach);v<=Math.min(A1,p1+reach);v+=fine)S.add(v);(ex||[]).forEach(([u0,u1])=>{for(let v=u0-.6;v<=u1+.6;v+=.15)S.add(v);S.add(u0);S.add(u1)});return [...S].filter(v=>v>=A0&&v<=A1).sort((a,b)=>a-b).filter((v,k,a)=>k===0||v-a[k-1]>.02)};
+      const AL0=(()=>{try{return aljList().filter(a=>a.pos!=='parking').map(aljO)}catch(e){return[]}})(),XS=axis(X0,X1,P.x0,P.x1,AL0.map(o=>[o.x-.3,o.x+o.w+.3])),YS=axis(Y0,Y1,P.y0,P.y1,AL0.map(o=>[o.y-.3,o.y+o.h+.3])),nx=XS.length,ny=YS.length,pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[];
       const cG=new T.Color('#b5c98a'),cC=new T.Color('#6e4a2c'),cD=new T.Color('#4f3420'),cF=new T.Color('#9c8458');
-      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=XS[i],y=YS[j];let tz=0;try{tz=tzAt(x,y)}catch(e){}const zt=zg+tz,zp=pitS(x,y),z0b=Math.min(zt,zp),zf=bajoFillS(P,x,y),z=Math.max(z0b,zf),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=z;pos[k+2]=y;
+      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=XS[i],y=YS[j];let tz=0;try{tz=tzAt(x,y)}catch(e){}const zt=zg+tz,zp=pitS(x,y),z0b=Math.min(zt,zp),zf=bajoFillS(P,x,y),z=Math.min(Math.max(z0b,zf),AL0.length?aljHole(x,y):1e9),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=z;pos[k+2]=y;
         const cc=z-zt>.03?cF:(zt-z>.03?(z<=zb+.03?cD:cC):cG);col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
       for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d)}
       const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
@@ -12829,7 +12829,7 @@ destAsk=function(){const q=PJ.p[PJ.cur];if(!q)return;$('#destBox')&&$('#destBox'
 /* Precios de partida para Mallorca, noviembre de 2026. Todos se pueden cambiar en «Precios…». */
 const PRES_D={
   exc:['Excavación del vaciado con máquina','m³',9],tra:['Carga, transporte y vertedero de tierras','m³ esponjado',16],rel:['Relleno con tierra de la obra, compactado','m³',12],pan:['Muro pantalla o entibación donde no cabe el talud','m²',220],
-  mcon:['Muro de contención en la parte baja, hormigón armado con su zapata','m²',280],poz:['Pozos de hormigón bajo las zapatas, hasta el terreno firme','m³',115],lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
+  alj_h:['Aljibe: hormigón armado de solera, muros y tapa','m³',260],alj_imp:['Aljibe: impermeabilización apta para agua','m²',32],alj_bom:['Aljibe: grupo de presión, filtro y boca de registro','ud',1600],alj_rec:['Aljibe: recogida de lluvia (bajantes, arqueta y rebosadero)','ud',1100],alj_pot:['Aljibe: tratamiento para agua potable (clorador)','ud',650],mcon:['Muro de contención en la parte baja, hormigón armado con su zapata','m²',280],poz:['Pozos de hormigón bajo las zapatas, hasta el terreno firme','m³',115],lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
   pil:['Pilares de hormigón armado','m³',750],vig:['Vigas de hormigón armado','m³',620],muro:['Muro de sótano de hormigón, impermeabilizado y con drenaje','m²',230],sol:['Solera del sótano','m²',45],
   fj_viguetas:['Forjado de viguetas y bovedillas','m²',78],fj_losa:['Forjado de losa maciza','m²',112],fj_reticular:['Forjado reticular','m²',98],fj_madera:['Forjado de madera','m²',140],fj_chapa:['Forjado de chapa colaborante','m²',90],
   c_bloque:['Muro de bloque enfoscado y pintado','m',125],c_murete:['Murete con reja metálica','m',150],c_lamas:['Valla de lamas de aluminio','m',185],c_malla:['Malla metálica sobre postes','m',38],c_piedra:['Muro de piedra en seco','m',360],c_seto:['Seto vegetal','m',45],
@@ -12862,6 +12862,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   cap('env','Fachadas, cubierta y ventanas',[ln('fach',fa),top?ln('cub',(top.w+E)*(top.h+E)):null,ln('vent',nv,presP_('vent')*q)]);
   /* 6 obra por dentro */const R=items.filter(i=>i.t==='room'),aU=R.reduce((s,r)=>s+r.w*r.h,0),nb=R.filter(r=>/ba[ñn]o|aseo/i.test((r.name||'')+' '+(r.dest||''))).length,nc=R.filter(r=>/cocina/i.test((r.name||'')+' '+(r.dest||''))).length;let pk=0;lv.forEach(f=>{if((f<=-10||(st.sot&&f===0))&&typeof ugUso==='function'&&ugUso(f)==='parking'){const c=contOf(f);pk+=c.w*c.h-R.filter(r=>r.f===f).reduce((s,r)=>s+r.w*r.h,0)}});
   cap('int','Obra por dentro',[ln('int',aU,presP_('int')*q),ln('ban',nb,presP_('ban')*q),ln('coc',nc,presP_('coc')*q),ln('park',pk)]);
+  /* aljibe */try{const A=aljList();if(A.length){let V=0,Hc=0,Im=0,np=0,nt=0;A.forEach(a=>{const m=aljMed(a);V+=m.V;Hc+=m.Hc;Im+=m.Im;if(a.uso!=='pot')np++;if(a.uso!=='pluv')nt++});cap('alj','Aljibe',[ln('exc',V,null,'Excavación del hueco del aljibe'),ln('tra',V*1.25,null,'Transporte de esa tierra al vertedero'),ln('alj_h',Hc),ln('alj_imp',Im),ln('alj_bom',A.length),ln('alj_rec',np),ln('alj_pot',nt)])}}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
   const hon=pem*P.hon/100,honI=hon*P.ivah/100,tasa=pem*P.tasa/100,icio=Math.max(0,pem*P.icio/100-tasa*P.icioDed/100),oct=pem*P.oct/100,octI=oct*P.ivah/100,dobra=(pec+iva)*P.dobra/100;
@@ -12951,6 +12952,115 @@ function bajoCalc(){try{return bajoFrom(exc())}catch(e){return null}}
   <p class="hint">${m==='zap'?`Las zapatas bajan con pozos de hormigón (${f1(Q.Vp)} m³) y se rellena con ${f1(Q.V)} m³ de tierra compactada, con talud por fuera.`:`Un muro de ${f1(Q.Am)} m² cierra el borde bajo desde el terreno firme hasta el suelo del sótano, y por dentro se rellenan ${f1(Q.V)} m³ de tierra compactada.`}</p>`;
   const k='<div class="bt3">';h=h.includes(k)?h.replace(k,r+k):h+r}catch(e){}return h}}
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-bjm]');if(!b)return;e.stopImmediatePropagation();push();OB().bajoM=b.dataset.bjm;done();try{pasoBody()}catch(er){}try{if($('#ccP'))cimCalcOpen()}catch(er){}},true);
+
+/* ===================== ALJIBE (obra nueva) ===================== */
+const ALJP={jardin:'Enterrado en el jardín',bajo:'Bajo el sótano o el parking',parking:'Dentro del parking, como un cuarto'};
+const ALJU={pluv:'Agua de lluvia',pot:'Reserva de agua potable',ambos:'Las dos cosas'};
+const ALJT=.25,ALJS=.3,ALJC=.2;/* muro, solera y tapa de hormigón */
+let ALW=null;
+const aljList=()=>items.filter(i=>i.t==='aljibe'&&i.pos);
+const aljFG=()=>st.sot?1:0;
+const aljF=a=>a.pos==='jardin'?aljFG():cimF();
+const aljO=a=>({x:a.x-ALJT,y:a.y-ALJT,w:a.w+2*ALJT,h:a.h+2*ALJT});
+const aljCap=a=>a.w*a.h*a.pr;
+const aljTot=a=>ALJS+a.pr+ALJC;
+function aljZ(a){const cx=a.x+a.w/2,cy=a.y+a.h/2,H=aljTot(a);let top,bot;
+  if(a.pos==='parking'){bot=floorZ(cimF());top=bot+H}
+  else if(a.pos==='bajo'){top=zFoundTop()-.15;bot=top-H}
+  else{let t=0;try{t=tzAt(cx,cy)}catch(e){}top=(st.sot?rasante():0)+t;bot=top-H}return{top,bot}}
+function aljMed(a){const o=aljO(a),H=aljTot(a);return{V:a.pos==='parking'?0:(o.w+.6)*(o.h+.6)*(H+.1),Hc:o.w*o.h*(ALJS+ALJC)+2*(a.w+a.h+2*ALJT)*ALJT*a.pr,Im:a.w*a.h+2*(a.w+a.h)*a.pr}}
+function aljProp(uso){let cub=0;try{const c=contOf(aljFG())||contOf(0);if(c)cub=c.w*c.h}catch(e){}const nv=Math.max(1,items.filter(i=>i.t==='room'&&/cocina/i.test((i.name||'')+' '+(i.dest||''))).length);
+  const pl=Math.max(6,Math.round(cub*.05)),po=Math.max(4,3*nv);return uso==='pluv'?pl:uso==='pot'?po:pl+po}
+function aljDims(cap,hu){const A=cap/hu,w=Math.ceil(Math.sqrt(A*1.5)*10)/10,h=Math.ceil(A/w*10)/10;return[w,h]}
+function aljPlace(a){const o=aljO(a);if(a.pos!=='jardin'){const c=contOf(cimF());if(c){a.x=r2(c.x+.6+ALJT);a.y=r2(c.y+.6+ALJT)}return}
+  const c=contOf(aljFG())||contOf(0),P=(()=>{try{return solPts()}catch(e){return null}})();if(!c)return;let S=null;if(P){const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);S={x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)}}
+  const E=(SD().ext||.3)/2+1,cand=[[c.x+c.w+E,c.y+.5,'e'],[c.x-E-o.w,c.y+.5,'o'],[c.x+.5,c.y+c.h+E,'s'],[c.x+.5,c.y-E-o.h,'n']];let best=cand[0],bs=-1e9;
+  cand.forEach(q=>{const sc=S?Math.min(q[0]-S.x0,q[1]-S.y0,S.x1-(q[0]+o.w),S.y1-(q[1]+o.h)):0;if(sc>bs){bs=sc;best=q}});a.x=r2(best[0]+ALJT);a.y=r2(best[1]+ALJT)}
+function aljWarn(a){const o=aljO(a),inR=(R,m)=>R&&o.x>=R.x-.01-(m||0)&&o.y>=R.y-.01-(m||0)&&o.x+o.w<=R.x+R.w+.01+(m||0)&&o.y+o.h<=R.y+R.h+.01+(m||0),hit=R=>R&&o.x<R.x+R.w&&o.x+o.w>R.x&&o.y<R.y+R.h&&o.y+o.h>R.y;
+  if(a.pos==='parking'&&!st.sot)return 'No hay parking: elige «Enterrado en el jardín» o «Bajo el edificio».';
+  if(a.pos==='jardin'){const c=contOf(aljFG())||contOf(0);if(hit(c))return 'Se mete bajo el edificio: muévelo al jardín o elige «Bajo el sótano o el parking».';
+    try{const P=solPts();if(P){const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);if(o.x<Math.min(...xs)||o.y<Math.min(...ys)||o.x+o.w>Math.max(...xs)||o.y+o.h>Math.max(...ys))return 'Se sale del solar.'}}catch(e){}return ''}
+  const c=contOf(cimF());if(c&&!inR(c))return 'Se sale del edificio: muévelo hacia dentro o hazlo más pequeño.';return ''}
+function aljNew(){const pos='jardin',uso='ambos',hu=2,[w,h]=aljDims(aljProp(uso),hu);push();const a={id:nid++,t:'aljibe',f:-2,x:0,y:0,w,h,pr:hu,fm:'rect',mt:'horm',pos,uso};aljPlace(a);items.push(a);done();return a}
+const aljCur=()=>ALW&&items.find(i=>i.id===ALW.id);
+function aljOpen(a){a=a||aljNew();ALW={id:a.id,step:ALW?ALW.step:.1};try{pasoClose()}catch(e){}try{xwStop()}catch(e){}tool='select';try{toolsUI()}catch(e){}fl=aljF(a);try{tabs()}catch(e){}sel=null;note='Aljibe: toca en el plano para ponerlo o muévelo con las flechas; Intro para terminar';try{const r=svg.getBoundingClientRect(),o=aljO(a),cx=o.x+o.w/2,cy=o.y+o.h/2,sx=(cx*view.s+view.ox),sy=(cy*view.s+view.oy);if(sx<r.width*.35||sx>r.width-40||sy<60||sy>r.height-40){view.ox=r.width*.65-cx*view.s;view.oy=r.height*.45-cy*view.s}}catch(e){}aljUI();render()}
+function aljClose(){ALW=null;const w=$('#aljW');if(w)w.remove();note='';render()}
+function aljUI(){const a=aljCur();if(!a)return aljClose();let w=$('#aljW');if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="aljW" role="dialog" aria-label="Aljibe"></div>');w=$('#aljW')}
+  const o=aljO(a),D=xwDist(fl,o.x+o.w/2,o.y+o.h/2),fv=(v,s)=>v==null?'—':fmt(r2(Math.max(0,v-s))),cap=aljCap(a),pr=aljProp(a.uso),W=aljWarn(a),st2=ALW.step;
+  w.innerHTML=`<div class="xwH"><b>Aljibe · ${fmt(r2(cap))} m³</b><button data-alj="x" aria-label="Terminar">✕</button></div>
+  <div class="xwG"><label>Dónde va<select data-alji="pos">${Object.entries(ALJP).map(([k,t])=>`<option value="${k}"${a.pos===k?' selected':''}>${t}</option>`).join('')}</select></label><label>Para qué<select data-alji="uso">${Object.entries(ALJU).map(([k,t])=>`<option value="${k}"${a.uso===k?' selected':''}>${t}</option>`).join('')}</select></label></div>
+  <div class="xwG"><label>Ancho (m)<input data-alji="w" type="number" step="0.1" min="0.5" inputmode="decimal" value="${r2(a.w)}"></label><label>Largo (m)<input data-alji="h" type="number" step="0.1" min="0.5" inputmode="decimal" value="${r2(a.h)}"></label><label>Altura del agua (m)<input data-alji="pr" type="number" step="0.1" min="0.5" inputmode="decimal" value="${r2(a.pr)}"></label></div>
+  <p class="xwD">Guarda <b>${fmt(r2(cap))} m³</b> (${fmt(Math.round(cap*1000))} litros). Medidas por dentro; muros de ${Math.round(ALJT*100)} cm.${Math.abs(pr-cap)>Math.max(1,pr*.08)?` <button data-alj="prop">Usar la propuesta: ${fmt(pr)} m³</button>`:''}</p>
+  <p class="xwD">Hasta la pared más cercana: izquierda <b>${fv(D.L,o.w/2)} m</b> · derecha <b>${fv(D.R,o.w/2)} m</b> · arriba <b>${fv(D.U,o.h/2)} m</b> · abajo <b>${fv(D.D,o.h/2)} m</b></p>
+  ${W?`<p class="xwD" style="color:var(--dng,#b3261e)"><b>⚠ ${esc(W)}</b></p>`:''}
+  <div class="xwA"><span></span><button data-alk="ArrowUp" aria-label="Arriba">▲</button><span></span><button data-alk="ArrowLeft" aria-label="Izquierda">◀</button><button data-alk="ArrowDown" aria-label="Abajo">▼</button><button data-alk="ArrowRight" aria-label="Derecha">▶</button></div>
+  <div class="xwSt">Paso <button data-als=".01"${st2===.01?' class="on"':''}>1 cm</button><button data-als=".1"${st2===.1?' class="on"':''}>10 cm</button><button data-als="1"${st2===1?' class="on"':''}>1 m</button></div>
+  <div class="xwB"><button data-alj="del">Quitar el aljibe</button><button data-alj="ok" class="pri">Listo <kbd>Intro</kbd></button></div>`}
+function aljMove(dx,dy){const a=aljCur();if(!a)return;push();a.x=Math.round((a.x+dx)*100)/100;a.y=Math.round((a.y+dy)*100)/100;done();aljUI();render()}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=t.closest('[data-alj],[data-alk],[data-als]');if(!b||!b.closest('#aljW'))return;e.stopImmediatePropagation();const a=aljCur();if(!a)return aljClose();
+  if(b.dataset.alk){const s=ALW.step,k=b.dataset.alk;aljMove(k==='ArrowLeft'?-s:k==='ArrowRight'?s:0,k==='ArrowUp'?-s:k==='ArrowDown'?s:0);return}
+  if(b.dataset.als){ALW.step=+b.dataset.als;aljUI();return}
+  const k=b.dataset.alj;if(k==='x'||k==='ok'){aljClose();return}
+  if(k==='del'){push();items=items.filter(i=>i!==a);done();aljClose();return}
+  if(k==='prop'){push();const[w,h]=aljDims(aljProp(a.uso),a.pr);a.w=w;a.h=h;done();aljUI();render()}},true);
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.alji==null)return;const a=aljCur();if(!a)return;const k=t.dataset.alji;push();
+  if(k==='pos'||k==='uso'){const old=a.pos;a[k]=t.value;if(k==='pos'&&old!==a.pos){aljPlace(a);fl=aljF(a);try{tabs()}catch(er){}}}
+  else{const v=parseFloat(String(t.value).replace(',','.'));if(v>=.3)a[k]=r2(v)}done();aljUI();render()});
+addEventListener('keydown',e=>{if(!ALW||!$('#aljW'))return;const t=e.target;if(t&&/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)){if(e.key==='Enter'){t.blur();e.preventDefault()}return}
+  if(e.key==='Enter'||e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();aljClose();return}
+  const s=ALW.step,m={ArrowLeft:[-s,0],ArrowRight:[s,0],ArrowUp:[0,-s],ArrowDown:[0,s]}[e.key];if(m){e.preventDefault();e.stopImmediatePropagation();aljMove(m[0],m[1])}},true);
+svg.addEventListener('pointerdown',e=>{if(!ALW||!e.isPrimary||e.button>0)return;const a=aljCur();if(!a)return;e.stopImmediatePropagation();e.preventDefault();const r=svg.getBoundingClientRect(),x=(e.clientX-r.left-view.ox)/view.s,y=(e.clientY-r.top-view.oy)/view.s;push();a.x=r2(x-a.w/2);a.y=r2(y-a.h/2);done();aljUI();render()},true);
+/* en el plano del nivel donde está */
+{const _rAL=render;render=function(){const r=_rAL.apply(this,arguments);try{if(!isMod())return r;const L=aljList().filter(a=>fl!==-2&&aljF(a)===fl);if(!L.length)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='<g id="aljG" pointer-events="none">';
+  L.forEach(a=>{const o=aljO(a),on=ALW&&ALW.id===a.id,col=on?'#d35400':'#2f5f8f',dash=a.pos==='parking'?'':' stroke-dasharray="7 4"';
+    h+=`<rect x="${o.x*S}" y="${o.y*S}" width="${o.w*S}" height="${o.h*S}" fill="#9aa0a6" fill-opacity=".5" stroke="${col}" stroke-width="2"${dash}/><rect x="${a.x*S}" y="${a.y*S}" width="${a.w*S}" height="${a.h*S}" fill="#bcd7ee" fill-opacity=".85" stroke="${col}" stroke-width="1"${dash}/><rect x="${(a.x+.2)*S}" y="${(a.y+.2)*S}" width="${.6*S}" height="${.6*S}" fill="none" stroke="${col}" stroke-width="1.5"/>
+    <text x="${(a.x+a.w/2)*S}" y="${(a.y+a.h/2)*S+5}" text-anchor="middle" style="font-size:13px;font-weight:700;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:4px">Aljibe · ${fmt(r2(aljCap(a)))} m³</text>`;
+    if(on){const D=xwDist(fl,o.x+o.w/2,o.y+o.h/2),cx=o.x+o.w/2,cy=o.y+o.h/2,dm=(x1,y1,x2,y2,v)=>v==null||v<.02?'':`<line x1="${x1*S}" y1="${y1*S}" x2="${x2*S}" y2="${y2*S}" stroke="${col}" stroke-dasharray="3 3"/><text x="${(x1+x2)/2*S}" y="${(y1+y2)/2*S-4}" text-anchor="middle" style="font-size:11px;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(r2(v))}</text>`;
+      if(D.L!=null)h+=dm(cx-D.L,cy,o.x,cy,D.L-o.w/2);if(D.R!=null)h+=dm(o.x+o.w,cy,cx+D.R,cy,D.R-o.w/2);if(D.U!=null)h+=dm(cx,cy-D.U,cx,o.y,D.U-o.h/2);if(D.D!=null)h+=dm(cx,o.y+o.h,cx,cy+D.D,D.D-o.h/2)}});
+  g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){console.warn('aljibe plano',e)}return r}}
+/* paso 1: fila del aljibe */
+{const _pw1AL=pw1;pw1=function(){let h=_pw1AL.apply(this,arguments);try{const L=aljList();h+=`<h3>Aljibe</h3>`;
+  if(!L.length)h+=pwRow(false,'Aljibe','Para agua de lluvia o reserva de agua potable. Te propongo la capacidad según la cubierta.',pwBtn('alj','Poner aljibe',true));
+  else L.forEach(a=>{h+=pwRow(!aljWarn(a),'Aljibe · '+fmt(r2(aljCap(a)))+' m³',`${esc(ALJP[a.pos])} · ${esc(ALJU[a.uso]).toLowerCase()} · ${fmt(a.w)} × ${fmt(a.h)} × ${fmt(a.pr)} m${aljWarn(a)?' · ⚠ '+esc(aljWarn(a)):''}`,pwBtn('alj','Cambiar…',false,` data-v="${a.id}"`))});
+  if(L.length)h+=`<div class="row">${pwBtn('alj','Otro aljibe',false,' data-v="new"')}</div>`}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-pw="alj"]');if(!b)return;e.stopImmediatePropagation();const v=b.dataset.v,a=v&&v!=='new'?items.find(i=>i.id===+v):null;aljOpen(a||null)},true);
+/* paso 3: en cada fase */
+{const _pw4AL=pw4;pw4=function(){let h=_pw4AL.apply(this,arguments);try{const L=aljList();if(!L.length)return h;const k=faseCur().F.k,f1=v=>fmt(Math.round(v*10)/10);let r='';
+  L.forEach(a=>{const m=aljMed(a);if(k==='exc'&&m.V>0)r+=pwRow(true,'Hueco del aljibe',`${esc(ALJP[a.pos])} · ${f1(m.V)} m³ de tierra, con las paredes rectas`,'');
+    if(k==='cim'&&a.pos!=='parking')r+=pwRow(true,'Aljibe: solera y muros',`Solera de ${Math.round(ALJS*100)} cm y muros de ${Math.round(ALJT*100)} cm de hormigón armado, impermeabilizado por dentro · ${f1(m.Hc)} m³ con la tapa`,'');
+    if(k==='f'+cimF()&&a.pos==='parking')r+=pwRow(true,'Aljibe en el parking',`Cuarto de hormigón de ${fmt(a.w)} × ${fmt(a.h)} m y ${fmt(r2(aljTot(a)))} m de alto · ${f1(m.Hc)} m³`,'')});
+  if(!r)return h;const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
+/* en el 3D: el hueco en la excavación y el aljibe de hormigón */
+function aljHole(x,y){let z=1e9;try{aljList().forEach(a=>{if(a.pos==='parking')return;const o=aljO(a),m=.3;if(x>=o.x-m&&x<=o.x+o.w+m&&y>=o.y-m&&y<=o.y+o.h+m)z=Math.min(z,aljZ(a).bot-.1)})}catch(e){}return z}
+{const _stAL=stBuild3;stBuild3=function(){const B=_stAL.apply(this,arguments);try{const L=aljList();if(!L.length)return B;const T=THREE,m=new T.MeshLambertMaterial({color:'#a9adb1'}),mt=new T.MeshLambertMaterial({color:'#a9adb1',transparent:true,opacity:.55}),mw=new T.MeshLambertMaterial({color:'#5a9ec4',transparent:true,opacity:.6}),lm=new T.LineBasicMaterial({color:'#5f646a'});
+  L.forEach(a=>{const g=a.pos==='parking'?(B.G[cimF()]||B.sc):(B.G.cim||B.sc),o=aljO(a),Z=aljZ(a),put=(w,h,d,x,y,z,M)=>{if(w<=0||h<=0||d<=0)return;const geo=new T.BoxGeometry(w,h,d),me=new T.Mesh(geo,M||m);me.position.set(x,y,z);me.userData.k='cim';g.add(me);const ed=new T.LineSegments(new T.EdgesGeometry(geo),lm);ed.position.copy(me.position);ed.userData.k='cim';g.add(ed)};
+    const cx=o.x+o.w/2,cy=o.y+o.h/2,z0=Z.bot,zw=z0+ALJS;put(o.w,ALJS,o.h,cx,z0+ALJS/2,cy);
+    put(o.w,a.pr,ALJT,cx,zw+a.pr/2,o.y+ALJT/2);put(o.w,a.pr,ALJT,cx,zw+a.pr/2,o.y+o.h-ALJT/2);put(ALJT,a.pr,a.h,o.x+ALJT/2,zw+a.pr/2,cy);put(ALJT,a.pr,a.h,o.x+o.w-ALJT/2,zw+a.pr/2,cy);
+    put(a.w,a.pr*.7,a.h,cx,zw+a.pr*.35,cy,mw);put(o.w,ALJC,o.h,cx,zw+a.pr+ALJC/2,cy,mt);put(.7,.12,.7,a.x+.5,zw+a.pr+ALJC+.06,a.y+.5)})}catch(e){console.warn('aljibe 3D',e)}return B}}
+/* ventana del aljibe con el mismo aspecto que la de la cruz */
+{const add=[];for(const sh of document.styleSheets){let R;try{R=sh.cssRules}catch(e){continue}for(const r of R){if(r.selectorText&&r.selectorText.includes('#xwP'))add.push(r.cssText.split('#xwP').join('#aljW'));else if(r.media&&r.cssRules)for(const q of r.cssRules)if(q.selectorText&&q.selectorText.includes('#xwP'))add.push('@media '+r.media.mediaText+'{'+q.cssText.split('#xwP').join('#aljW')+'}')}}
+  const cs=document.createElement('style');cs.textContent=add.join('\n')+'\n#aljW{border-left-color:#2f5f8f}#aljW .xwB .pri{background:#2f5f8f;border-color:#2f5f8f}#aljW .xwD button{font-size:13px;padding:3px 8px;margin-top:4px}';document.head.appendChild(cs)}
+
+/* ===================== EXPORTAR A TRAZO · MAQUETAS ===================== */
+const MAQ_URL='https://claude.ai/artifact/TdToQzpCgEtMYFj5pnadGn';
+function maqData(){try{save()}catch(e){}const q=PJ.p[PJ.cur];if(!q)return null;const d=JSON.parse(JSON.stringify(q.data)),s=d.st||{},sh=st.sot?1:0,top=Math.max(1,(s.n||1)-sh);
+  /* la maqueta empieza en la planta baja: los sótanos quedan bajo tierra */
+  const fhs={};for(let f=sh;f<sh+top+(s.golfas?1:0);f++){try{fhs[f-sh]=r2(floorH(f))}catch(e){}}
+  d.items=(d.items||[]).filter(i=>typeof i.f!=='number'||i.f>=sh).map(i=>typeof i.f==='number'?{...i,f:i.f-sh}:i);s.n=top;s.fhs={...fhs};d.st=s;return{trazo:1,app:'obra',name:q.name||'Proyecto',data:d}}
+async function maqExport(){const D=maqData();if(!D){note='Abre primero un proyecto';return render()}const nR=D.data.items.filter(i=>i.t==='room').length,fn=(D.name||'Proyecto').replace(/[^\wáéíóúñüÁÉÍÓÚÑÜ -]+/g,'').trim().replace(/\s+/g,'_')+'_maqueta.json';
+  let ok=false;try{const dl=await getDL();if(dl){await dl.save({filename:fn,data:JSON.stringify(D)});ok=true}}catch(e){}
+  $('#maqP')&&$('#maqP').remove();const txt=JSON.stringify(D);
+  document.body.insertAdjacentHTML('beforeend',`<div id="maqP" class="dlgw" role="dialog" aria-label="Exportar a Trazo · Maquetas" style="position:fixed;inset:0;z-index:95;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:560px;width:100%;max-height:90vh;overflow:auto;font-size:16px;line-height:1.45">
+  <h2>Exportar a Trazo · Maquetas</h2>
+  <p>${ok?`Guardado el archivo <b>${esc(fn)}</b>.`:'No se pudo guardar el archivo: copia el texto de abajo.'}</p>
+  ${nR?'':'<p class="hint"><b>⚠ Todavía no hay habitaciones dibujadas.</b> La maqueta corta los muros de las habitaciones: dibújalas en el paso 4.</p>'}
+  <ol style="padding-left:20px"><li>Abre <b>Trazo · Maquetas</b>.</li><li>Pulsa <b>«Importar de Trazo»</b> y elige ese archivo, o pega el texto en «Pegar el texto de Exportar».</li></ol>
+  <p class="hint">La maqueta empieza en la planta baja: los sótanos y el parking quedan bajo tierra y no se cortan.</p>
+  <div class="row" style="gap:8px;flex-wrap:wrap"><a href="${MAQ_URL}" target="_blank" rel="noopener"><button>Abrir Trazo · Maquetas</button></a><button data-maq="url">Copiar el enlace</button><button data-maq="txt">Copiar el texto</button><button data-maq="x" style="margin-left:auto">Cerrar</button></div>
+  <textarea id="maqT" readonly style="width:100%;height:80px;margin-top:10px;font-size:12px">${esc(txt)}</textarea></div></div>`)}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-maq]');if(!b)return;const k=b.dataset.maq;if(k==='x'){$('#maqP')&&$('#maqP').remove();return}
+  const s=k==='url'?MAQ_URL:($('#maqT')||{}).value||'';const fb=()=>{const t=$('#maqT');if(t){t.value=s;t.select();try{document.execCommand('copy')}catch(er){}}};try{navigator.clipboard.writeText(s).then(()=>{b.textContent='Copiado ✓'},fb)}catch(er){fb()}});
+(function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-maqx]'))return;const b=document.createElement('button');b.dataset.maqx='1';b.textContent='▣ Exportar a Trazo · Maquetas';b.onclick=()=>maqExport();m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
