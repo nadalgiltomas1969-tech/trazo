@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · edificio de parkings, coches y rampa en L</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · rampa de entrada y terreno con desnivel en 3D</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -8997,7 +8997,7 @@ function extras3(T,f,g,z,opt){opt=opt||{};const M=c=>new T.MeshLambertMaterial({
     if(o.t==='plaza'||o.t==='rampa'){const b=bboxOf(o);if(!b)return;add(new T.Mesh(new T.BoxGeometry(b.w,.04,b.h),M('#b8ae9a')),b.x+b.w/2,z+.02,b.y+b.h/2);return}
   }catch(e){console.warn('3D pieza',o.t,e)}})}
 /* qué hay en el plano que no tiene 3D (para avisar) */
-const NO3D_IGN=['label','cata','guia','cota','medir','secc','elec','tub','pas','wzfix','cont','marca'];
+const NO3D_IGN=['amu','label','cata','guia','cota','medir','secc','elec','tub','pas','wzfix','cont','marca'];
 const HAS3D=['rampx','barrera','room','wall','door','window','arco','obj','tonel','chim','esc','escx','baran','pujador','estufa','camp','cruz','pilar','pozo','aljibe','pneg','farol','deco','baj','balc','porche','caseta','mirador','plaza','rampa','anilla'];
 function no3dList(){const cnt={};items.forEach(o=>{if(!o||!o.t||NO3D_IGN.includes(o.t)||HAS3D.includes(o.t))return;cnt[o.t]=(cnt[o.t]||0)+1});return cnt}
 
@@ -13264,6 +13264,47 @@ function pkAllDo(){push();const sh=st.sot?1:0;st.pUso=st.pUso||{};for(let f=sh;f
   try{if(st.sot){st.ugUso=st.ugUso||{};[0,...(s2On()?s2Levels():[])].forEach(k=>{st.ugUso[k]='parking';if(k<=-10&&st.ug)st.ug[-10-k]='parking'})}}catch(e){}
   const L=pkAllLevels();L.slice(0,-1).forEach(f=>pkRamp(f));let n=0;L.forEach(f=>{n+=pkFill(f)});items.filter(o=>o.t==='plaza'&&o.auto).forEach((o,i)=>{if(o.car==null)o.car=i%5===3?0:1});
   note=`Edificio de aparcamientos: ${L.length} niveles, ${n} plazas y ${Math.max(0,L.length-1)} rampas. Cambia o borra lo que quieras.`;done();try{tabs()}catch(e){}}
+
+/* ===================== RAMPA DE ENTRADA AL PARKING: POR EL FRENTE O POR DETRÁS ===================== */
+function rxFrame(){const s=SOL();if(!s)return null;const P=solPts(s),ed=solEd(s),ci=ed.findIndex(q=>q.t==='calle');if(ci<0)return null;const a=P[ci],b=P[(ci+1)%P.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]),d=[(b[0]-a[0])/L,(b[1]-a[1])/L];
+  const cx=P.reduce((s,p)=>s+p[0],0)/P.length,cy=P.reduce((s,p)=>s+p[1],0)/P.length;let n=[-d[1],d[0]];if((cx-a[0])*n[0]+(cy-a[1])*n[1]<0)n=[-n[0],-n[1]];
+  const uv=p=>[(p[0]-a[0])*d[0]+(p[1]-a[1])*d[1],(p[0]-a[0])*n[0]+(p[1]-a[1])*n[1]],xy=(u,v)=>[r2(a[0]+d[0]*u+n[0]*v),r2(a[1]+d[1]*u+n[1]*v)];
+  const S=P.map(uv),c=contOf(0)||contOf(aljFG());if(!c)return null;const E=(SD().ext||.3)/2,C=[[c.x-E,c.y-E],[c.x+c.w+E,c.y-E],[c.x+c.w+E,c.y+c.h+E],[c.x-E,c.y+c.h+E]].map(uv);
+  const mm=(A,k)=>[Math.min(...A.map(p=>p[k])),Math.max(...A.map(p=>p[k]))];const[su0,su1]=mm(S,0),[sv0,sv1]=mm(S,1),[cu0,cu1]=mm(C,0),[cv0,cv1]=mm(C,1);const lf=[n[1],-n[0]],lowIzq=(d[0]*lf[0]+d[1]*lf[1])<0;return{xy,su0,su1,sv1,cu0,cu1,cv0,cv1,lowIzq}}
+function rxMake(modo,lado){const F=rxFrame();if(!F){note='Primero el solar con su calle (paso 1) y el contorno del sótano (paso 2)';return render()}
+  if(!st.sot){note='No hay sótano: ponlo en el paso 2';return render()}
+  const W=3,G=5,ri=4.5,rl=4.5,des=Math.max(.5,zCalle()+floorH(0)),need=ri+rl+des/.16+4,gL=F.cu0-F.su0,gR=F.su1-F.cu1;let pts,warn='';
+  const lowS=F.lowIzq?'izq':'der',hiS=F.lowIzq?'der':'izq',side=lado||(gL>=gR?lowS:hiS),low=side===lowS;
+  if(modo==='frente'){const u=low?F.cu0+W/2+.6:F.cu1-W/2-.6;pts=[F.xy(u,0),F.xy(u,F.cv0)];if(F.cv0<need)warn=`El frente mide ${fmt(r2(F.cv0))} m y la rampa recta necesita unos ${fmt(Math.ceil(need))} m: saldrá muy empinada. Mejor por detrás, o alarga el retranqueo.`}
+  else{const gap=low?gL:gR;if(gap<G+.3)warn=`El paso lateral (${side==='izq'?'izquierdo':'derecho'}) mide ${fmt(r2(gap))} m y la rampa con sus giros necesita ${fmt(G+.3)} m.`;
+    const ul=low?F.su0+gap/2:F.su1-gap/2,off=Math.max(rl+.5,G/2+.6),vb=F.cv1+off,ui=low?F.cu0+W/2+1.2:F.cu1-W/2-1.2;if(F.sv1<vb+G/2)warn=(warn?warn+' ':'')+`Detrás del edificio hay ${fmt(r2(F.sv1-F.cv1))} m y hacen falta ${fmt(r2(off+G/2))} m para girar.`;
+    pts=[F.xy(ul,0),F.xy(ul,vb),F.xy(ui,vb),F.xy(ui,F.cv1)]}
+  push();items.filter(o=>o.t==='rampx'&&o.auto).forEach(o=>{items=items.filter(q=>q!==o&&!(q.t==='door'&&q.rxid===o.id))});
+  const o={id:nid++,t:'rampx',f:0,auto:1,pts,w:W,wg:G,ri,rl,tr:4};items.push(o);sel=o.id;fl=0;try{tabs()}catch(e){}done();
+  const G2=rxGeo(o);note=(modo==='frente'?'Rampa por el frente':'Rampa por detrás, por el lateral '+(side==='izq'?'izquierdo':'derecho'))+(G2&&isFinite(G2.p)?` · pendiente ${fmt(Math.round(G2.p*1000)/10)} %`:'')+(warn?' · ⚠ '+warn:'')+' · arrastra los puntos naranjas para ajustarla';render()}
+{const _pw2RX=pw2;pw2=function(){let h=_pw2RX.apply(this,arguments);try{if(!st.sot)return h;const R=items.find(o=>o.t==='rampx');const G=R&&rxGeo(R);
+  h+=`<h3>Rampa de entrada al parking</h3>`+pwRow(!!R,R?`Rampa exterior${G&&isFinite(G.p)?' · '+fmt(Math.round(G.p*1000)/10)+' %':''}`:'Rampa exterior','Desde la calle hasta el muro del sótano, con su meseta de espera, curvas suaves y puerta de garaje. Elige por dónde entra:',
+   `${pwBtn('rxF','Por el frente',!R)}${pwBtn('rxT','Por detrás (por el lateral)')}`)+`<div class="pwG"><label>Lado<select id="rxLado"><option value="">El que tenga más sitio</option><option value="izq">Izquierdo, mirando desde la calle</option><option value="der">Derecho, mirando desde la calle</option></select></label></div>`}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-pw="rxF"],#pwP [data-pw="rxT"]');if(!b)return;e.stopImmediatePropagation();const lado=($('#rxLado')||{}).value||'';try{pasoClose()}catch(er){}rxMake(b.dataset.pw==='rxF'?'frente':'detras',lado)},true);
+(function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-rxg]'))return;[['frente','Rampa de entrada por el frente'],['detras','Rampa de entrada por detrás']].forEach(([k,t])=>{const b=document.createElement('button');b.dataset.rxg=k;b.textContent=t;b.onclick=()=>{try{closeMenus()}catch(e){}rxMake(k,'')};m.pop.appendChild(b)})}catch(e){}})();
+
+/* ===================== 3D DEL EDIFICIO: EL TERRENO CON SU DESNIVEL ===================== */
+function ter3(T,B){const s=SOL();if(!s)return;const P=solPts(s),c=contOf(0)||contOf(aljFG());if(!c)return;const E=(SD().ext||.3)/2,base=st.sot?rasante():0;
+  /* fuera el suelo plano */const span=Math.max(c.w,c.h);B.sc.traverse(o=>{if(!o.isMesh||!o.geometry||o.userData.terr)return;try{o.geometry.computeBoundingBox();const bb=o.geometry.boundingBox;if(!bb)return;const sx=(bb.max.x-bb.min.x)*(o.scale?o.scale.x:1),sy=(bb.max.y-bb.min.y),sz=(bb.max.z-bb.min.z);
+    const flat=Math.min(sx,sy,sz)<.06,big=[sx,sy,sz].sort((a,b)=>b-a)[1]>span+4;if(flat&&big&&Math.abs(o.position.y-(base-.02))<.3)o.visible=false}catch(e){}});
+  const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),m=10,X0=Math.min(...xs)-m,X1=Math.max(...xs)+m,Y0=Math.min(...ys)-m,Y1=Math.max(...ys)+m,stp=Math.max(.4,Math.sqrt((X1-X0)*(Y1-Y0)/30000));
+  const hx0=c.x-E,hx1=c.x+c.w+E,hy0=c.y-E,hy1=c.y+c.h+E,inH=(x,y)=>x>hx0+.01&&x<hx1-.01&&y>hy0+.01&&y<hy1-.01;
+  const nx=Math.ceil((X1-X0)/stp)+1,ny=Math.ceil((Y1-Y0)/stp)+1,pos=new Float32Array(nx*ny*3),col=new Float32Array(nx*ny*3),idx=[],cIn=new T.Color('#b9c98f'),cOut=new T.Color('#cfd3bf'),cCut=new T.Color('#8a7356');
+  const XA=i=>Math.min(X1,X0+i*stp),YA=j=>Math.min(Y1,Y0+j*stp);
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){let x=XA(i),y=YA(j);/* pegar los bordes al muro del edificio */if(Math.abs(x-hx0)<stp/2)x=hx0;if(Math.abs(x-hx1)<stp/2)x=hx1;if(Math.abs(y-hy0)<stp/2)y=hy0;if(Math.abs(y-hy1)<stp/2)y=hy1;
+    let z=0,zn=0;try{z=tzAt(x,y)}catch(e){}try{_rxIn++;zn=exZ(x,y)}catch(e){}finally{_rxIn--}const k=(j*nx+i)*3;pos[k]=x;pos[k+1]=base+z;pos[k+2]=y;
+    const cc=zn-z>.15?cCut:(rxInSolar(x,y,.01)?cIn:cOut);col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
+  for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const x=(XA(i)+XA(i+1))/2,y=(YA(j)+YA(j+1))/2;if(inH(x,y))continue;const a=j*nx+i,b=a+1,cc=a+nx,d=cc+1;idx.push(a,cc,b,b,cc,d)}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
+  const me=new T.Mesh(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));me.userData.terr=1;me.receiveShadow=true;B.sc.add(me);
+  /* linderos: una línea para ver el solar */const lp=[];P.forEach((p,i)=>{const q=P[(i+1)%P.length],n=Math.max(1,Math.ceil(Math.hypot(q[0]-p[0],q[1]-p[1])/1));for(let k=0;k<n;k++){const x=p[0]+(q[0]-p[0])*k/n,y=p[1]+(q[1]-p[1])*k/n,x2=p[0]+(q[0]-p[0])*(k+1)/n,y2=p[1]+(q[1]-p[1])*(k+1)/n;let z1=0,z2=0;try{z1=tzAt(x,y);z2=tzAt(x2,y2)}catch(e){}lp.push(x,base+z1+.05,y,x2,base+z2+.05,y2)}});
+  try{const lg=new T.BufferGeometry();lg.setAttribute('position',new T.Float32BufferAttribute(lp,3));const ln=new T.LineSegments(lg,new T.LineBasicMaterial({color:'#8d5a2b'}));ln.userData.terr=1;B.sc.add(ln)}catch(e){}}
+{const _bTER=bldAll3;bldAll3=function(){const B=_bTER.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return B;ter3(THREE,B)}catch(e){console.warn('terreno 3D',e)}return B}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
