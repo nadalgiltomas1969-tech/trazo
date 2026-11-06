@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · rampa suave, barreras, plazas y vistas</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · edificio de parkings, coches y rampa en L</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -920,7 +920,7 @@ function start3(R){const T=THREE,box=$('#v3c');box.innerHTML='';const B=build3(R
   $('#v3roof').onclick=e=>{const b=e.currentTarget;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')==='true'?'false':'true')};
   $('#v3img').onclick=async()=>{const dl=await getDL();if(!dl){$('#v3m').textContent='Este visor no permite guardar archivos';return}rd.render(B.sc,cam);rd.domElement.toBlob(async bl=>{try{await dl.save({filename:(R.name||'estancia').replace(/[^\w\- áéíóúñÁÉÍÓÚÑ]+/g,'_')+'_3d.png',data:bl});$('#v3m').textContent='Imagen guardada: adjúntala en Gemini junto al prompt de la habitación'}catch(e){$('#v3m').textContent='No se pudo guardar la imagen'}},'image/png')};
   const close3=()=>{cancelAnimationFrame(st3.raf);removeEventListener('keydown',kd,true);removeEventListener('keyup',ku,true);removeEventListener('resize',size);rd.dispose();box.innerHTML='';$('#v3d').hidden=true;V3=null};
-  $('#v3x').onclick=close3;V3={close:close3,st:st3};preset('corner');tick()}
+  $('#v3x').onclick=close3;V3={close:close3,st:st3,B};preset('corner');tick()}
 /* ---------- estancias fijadas, paredes compartidas y duplicar con contenido ---------- */
 let UNL=null;/* id de la habitación desbloqueada para mover o estirar */
 const roomLocked=it=>it&&it.t==='room'&&UNL!==it.id;
@@ -8989,11 +8989,11 @@ function extras3(T,f,g,z,opt){opt=opt||{};const M=c=>new T.MeshLambertMaterial({
       if(lg){add(new T.Mesh(new T.BoxGeometry(lw,.025,b.h),wl),b.x+lw/2,z+.02,b.y+b.h/2);add(new T.Mesh(new T.BoxGeometry(lw,.025,b.h),wl),b.x+b.w-lw/2,z+.02,b.y+b.h/2);add(new T.Mesh(new T.BoxGeometry(b.w,.025,lw),wl),b.x+b.w/2,z+.02,open==='bottom'?b.y+lw/2:b.y+b.h-lw/2)}
       else{add(new T.Mesh(new T.BoxGeometry(b.w,.025,lw),wl),b.x+b.w/2,z+.02,b.y+lw/2);add(new T.Mesh(new T.BoxGeometry(b.w,.025,lw),wl),b.x+b.w/2,z+.02,b.y+b.h-lw/2);add(new T.Mesh(new T.BoxGeometry(lw,.025,b.h),wl),open==='right'?b.x+lw/2:b.x+b.w-lw/2,z+.02,b.y+b.h/2)}
       /* tope de rueda */add(new T.Mesh(new T.BoxGeometry(lg?b.w*.6:.15,.12,lg?.15:b.h*.6),M('#d9b23a')),lg?b.x+b.w/2:(open==='right'?b.x+.6:b.x+b.w-.6),z+.06,lg?(open==='bottom'?b.y+.6:b.y+b.h-.6):b.y+b.h/2);return}
-    if(st.epoca==='moderna'&&o.t==='rampa'){const b=bboxOf(o);if(!b)return;const c2=contOf(o.f),lg=b.w<b.h,rise=(typeof floorH==='function'?floorH(o.f):3)+.3;let hiEnd;/* la parte alta es la que toca el borde del contorno (la calle) */
-      if(lg)hiEnd=c2&&Math.abs(b.y-c2.y)<Math.abs(b.y+b.h-(c2.y+c2.h))?'min':'max';else hiEnd=c2&&Math.abs(b.x-c2.x)<Math.abs(b.x+b.w-(c2.x+c2.w))?'min':'max';
-      const L=lg?b.h:b.w,W=lg?b.w:b.h,ang=Math.atan2(rise,L),sl=new T.Mesh(new T.BoxGeometry(lg?W:L/Math.cos(ang),.2,lg?L/Math.cos(ang):W),M('#a9a59c'));add(sl,b.x+b.w/2,z+rise/2-.1,b.y+b.h/2);
+    if(st.epoca==='moderna'&&o.t==='rampa'){const b=bboxOf(o);if(!b)return;const c2=contOf(o.f),lg=b.w<b.h,riseT=(typeof floorH==='function'?floorH(o.f):3)+.3,_LL=(typeof rpL==='function')?rpL(o):null,rise=_LL?riseT*_LL.L1/(_LL.L1+o.L2):riseT,zR=z+riseT-rise;let hiEnd;/* la parte alta es la que toca el borde del contorno (la calle) */
+      if(lg)hiEnd=c2&&Math.abs(b.y-c2.y)<Math.abs(b.y+b.h-(c2.y+c2.h))?'min':'max';else hiEnd=c2&&Math.abs(b.x-c2.x)<Math.abs(b.x+b.w-(c2.x+c2.w))?'min':'max';if(o.hi)hiEnd=o.hi;
+      const L=lg?b.h:b.w,W=lg?b.w:b.h,ang=Math.atan2(rise,L),sl=new T.Mesh(new T.BoxGeometry(lg?W:L/Math.cos(ang),.2,lg?L/Math.cos(ang):W),M('#a9a59c'));add(sl,b.x+b.w/2,zR+rise/2-.1,b.y+b.h/2);
       if(lg)sl.rotation.x=hiEnd==='max'?ang:-ang;else sl.rotation.z=hiEnd==='max'?-ang:ang;
-      /* bordillos y rayado antideslizante */const n=Math.floor(L/.6);for(let k=1;k<n;k++){const t=k/n,zz=z+(hiEnd==='max'?t:1-t)*rise+.01;const st2=new T.Mesh(new T.BoxGeometry(lg?W*.9:.05,.02,lg?.05:W*.9),M('#7d7a73'));add(st2,lg?b.x+b.w/2:b.x+t*L,zz,lg?b.y+t*L:b.y+b.h/2)}return}
+      /* bordillos y rayado antideslizante */const n=Math.floor(L/.6);for(let k=1;k<n;k++){const t=k/n,zz=zR+(hiEnd==='max'?t:1-t)*rise+.01;const st2=new T.Mesh(new T.BoxGeometry(lg?W*.9:.05,.02,lg?.05:W*.9),M('#7d7a73'));add(st2,lg?b.x+b.w/2:b.x+t*L,zz,lg?b.y+t*L:b.y+b.h/2)}return}
     if(o.t==='plaza'||o.t==='rampa'){const b=bboxOf(o);if(!b)return;add(new T.Mesh(new T.BoxGeometry(b.w,.04,b.h),M('#b8ae9a')),b.x+b.w/2,z+.02,b.y+b.h/2);return}
   }catch(e){console.warn('3D pieza',o.t,e)}})}
 /* qué hay en el plano que no tiene 3D (para avisar) */
@@ -12799,7 +12799,7 @@ let STUP=null;
         const cc=z-zt>.03?cF:(zt-z>.03?(z<=zb+.03?cD:cC):cG);col[k]=cc.r;col[k+1]=cc.g;col[k+2]=cc.b}
       for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d)}
       const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
-      const terr=new T.Mesh(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));B.sc.add(terr);
+      const terr=new T.Mesh(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));terr.userData.terr=1;B.sc.add(terr);
       }}catch(e){console.warn('fases3D',e)}return B}}
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='v3x'&&STUP){STUP=null;setTimeout(()=>pasoOpen(3),50)}},true);
 /* una ventana cada vez */
@@ -13161,6 +13161,109 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 function rampMed(){let A=0,Wm=0,Lb=0;items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(!G)return;try{const{R,W}=rxParts(G);R.forEach(r=>{const p=r.P;let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}A+=Math.abs(a)/2});
   W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]),m=[(w.a[0]+w.b[0])/2,(w.a[1]+w.b[1])/2],zr=rxZnear(G,m[0]+w.nin[0]*.35,m[1]+w.nin[1]*.35),zt=rxTerr(m[0]-w.nin[0]*.4,m[1]-w.nin[1]*.4);Wm+=L*Math.max(.4,zt-zr+.5)})}catch(e){}
   if(rxBarOn(it))rxBarSegs(G).forEach(q=>q.P.forEach((p,i)=>{if(i)Lb+=Math.hypot(p[0]-q.P[i-1][0],p[1]-q.P[i-1][1])}))});return{A,Wm,Lb,nB:items.filter(isBar).length}}
+
+/* ===================== 3D: ENCUADRE CENTRADO EN LO QUE SE VE ===================== */
+function v3Fit(){try{if(!V3||!V3.B||!window.THREE)return;const T=THREE,B=V3.B,S=V3.st,box=new T.Box3(),tmp=new T.Box3();let n=0,c0=null;try{c0=contOf(aljFG())||contOf(0)}catch(e){}const span0=c0?Math.max(c0.w,c0.h):30;
+  const vis=o=>{for(let p=o;p;p=p.parent)if(p.visible===false)return false;return true};
+  B.sc.traverse(o=>{if(!o.isMesh||!o.geometry||(o.userData&&o.userData.terr)||!vis(o))return;o.geometry.computeBoundingBox&&o.geometry.computeBoundingBox();tmp.setFromObject(o);const sx=tmp.max.x-tmp.min.x,sz=tmp.max.z-tmp.min.z;if(!isFinite(sx)||sx>span0*2.2+10||sz>span0*2.2+10)return;box.union(tmp);n++});
+  if(!n||box.isEmpty())return;const c=new T.Vector3(),sz=new T.Vector3();box.getCenter(c);box.getSize(sz);const R=Math.max(sz.x,sz.z,sz.y*1.6);S.mode='orbit';S.tx=c.x;S.ty=c.y;S.tz=c.z;S.dist=R*1.05+3;S.pitch=.5;S.yaw=.8}catch(e){console.warn('encuadre',e)}}
+{const _o3FT=open3D;open3D=function(R){const r=_o3FT.apply(this,arguments);try{if(R&&(R.stView||R.allView)){const go=n=>{if(!V3||!V3.B){if(n<60)setTimeout(()=>go(n+1),120);return}v3Fit();const b=$('#v3cor');if(b&&!b._ft){b._ft=1;b.addEventListener('click',()=>setTimeout(v3Fit,0))}};go(0)}}catch(e){}return r}}
+
+/* ===================== AVISO DEL SÓTANO A LA VISTA: SOLO LA PRIMERA VEZ ===================== */
+let UGWSH='';
+{const _ugwOnce=ugwShow;ugwShow=function(f){const r=_ugwOnce.apply(this,arguments);try{const w=$('#ugw');if(!w||w.hidden)return r;const b=w.querySelector('[data-ugwok]'),sg=b?b.dataset.ugwok:'';if(!sg)return r;const o=OB();o.ugwSeen=o.ugwSeen||[];
+  if(o.ugwSeen.includes(sg)&&UGWSH!==sg){w.hidden=true;return r}if(!o.ugwSeen.includes(sg)){o.ugwSeen.push(sg);if(o.ugwSeen.length>40)o.ugwSeen.shift();UGWSH=sg}}catch(e){}return r}}
+/* volver a verlo desde el menú Bajo tierra */
+(function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-ugwv]'))return;const b=document.createElement('button');b.dataset.ugwv='1';b.textContent='¿Se ve desde fuera este nivel?';b.onclick=()=>{try{closeMenus()}catch(e){}const o=OB();o.ugwSeen=[];UGWHIDE='';UGWSH='';render()};m.pop.appendChild(b)}catch(e){}})();
+
+/* ===================== RAMPA INTERIOR: GIRAR, SENTIDO, EN L Y PEGADA A UN LATERAL ===================== */
+function rpHi(o){if(o.hi)return o.hi;const b=bboxOf(o),c2=contOf(o.f),lg=b.w<b.h;if(lg)return c2&&Math.abs(b.y-c2.y)<Math.abs(b.y+b.h-(c2.y+c2.h))?'min':'max';return c2&&Math.abs(b.x-c2.x)<Math.abs(b.x+b.w-(c2.x+c2.w))?'min':'max'}
+function rpL(o){if(!o||o.t!=='rampa'||!(o.L2>0))return null;const b=bboxOf(o);if(!b)return null;const lg=b.w<b.h,W=lg?b.w:b.h,hi=rpHi(o),s=o.Ls||1;let C,L2,d2;
+  if(lg){const cy=hi==='min'?b.y+b.h:b.y-W;C={x:b.x,y:cy,w:W,h:W};L2=s>0?{x:b.x+W,y:cy,w:o.L2,h:W}:{x:b.x-o.L2,y:cy,w:o.L2,h:W};d2=[s,0]}
+  else{const cx=hi==='min'?b.x+b.w:b.x-W;C={x:cx,y:b.y,w:W,h:W};L2=s>0?{x:cx,y:b.y+W,w:W,h:o.L2}:{x:cx,y:b.y-o.L2,w:W,h:o.L2};d2=[0,s]}return{C,L2,d2,L1:lg?b.h:b.w,lg,hi,W}}
+{const _ugPctL=ugPct;ugPct=function(it){const p=_ugPctL.apply(this,arguments);try{const L=rpL(it);if(L)return p*L.L1/(L.L1+it.L2)}catch(e){}return p}}
+/* plano: el codo y el segundo tramo, y la flecha de bajada */
+{const _rRP=render;render=function(){const r=_rRP.apply(this,arguments);try{if(!isMod())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='';
+  items.filter(o=>o.t==='rampa'&&o.f===fl).forEach(o=>{const b=bboxOf(o);if(!b)return;const lg=b.w<b.h,hi=rpHi(o),L=rpL(o),col='#5a5346';
+    const ar=(x1,y1,x2,y2)=>{const a=Math.atan2(y2-y1,x2-x1),k=.5;return `<path d="M${x1*S} ${y1*S}L${x2*S} ${y2*S}M${(x2-Math.cos(a-.5)*k)*S} ${(y2-Math.sin(a-.5)*k)*S}L${x2*S} ${y2*S}L${(x2-Math.cos(a+.5)*k)*S} ${(y2-Math.sin(a+.5)*k)*S}" stroke="#1565c0" stroke-width="2.5" fill="none" pointer-events="none"/>`};
+    const cx=b.x+b.w/2,cy=b.y+b.h/2;if(lg)h+=ar(cx,hi==='min'?b.y+.6:b.y+b.h-.6,cx,hi==='min'?b.y+b.h-.6:b.y+.6);else h+=ar(hi==='min'?b.x+.6:b.x+b.w-.6,cy,hi==='min'?b.x+b.w-.6:b.x+.6,cy);
+    if(L){[L.C,L.L2].forEach((q,i)=>{h+=`<rect data-id="${o.id}" x="${q.x*S}" y="${q.y*S}" width="${q.w*S}" height="${q.h*S}" fill="${i?'#d8d2c4':'#e4dfd3'}" stroke="${col}" stroke-width="2.5"/>`});
+      const q=L.L2,mx=q.x+q.w/2,my=q.y+q.h/2;h+=L.d2[0]?ar(L.d2[0]>0?q.x+.6:q.x+q.w-.6,my,L.d2[0]>0?q.x+q.w-.6:q.x+.6,my):ar(mx,L.d2[1]>0?q.y+.6:q.y+q.h-.6,mx,L.d2[1]>0?q.y+q.h-.6:q.y+.6);
+      h+=`<text x="${(L.C.x+L.C.w/2)*S}" y="${(L.C.y+L.C.h/2)*S+4}" text-anchor="middle" style="font-size:11px;fill:${col}" pointer-events="none">giro</text>`}});
+  if(h)g.insertAdjacentHTML('beforeend',h)}catch(e){console.warn('rampa L',e)}return r}}
+/* panel de la rampa interior */
+{const _pnRP=panel;panel=function(){const r=_pnRP.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(it&&it.t==='rampa'&&isMod()&&sp&&!$('#rpX')){const L=it.L2>0;
+  sp.insertAdjacentHTML('beforeend',`<div id="rpX" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0"><b>Colocar la rampa</b>
+  <div class="row"><button data-rpb="rot">Girar 90°</button><button data-rpb="hi">Cambiar el sentido (baja por el otro lado)</button></div>
+  <div class="row"><button data-rpb="side">Pegarla al lateral más cercano</button></div>
+  <label style="flex-direction:row;align-items:center;gap:8px;margin-top:6px"><input type="checkbox" data-rpk="L"${L?' checked':''} style="width:auto"> En L: gira 90° al final y sigue bajando</label>
+  ${L?`<div class="g2"><label>Largo del segundo tramo (m)<input data-rpk="L2" type="number" step="0.5" min="2" inputmode="decimal" value="${r2(it.L2)}"></label><label>Gira hacia<select data-rpk="Ls"><option value="1"${(it.Ls||1)>0?' selected':''}>${(it.w<it.h)?'la derecha':'abajo'}</option><option value="-1"${(it.Ls||1)<0?' selected':''}>${(it.w<it.h)?'la izquierda':'arriba'}</option></select></label></div><p class="hint">El giro es un rellano cuadrado del ancho de la rampa. La pendiente se reparte entre los dos tramos.</p>`:''}
+  <p class="hint">La flecha azul indica hacia dónde baja.</p></div>`)}}catch(e){}return r}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rpb]');if(!b)return;const it=cur();if(!it||it.t!=='rampa')return;const k=b.dataset.rpb;push();
+  if(k==='rot'){const cx=it.x+it.w/2,cy=it.y+it.h/2,w=it.w;it.w=it.h;it.h=w;it.x=r2(cx-it.w/2);it.y=r2(cy-it.h/2);if(it.hi)it.hi=it.hi}
+  else if(k==='hi')it.hi=rpHi(it)==='min'?'max':'min';
+  else if(k==='side'){const c=contOf(it.f),E=(SD().ext||.3)/2;if(c){const ds={l:it.x-(c.x+E),r:c.x+c.w-E-(it.x+it.w),u:it.y-(c.y+E),d:c.y+c.h-E-(it.y+it.h)},m=Object.entries(ds).sort((a,b)=>a[1]-b[1])[0][0];
+    if((m==='l'||m==='r')&&it.w>it.h){const cx=it.x+it.w/2,cy=it.y+it.h/2,w=it.w;it.w=it.h;it.h=w;it.x=cx-it.w/2;it.y=cy-it.h/2}if((m==='u'||m==='d')&&it.h>it.w){const cx=it.x+it.w/2,cy=it.y+it.h/2,w=it.w;it.w=it.h;it.h=w;it.x=cx-it.w/2;it.y=cy-it.h/2}
+    if(m==='l')it.x=c.x+E;if(m==='r')it.x=c.x+c.w-E-it.w;if(m==='u')it.y=c.y+E;if(m==='d')it.y=c.y+c.h-E-it.h;it.x=Math.max(c.x+E,Math.min(c.x+c.w-E-it.w,it.x));it.y=Math.max(c.y+E,Math.min(c.y+c.h-E-it.h,it.y));it.x=r2(it.x);it.y=r2(it.y)}}
+  done()});
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.rpk)return;const it=cur();if(!it||it.t!=='rampa')return;const k=t.dataset.rpk;push();
+  if(k==='L'){it.L2=t.checked?r2(Math.max(4,Math.max(it.w,it.h)*.6)):0;if(t.checked&&!it.Ls)it.Ls=1}else if(k==='Ls')it.Ls=+t.value;else{const v=parseFloat(String(t.value).replace(',','.'));if(v>=2)it.L2=r2(v)}done()});
+/* 3D: el codo y el segundo tramo (el primer tramo lo dibuja la app con la parte alta en su sitio) */
+{const _ex3RP=extras3;extras3=function(T,f,g,z,opt){const r=_ex3RP.apply(this,arguments);try{if(!isMod())return r;const M=c=>new T.MeshLambertMaterial({color:c,side:T.DoubleSide});
+  items.filter(o=>o.f===f&&o.t==='rampa'&&o.L2>0).forEach(o=>{const L=rpL(o);if(!L)return;const rise=(typeof floorH==='function'?floorH(o.f):3)+.3,zc=z+rise*o.L2/(L.L1+o.L2);
+    const c=new T.Mesh(new T.BoxGeometry(L.C.w,.2,L.C.h),M('#a9a59c'));c.position.set(L.C.x+L.C.w/2,zc-.1,L.C.y+L.C.h/2);g.add(c);
+    const q=L.L2,hz=q.w>q.h,Ln=hz?q.w:q.h,W=hz?q.h:q.w,ang=Math.atan2(zc-z,Ln),sl=new T.Mesh(new T.BoxGeometry(hz?Ln/Math.cos(ang):W,.2,hz?W:Ln/Math.cos(ang)),M('#a9a59c'));sl.position.set(q.x+q.w/2,z+(zc-z)/2-.1,q.y+q.h/2);
+    /* baja alejándose del codo */if(hz)sl.rotation.z=L.d2[0]>0?-ang:ang;else sl.rotation.x=L.d2[1]>0?ang:-ang;g.add(sl)});
+  /* coches en las plazas */items.filter(o=>o.f===f&&o.t==='plaza'&&o.car).forEach(o=>{const b=bboxOf(o);if(!b)return;g.add(car3(T,b,z,o))})}catch(e){console.warn('rampa L 3D',e)}return r}}
+
+/* ===================== COCHES PARA DECORAR LAS PLAZAS ===================== */
+const CARC=['#c62828','#1565c0','#eceff1','#212121','#9e9e9e','#2e7d32','#f9a825','#5d4037','#455a64','#ad1457'];
+const carCol=o=>CARC[(o.id*7+3)%CARC.length];
+function car3(T,b,z,o){const g=new T.Group(),lg=b.h>=b.w,L=Math.min(4.4,(lg?b.h:b.w)-.5),W=Math.min(1.8,(lg?b.w:b.h)-.5),M=c=>new T.MeshLambertMaterial({color:c}),col=carCol(o),cx=b.x+b.w/2,cy=b.y+b.h/2;
+  const bx=(w,h,l,y,c,off)=>{const m=new T.Mesh(new T.BoxGeometry(lg?w:l,h,lg?l:w),M(c));m.position.set(cx+(lg?0:off||0),z+y,cy+(lg?off||0:0));g.add(m);return m};
+  bx(W,.62,L,.5,col);bx(W*.86,.5,L*.5,1.06,col,0);bx(W*.88,.44,L*.46,1.07,'#37474f',0);
+  [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a,c])=>{let w;try{w=new T.Mesh(new T.CylinderGeometry(.33,.33,.22,14),M('#1b1b1b'))}catch(e){w=new T.Mesh(new T.BoxGeometry(.22,.66,.66),M('#1b1b1b'))}w.rotation.z=lg?Math.PI/2:0;w.rotation.x=lg?0:Math.PI/2;
+    const u=a*L*.32,v=c*(W/2-.05);w.position.set(cx+(lg?v:u),z+.33,cy+(lg?u:v));g.add(w)});return g}
+{const _rCAR=render;render=function(){const r=_rCAR.apply(this,arguments);try{if(!isMod())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='';
+  items.filter(o=>o.t==='plaza'&&o.car&&o.f===fl).forEach(o=>{const b=bboxOf(o);if(!b)return;const lg=b.h>=b.w,L=Math.min(4.4,(lg?b.h:b.w)-.5),W=Math.min(1.8,(lg?b.w:b.h)-.5),cx=b.x+b.w/2,cy=b.y+b.h/2,w=lg?W:L,hh=lg?L:W,col=carCol(o);
+    const gl=lg?{x:cx-W*.42,y:cy-L*.18,w:W*.84,h:L*.4}:{x:cx-L*.22,y:cy-W*.42,w:L*.4,h:W*.84};
+    h+=`<g pointer-events="none"><rect x="${(cx-w/2)*S}" y="${(cy-hh/2)*S}" width="${w*S}" height="${hh*S}" rx="${.45*S}" fill="${col}" stroke="#263238" stroke-width="1.2"/><rect x="${gl.x*S}" y="${gl.y*S}" width="${gl.w*S}" height="${gl.h*S}" rx="${.2*S}" fill="#37474f" fill-opacity=".8"/></g>`});
+  if(h)g.insertAdjacentHTML('beforeend',h)}catch(e){}return r}}
+{const _pnCAR=panel;panel=function(){const r=_pnCAR.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(it&&it.t==='plaza'&&sp&&!$('#carX')){const n=items.filter(o=>o.t==='plaza'&&o.f===it.f).length;
+  sp.insertAdjacentHTML('beforeend',`<div id="carX" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0"><b>Coche de decoración</b><label style="flex-direction:row;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" data-car="1"${it.car?' checked':''} style="width:auto"> Un coche en esta plaza</label><div class="row"><button data-carall="1">Coches en todas las plazas de esta planta (${n})</button><button data-carall="0">Quitar todos</button></div></div>`)}}catch(e){}return r}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.car)return;const it=cur();if(!it||it.t!=='plaza')return;push();it.car=t.checked?1:0;done()});
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-carall]');if(!b)return;const it=cur(),f=it?it.f:fl,on=b.dataset.carall==='1';push();items.filter(o=>o.t==='plaza'&&o.f===f).forEach((o,i)=>{o.car=on?(i%5===3?0:1):0});note=on?'Coches puestos (alguna plaza queda libre, como en la realidad)':'Coches quitados';done()});
+
+/* ===================== DUPLICAR HABITACIONES Y TRASTEROS VARIAS VECES ===================== */
+{const _drH=dupRoomHTML;dupRoomHTML=function(it){let h=_drH.apply(this,arguments);try{h=h.replace('<div class="row"><button id="dupL">',`<label style="max-width:200px">Cuántas copias<input id="dupN" type="number" min="1" max="20" step="1" value="${window._DUPN||1}"></label><div class="row"><button id="dupL">`)}catch(e){}return h}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!['dupL','dupR','dupU','dupD'].includes(t.id))return;const n=Math.max(1,Math.min(20,parseInt(($('#dupN')||{}).value)||1));window._DUPN=n;if(n<2)return;const it=cur();if(!it||it.t!=='room')return;e.stopImmediatePropagation();
+  const w={dupL:'l',dupR:'r',dupU:'u',dupD:'d'}[t.id];let k=0;for(let i=0;i<n;i++){const before=sel;dupRoom(cur(),w);if(sel===before)break;k++}note=`${k} copia${k===1?'':'s'} de la habitación${k<n?` · ${n-k} no caben`:''}`;render()},true);
+
+/* ===================== PLANTAS DE PARKING SOBRE EL TERRENO Y EDIFICIO DE APARCAMIENTOS ===================== */
+const pkUp=f=>!!(st.pUso&&st.pUso[f]==='parking');
+{const _tabsPK=tabs;tabs=function(){const r=_tabsPK.apply(this,arguments);try{if(isMod())document.querySelectorAll('#tabs [data-f]').forEach(b=>{const f=+b.dataset.f;if(f>=0&&!(st.sot&&f===0)&&pkUp(f))b.textContent='Parking '+fname(f).toLowerCase()})}catch(e){}return r}}
+{const _pw2PK=pw2;pw2=function(){let h=_pw2PK.apply(this,arguments);try{const sh=st.sot?1:0,n=Math.max(1,(st.n||1)-sh),sel2=[];for(let i=0;i<n;i++){const f=i+sh;sel2.push(`<label>Uso de ${esc(fname(f).toLowerCase())}<select data-pwpu="${f}"><option value=""${pkUp(f)?'':' selected'}>Viviendas, locales u oficinas</option><option value="parking"${pkUp(f)?' selected':''}>Parking</option></select></label>`)}
+  h=h.replace(/(<h3>Plantas sobre el terreno<\/h3><div class="pwSeg">[\s\S]*?<\/div>)/,`$1<div class="pwG">${sel2.join('')}</div>`);
+  h+=`<h3>Edificio de aparcamientos</h3>`+pwRow(false,'Todo el edificio parking','Pone todos los niveles como parking, coloca las rampas en L junto a un lateral y llena cada planta de plazas con sus pasillos de 5,5 m.',pwBtn('pkAll','Hacerlo todo parking',false))}catch(e){}return h}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.pwpu==null)return;push();st.pUso=st.pUso||{};st.pUso[+t.dataset.pwpu]=t.value;done();try{tabs()}catch(er){}try{pasoBody()}catch(er){}});
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-pw="pkAll"]');if(!b)return;e.stopImmediatePropagation();pkAllDo();try{pasoBody()}catch(er){}},true);
+/* llenar una planta de plazas: filas de 5 m a los dos lados de un pasillo de 5,5 m */
+function pkBlocked(f){const R=[];items.forEach(o=>{if(o.f!==f&&!(o.t==='rampa'&&o.f===pkBelow(f)))return;if(o.t==='rampa'){const b=bboxOf(o);if(b)R.push(b);const L=rpL(o);if(L)R.push(L.C,L.L2)}else if(o.t==='room'||o.t==='monta'||o.t==='esc'||o.t==='escx'){const b=bboxOf(o);if(b)R.push(b)}});return R}
+function pkBelow(f){const L=pkAllLevels(),i=L.indexOf(f);return i>0?L[i-1]:null}
+function pkAllLevels(){const sh=st.sot?1:0,L=[];try{if(st.sot&&s2On())L.push(...s2Levels())}catch(e){}if(st.sot)L.push(0);for(let f=sh;f<(st.n||1);f++)L.push(f);return [...new Set(L)].filter(f=>contOf(f)||f>=sh).sort((a,b)=>pkOrd(a)-pkOrd(b))}
+const pkOrd=f=>f<=-10?f+8:(st.sot?f-1:f);
+function pkFill(f){const c=contOf(f);if(!c)return 0;const E=(SD().ext||.3)/2,X0=c.x+E,Y0=c.y+E,X1=c.x+c.w-E,Y1=c.y+c.h-E,hz=(X1-X0)>=(Y1-Y0),B=pkBlocked(f),PW=2.5,PD=5,AI=5.5;let n=0;
+  items=items.filter(o=>!(o.t==='plaza'&&o.f===f&&o.auto));
+  let A0=hz?Y0:X0,A1=hz?Y1:X1;const U0=hz?X0:Y0,U1=hz?X1:Y1;/* la rampa pegada a un lateral: las filas empiezan después */
+  B.forEach(b=>{const ba0=hz?b.y:b.x,ba1=hz?b.y+b.h:b.x+b.w,ul=hz?b.w:b.h;if(ul<.4*(U1-U0))return;if(ba0<=A0+1.2)A0=Math.max(A0,ba1);else if(ba1>=A1-1.2)A1=Math.min(A1,ba0)});/* bandas a lo ancho: plazas, pasillo, plazas */let a=A0;const rows=[];
+  while(a+PD<=A1+.01){rows.push(a);if(a+PD+AI+PD<=A1+.01){rows.push(a+PD+AI);a+=PD+AI+PD}else a+=PD+AI;if(a+AI>A1)break}
+  rows.forEach(r0=>{for(let u=U0;u+PW<=U1+.01;u+=PW){const q=hz?{x:r2(u),y:r2(r0),w:PW,h:PD}:{x:r2(r0),y:r2(u),w:PD,h:PW};if(B.some(b=>b.x<q.x+q.w-.05&&b.x+b.w>q.x+.05&&b.y<q.y+q.h-.05&&b.y+b.h>q.y+.05))continue;items.push({id:nid++,t:'plaza',f,auto:1,...q});n++}});return n}
+function pkRamp(f){const c=contOf(f);if(!c)return null;if(items.some(o=>o.t==='rampa'&&o.f===f))return null;const E=(SD().ext||.3)/2,des=floorH(f)+.3,Lt=Math.ceil(des/.15),W=3.5,hz=c.w>=c.h,Ls=(hz?c.w:c.h)-2*E-W-1;
+  const L1=Math.min(Lt,Math.max(6,Ls)),L2=Lt>L1?Math.max(3,Lt-L1):0;const o=hz?{id:nid++,t:'rampa',f,x:r2(c.x+E+W),y:r2(c.y+E),w:L1,h:W,hi:'min'}:{id:nid++,t:'rampa',f,x:r2(c.x+E),y:r2(c.y+E+W),w:W,h:L1,hi:'min'};if(L2){o.L2=L2;o.Ls=1}items.push(o);return o}
+function pkAllDo(){push();const sh=st.sot?1:0;st.pUso=st.pUso||{};for(let f=sh;f<(st.n||1);f++){st.pUso[f]='parking';const c0=contOf(0)||contOf(sh);if(!contOf(f)&&c0)items.push({...JSON.parse(JSON.stringify(c0)),id:nid++,f})}
+  try{if(st.sot){st.ugUso=st.ugUso||{};[0,...(s2On()?s2Levels():[])].forEach(k=>{st.ugUso[k]='parking';if(k<=-10&&st.ug)st.ug[-10-k]='parking'})}}catch(e){}
+  const L=pkAllLevels();L.slice(0,-1).forEach(f=>pkRamp(f));let n=0;L.forEach(f=>{n+=pkFill(f)});items.filter(o=>o.t==='plaza'&&o.auto).forEach((o,i)=>{if(o.car==null)o.car=i%5===3?0:1});
+  note=`Edificio de aparcamientos: ${L.length} niveles, ${n} plazas y ${Math.max(0,L.length-1)} rampas. Cambia o borra lo que quieras.`;done();try{tabs()}catch(e){}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
