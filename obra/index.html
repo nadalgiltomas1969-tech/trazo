@@ -13061,6 +13061,11 @@ async function maqExport(){const D=maqData();if(!D){note='Abre primero un proyec
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-maq]');if(!b)return;const k=b.dataset.maq;if(k==='x'){$('#maqP')&&$('#maqP').remove();return}
   const s=k==='url'?MAQ_URL:($('#maqT')||{}).value||'';const fb=()=>{const t=$('#maqT');if(t){t.value=s;t.select();try{document.execCommand('copy')}catch(er){}}};try{navigator.clipboard.writeText(s).then(()=>{b.textContent='Copiado ✓'},fb)}catch(er){fb()}});
 (function(){try{const m=MENUS.find(m=>m.name==='Proyecto');if(!m||m.pop.querySelector('[data-maqx]'))return;const b=document.createElement('button');b.dataset.maqx='1';b.textContent='▣ Exportar a Trazo · Maquetas';b.onclick=()=>maqExport();m.pop.insertBefore(b,m.pop.children[2]||null)}catch(e){}})();
+
+/* al abrir un proyecto la app arranca en «Seleccionar»: la cruz solo sale cuando eliges Habitación o Tabique */
+function arrSel(){try{if(!isMod())return;if(tool==='room'||tool==='wall'||tool==='cont'&&contOf(fl)){try{xwStop()}catch(e){}tool='select';toolsUI();render()}}catch(e){}}
+['loadProj','loadProjNoSave'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;const w=function(){const r=f.apply(this,arguments);arrSel();return r};try{if(n==='loadProj')loadProj=w;else loadProjNoSave=w}catch(e){}});
+arrSel();setTimeout(arrSel,0);
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
