@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · aljibe y exportar a Trazo · Maquetas</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · una ventana cada vez</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12338,7 +12338,7 @@ function ugwShow(f){let w=$('#ugw');const on=isMod()&&(isUG(f)||(st.sot&&f===0))
 document.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('[data-ugwok],[data-rfo]');if(!t)return;if(t.dataset.ugwok!=null){UGWHIDE=t.dataset.ugwok;const w=$('#ugw');if(w)w.hidden=true;return}try{closeMenus()}catch(er){}rfOpen()});
 {const cs=document.createElement('style');cs.textContent=`
 #ugw{position:absolute;left:10px;bottom:34px;z-index:6;width:min(560px,calc(100% - 90px));max-height:46%;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:6px solid #d08a1e;border-radius:10px;padding:10px 14px;font-size:15px;line-height:1.45;box-shadow:0 3px 12px #0003}
-#ugw.ok{border-left-color:#3a8a5a}#ugw p{margin:4px 0}#ugw ul{margin:4px 0 6px;padding-left:20px}#ugw li{margin:2px 0}
+body.xwon #ugw,body.aljon #ugw{display:none!important}#ugw.ok{border-left-color:#3a8a5a}#ugw p{margin:4px 0}#ugw ul{margin:4px 0 6px;padding-left:20px}#ugw li{margin:2px 0}
 #ugw .ugwT{font-weight:700;font-size:16px;margin-bottom:2px}#ugw .ugwB{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}#ugw .ugwB button{font-size:15px;padding:7px 14px}
 #rfP .card{max-width:560px;font-size:16px;line-height:1.5}#rfP h2{margin:0 0 6px}#rfP h3{font-size:17px;margin:14px 0 6px}#rfP .hint{font-size:14px}
 #rfP .op{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0;cursor:pointer;font-size:16px}
@@ -12983,8 +12983,8 @@ function aljWarn(a){const o=aljO(a),inR=(R,m)=>R&&o.x>=R.x-.01-(m||0)&&o.y>=R.y-
   const c=contOf(cimF());if(c&&!inR(c))return 'Se sale del edificio: muévelo hacia dentro o hazlo más pequeño.';return ''}
 function aljNew(){const pos='jardin',uso='ambos',hu=2,[w,h]=aljDims(aljProp(uso),hu);push();const a={id:nid++,t:'aljibe',f:-2,x:0,y:0,w,h,pr:hu,fm:'rect',mt:'horm',pos,uso};aljPlace(a);items.push(a);done();return a}
 const aljCur=()=>ALW&&items.find(i=>i.id===ALW.id);
-function aljOpen(a){a=a||aljNew();ALW={id:a.id,step:ALW?ALW.step:.1};try{pasoClose()}catch(e){}try{xwStop()}catch(e){}tool='select';try{toolsUI()}catch(e){}fl=aljF(a);try{tabs()}catch(e){}sel=null;note='Aljibe: toca en el plano para ponerlo o muévelo con las flechas; Intro para terminar';try{const r=svg.getBoundingClientRect(),o=aljO(a),cx=o.x+o.w/2,cy=o.y+o.h/2,sx=(cx*view.s+view.ox),sy=(cy*view.s+view.oy);if(sx<r.width*.35||sx>r.width-40||sy<60||sy>r.height-40){view.ox=r.width*.65-cx*view.s;view.oy=r.height*.45-cy*view.s}}catch(e){}aljUI();render()}
-function aljClose(){ALW=null;const w=$('#aljW');if(w)w.remove();note='';render()}
+function aljOpen(a){a=a||aljNew();ALW={id:a.id,step:ALW?ALW.step:.1};document.body.classList.add('aljon');try{pasoClose()}catch(e){}try{xwStop()}catch(e){}tool='select';try{toolsUI()}catch(e){}fl=aljF(a);try{tabs()}catch(e){}sel=null;note='Aljibe: toca en el plano para ponerlo o muévelo con las flechas; Intro para terminar';try{const r=svg.getBoundingClientRect(),o=aljO(a),cx=o.x+o.w/2,cy=o.y+o.h/2,sx=(cx*view.s+view.ox),sy=(cy*view.s+view.oy);if(sx<r.width*.35||sx>r.width-40||sy<60||sy>r.height-40){view.ox=r.width*.65-cx*view.s;view.oy=r.height*.45-cy*view.s}}catch(e){}aljUI();render()}
+function aljClose(){ALW=null;document.body.classList.remove('aljon');const w=$('#aljW');if(w)w.remove();note='';render()}
 function aljUI(){const a=aljCur();if(!a)return aljClose();let w=$('#aljW');if(!w){$('#cvw').insertAdjacentHTML('beforeend','<div id="aljW" role="dialog" aria-label="Aljibe"></div>');w=$('#aljW')}
   const o=aljO(a),D=xwDist(fl,o.x+o.w/2,o.y+o.h/2),fv=(v,s)=>v==null?'—':fmt(r2(Math.max(0,v-s))),cap=aljCap(a),pr=aljProp(a.uso),W=aljWarn(a),st2=ALW.step;
   w.innerHTML=`<div class="xwH"><b>Aljibe · ${fmt(r2(cap))} m³</b><button data-alj="x" aria-label="Terminar">✕</button></div>
