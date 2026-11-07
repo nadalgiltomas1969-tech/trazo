@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · las rampas en la estructura</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · rampas, escaleras y ascensor en la estructura</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12829,7 +12829,7 @@ destAsk=function(){const q=PJ.p[PJ.cur];if(!q)return;$('#destBox')&&$('#destBox'
 /* Precios de partida para Mallorca, noviembre de 2026. Todos se pueden cambiar en «Precios…». */
 const PRES_D={
   exc:['Excavación del vaciado con máquina','m³',9],tra:['Carga, transporte y vertedero de tierras','m³ esponjado',16],rel:['Relleno con tierra de la obra, compactado','m³',12],pan:['Muro pantalla o entibación donde no cabe el talud','m²',220],
-  ram_s:['Rampa: solera de hormigón ruleteado','m²',85],ram_m:['Rampa: muros laterales de hormigón','m²',230],baran_m:['Barandilla de acero en los bordes de la rampa','m',140],barr:['Barrera de parking automática (poste, brazo y mando)','ud',2400],alj_h:['Aljibe: hormigón armado de solera, muros y tapa','m³',260],alj_imp:['Aljibe: impermeabilización apta para agua','m²',32],alj_bom:['Aljibe: grupo de presión, filtro y boca de registro','ud',1600],alj_rec:['Aljibe: recogida de lluvia (bajantes, arqueta y rebosadero)','ud',1100],alj_pot:['Aljibe: tratamiento para agua potable (clorador)','ud',650],mcon:['Muro de contención en la parte baja, hormigón armado con su zapata','m²',280],poz:['Pozos de hormigón bajo las zapatas, hasta el terreno firme','m³',115],lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
+  esc_l:['Escalera: losa de hormigón armado con peldaños y mesetas','m²',190],asc_m:['Hueco del ascensor: muros de hormigón armado y foso','m²',230],asc_u:['Ascensor instalado (cabina, guías y maquinaria)','ud',24000],ram_s:['Rampa: solera de hormigón ruleteado','m²',85],ram_m:['Rampa: muros laterales de hormigón','m²',230],baran_m:['Barandilla de acero en los bordes de la rampa','m',140],barr:['Barrera de parking automática (poste, brazo y mando)','ud',2400],alj_h:['Aljibe: hormigón armado de solera, muros y tapa','m³',260],alj_imp:['Aljibe: impermeabilización apta para agua','m²',32],alj_bom:['Aljibe: grupo de presión, filtro y boca de registro','ud',1600],alj_rec:['Aljibe: recogida de lluvia (bajantes, arqueta y rebosadero)','ud',1100],alj_pot:['Aljibe: tratamiento para agua potable (clorador)','ud',650],mcon:['Muro de contención en la parte baja, hormigón armado con su zapata','m²',280],poz:['Pozos de hormigón bajo las zapatas, hasta el terreno firme','m³',115],lim:['Hormigón de limpieza bajo la cimentación','m²',9],zap:['Zapatas y vigas de atado de hormigón armado','m³',230],losa:['Losa de cimentación de hormigón armado','m³',210],
   pil:['Pilares de hormigón armado','m³',750],vig:['Vigas de hormigón armado','m³',620],muro:['Muro de sótano de hormigón, impermeabilizado y con drenaje','m²',230],sol:['Solera del sótano','m²',45],
   fj_viguetas:['Forjado de viguetas y bovedillas','m²',78],fj_losa:['Forjado de losa maciza','m²',112],fj_reticular:['Forjado reticular','m²',98],fj_madera:['Forjado de madera','m²',140],fj_chapa:['Forjado de chapa colaborante','m²',90],
   c_bloque:['Muro de bloque enfoscado y pintado','m',125],c_murete:['Murete con reja metálica','m',150],c_lamas:['Valla de lamas de aluminio','m',185],c_malla:['Malla metálica sobre postes','m',38],c_piedra:['Muro de piedra en seco','m',360],c_seto:['Seto vegetal','m',45],
@@ -12863,6 +12863,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* 6 obra por dentro */const R=items.filter(i=>i.t==='room'),aU=R.reduce((s,r)=>s+r.w*r.h,0),nb=R.filter(r=>/ba[ñn]o|aseo/i.test((r.name||'')+' '+(r.dest||''))).length,nc=R.filter(r=>/cocina/i.test((r.name||'')+' '+(r.dest||''))).length;let pk=0;lv.forEach(f=>{if((f<=-10||(st.sot&&f===0))&&typeof ugUso==='function'&&ugUso(f)==='parking'){const c=contOf(f);pk+=c.w*c.h-R.filter(r=>r.f===f).reduce((s,r)=>s+r.w*r.h,0)}});
   cap('int','Obra por dentro',[ln('int',aU,presP_('int')*q),ln('ban',nb,presP_('ban')*q),ln('coc',nc,presP_('coc')*q),ln('park',pk)]);
   /* aljibe */try{const A=aljList();if(A.length){let V=0,Hc=0,Im=0,np=0,nt=0;A.forEach(a=>{const m=aljMed(a);V+=m.V;Hc+=m.Hc;Im+=m.Im;if(a.uso!=='pot')np++;if(a.uso!=='pluv')nt++});cap('alj','Aljibe',[ln('exc',V,null,'Excavación del hueco del aljibe'),ln('tra',V*1.25,null,'Transporte de esa tierra al vertedero'),ln('alj_h',Hc),ln('alj_imp',Im),ln('alj_bom',A.length),ln('alj_rec',np),ln('alj_pot',nt)])}}catch(e){}
+  /* escaleras y ascensor */try{const E=items.filter(o=>o.t==='esc').reduce((a,o)=>a+escArea(o),0),AL=ascList();let Am=0;if(AL.length){const Lv=pkAllLevels(),Ht=Lv.reduce((a,f)=>a+floorH(f),0)+ASC_FOSO;AL.forEach(o=>{const b=bboxOf(o);if(b)Am+=2*(b.w+b.h+2*ASC_T)*Ht})}if(E>0||Am>0)cap('escx','Escaleras y ascensor',[ln('esc_l',E),ln('asc_m',Am),ln('asc_u',AL.length)])}catch(e){}
   /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
@@ -13392,6 +13393,38 @@ function rpSlab3(T,o,y0,y1,M){const g=new T.Group(),b=bboxOf(o);if(!b)return g;c
   L.forEach(o=>{const b=bboxOf(o),Lr=rpL(o),len=Math.max(b.w,b.h)+(Lr?o.L2:0);r+=pwRow(true,'Rampa de '+nmF(f).toLowerCase(),`Losa inclinada de hormigón armado de ${Math.round(RP_E*100)} cm, ${fmt(r2(len))} m de largo${Lr?' en L':''}, al ${fmt(Math.round(ugPct(o)*10)/10)} %. Deja hueco en el forjado de arriba.`,'')});
   X.forEach(it=>{const G=rxGeo(it);r+=pwRow(true,'Rampa de entrada',`Losa de hormigón con muros laterales, de la calle al parking${G&&isFinite(G.p)?' · '+fmt(Math.round(G.p*1000)/10)+' %':''}`,'')});
   const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
+
+/* ===================== ESCALERAS Y HUECO DEL ASCENSOR EN LA ESTRUCTURA ===================== */
+const ESC_E=.2;
+function escSlab3(T,o,y0,M){const g=new T.Group();let D;try{D=escTreads(o)}catch(e){return g}const rise=D.rise;
+  const ext=(P,yb,h)=>{if(!P||P.length<3)return;const sh=new T.Shape();P.forEach((p,i)=>i?sh.lineTo(p[0],-p[1]):sh.moveTo(p[0],-p[1]));const geo=new T.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false}),m=new T.Mesh(geo,M);m.rotation.x=-Math.PI/2;m.position.y=yb;m.castShadow=true;m.userData.k='esc';g.add(m)};
+  /* cada peldaño: macizo de su altura más el espesor de la losa por debajo */D.T.forEach(t=>{const P=trPoly(t).map(p=>escW(o,p)),top=y0+t.k*rise;ext(P,Math.max(y0,top-rise-ESC_E),Math.min(top-y0,rise+ESC_E))});
+  D.Ld.forEach(l=>{const P=l.P.map(p=>escW(o,p)),top=y0+l.k*rise;ext(P,top-ESC_E,ESC_E)});return g}
+function escArea(o){let A=0;try{const D=escTreads(o),pa=P=>{let a=0;for(let i=0;i<P.length;i++){const q=P[(i+1)%P.length];a+=P[i][0]*q[1]-q[0]*P[i][1]}return Math.abs(a)/2};D.T.forEach(t=>A+=pa(trPoly(t)));D.Ld.forEach(l=>A+=pa(l.P))}catch(e){}return A}
+/* ascensor: el hueco atraviesa todos los niveles; muros de 20 cm y foso de 1,2 m */
+const ASC_T=.2,ASC_FOSO=1.2;
+function ascList(){return items.filter(o=>o.t==='monta')}
+{const _stESC=stBuild3;stBuild3=function(){const B=_stESC.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,M=new T.MeshLambertMaterial({color:'#9a968d'}),Lv=pkAllLevels(),up=f=>{const i=Lv.indexOf(f);return i>=0?Lv[i+1]:null},H=[];
+  items.filter(o=>o.t==='esc').forEach(o=>{const g=escSlab3(T,o,floorZ(o.f),M);(B.G&&B.G[o.f]||B.sc).add(g);const u=up(o.f);if(u!=null){try{escHolePolys(o).H.forEach(P=>{const b=pbb(P);H.push({x0:b.x,x1:b.x+b.w,z0:b.y,z1:b.y+b.h,y:floorZ(u)})})}catch(e){}}});
+  const AL=ascList();if(AL.length&&Lv.length){const yb=floorZ(Lv[0])-ASC_FOSO,top=Lv[Lv.length-1],yt=floorZ(top)+floorH(top);AL.forEach(o=>{const b=bboxOf(o);if(!b)return;
+    Lv.slice(1).forEach(f=>H.push({x0:b.x,x1:b.x+b.w,z0:b.y,z1:b.y+b.h,y:floorZ(f)}));const h=yt-yb,w=(x,z,sx,sz)=>{const m=new T.Mesh(new T.BoxGeometry(sx,h,sz),M);m.position.set(x,yb+h/2,z);m.castShadow=true;m.userData.k='asc';(B.G&&B.G[Lv[0]]||B.sc).add(m)};
+    w(b.x+b.w/2,b.y-ASC_T/2,b.w+2*ASC_T,ASC_T);w(b.x+b.w/2,b.y+b.h+ASC_T/2,b.w+2*ASC_T,ASC_T);w(b.x-ASC_T/2,b.y+b.h/2,ASC_T,b.h);w(b.x+b.w+ASC_T/2,b.y+b.h/2,ASC_T,b.h);
+    const fo=new T.Mesh(new T.BoxGeometry(b.w+2*ASC_T,.3,b.h+2*ASC_T),M);fo.position.set(b.x+b.w/2,yb-.15,b.y+b.h/2);(B.G&&B.G.cim||B.sc).add(fo)})}
+  slabCut(B.sc,H,T)}catch(e){console.warn('escaleras estructura',e)}return B}}
+/* el ascensor también abre hueco en el 3D del edificio, en todas las plantas */
+{const _bASC=bldAll3;bldAll3=function(){const B=_bASC.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const AL=ascList();if(!AL.length)return B;const Lv=pkAllLevels(),H=[],base=0;
+  AL.forEach(o=>{const b=bboxOf(o);if(!b)return;Lv.slice(1).forEach(f=>{let y=0;try{y=floorZ(f)}catch(e){}H.push({x0:b.x,x1:b.x+b.w,z0:b.y,z1:b.y+b.h,y})})});slabCut(B.sc,H,THREE)}catch(e){console.warn('ascensor 3D',e)}return B}}
+/* plano: el hueco del ascensor en todas las plantas */
+{const _rASC=render;render=function(){const r=_rASC.apply(this,arguments);try{if(!isMod())return r;const AL=ascList().filter(o=>o.f!==fl);if(!AL.length||!pkAllLevels().includes(fl))return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='<g pointer-events="none">';
+  AL.forEach(o=>{const b=bboxOf(o);if(!b)return;h+=`<rect x="${(b.x-ASC_T)*S}" y="${(b.y-ASC_T)*S}" width="${(b.w+2*ASC_T)*S}" height="${(b.h+2*ASC_T)*S}" fill="#8d8a84"/><rect x="${b.x*S}" y="${b.y*S}" width="${b.w*S}" height="${b.h*S}" fill="#fff"/><path d="M${b.x*S} ${b.y*S}L${(b.x+b.w)*S} ${(b.y+b.h)*S}M${(b.x+b.w)*S} ${b.y*S}L${b.x*S} ${(b.y+b.h)*S}" stroke="#555" stroke-width="1"/><text x="${(b.x+b.w/2)*S}" y="${(b.y+b.h/2)*S+4}" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#333;paint-order:stroke;stroke:#fff;stroke-width:3px">Ascensor</text>`});
+  g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){}return r}}
+{const _ihASC=inHole;inHole=function(it){const h=_ihASC.apply(this,arguments);if(h)return h;try{if(!it||it.t==='monta'||!isMod())return null;const b=bboxOf(it);if(!b)return null;for(const o of ascList()){if(o.f===it.f)continue;const q=bboxOf(o);if(q&&b.x<q.x+q.w-.05&&b.x+b.w>q.x+.05&&b.y<q.y+q.h-.05&&b.y+b.h>q.y+.05)return{e:o,asc:1}}}catch(e){}return null}}
+{const _vmASC=vmsg;vmsg=function(it){let m=_vmASC.apply(this,arguments);try{const h=inHole(it);if(h&&h.asc)m='Ahí pasa el hueco del ascensor: esa zona queda libre en todas las plantas'}catch(e){}return m}}
+/* paso 3: en cada fase */
+{const _pw4ESC=pw4;pw4=function(){let h=_pw4ESC.apply(this,arguments);try{const k=faseCur().F.k;let r='';const b0='<div class="bt3">';
+  if(/^f-?\d+$/.test(k)){const f=+k.slice(1);items.filter(o=>o.t==='esc'&&o.f===f).forEach(o=>{r+=pwRow(true,'Escalera de '+nmF(f).toLowerCase(),`Losa de hormigón armado de ${Math.round(ESC_E*100)} cm con los peldaños y las mesetas · ${fmt(r2(escArea(o)))} m². Deja hueco en el forjado de arriba.`,'')});
+    const Lv=pkAllLevels();if(ascList().length&&f===Lv[0])r+=pwRow(true,'Hueco del ascensor',`Muros de hormigón de ${Math.round(ASC_T*100)} cm de abajo arriba, con foso de ${fmt(ASC_FOSO)} m bajo el nivel más bajo. Hueco en todos los forjados.`,'')}
+  if(!r)return h;return h.includes(b0)?h.replace(b0,r+b0):h+r}catch(e){}return h}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
