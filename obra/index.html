@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 6 nov 2026 · rellenos bajo la rampa, piscina y frente</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · bajar el edificio hasta que el parking quede enterrado</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -5759,7 +5759,7 @@ function exZ(x,y,skip,noCam){const e=st.ex;if(!e)return _tzAtEX(x,y);const M=exM
   (e.exp||[]).forEach(o=>{if(o===skip||!o.pts||o.pts.length<3)return;const zf=o.z??0;if(exPip(x,y,o.pts)){z=zf;return}if(o.bd==='muro')return;const t=exDpoly(x,y,o.pts,1),k=1.5;if(z>zf)z=Math.min(z,zf+t/k);else z=Math.max(z,zf-t/k)});
   z=exPzZ(x,y,z);if(!noCam)z=exCamZ(x,y,z);
   return Math.round(z*100)/100}
-tzAt=function(px,py){if(exHas())return exZ(px,py);return _tzAtEX(px,py)};
+tzAt=function(px,py){if(exHas())return exZ(px,py);return _tzAtEX(px,py)+(typeof hundZ==='function'?hundZ():0)};
 terrOn=function(){return exHas()||_terrOnEX()};
 /* ---- rejilla para dibujar ---- */
 function exGrid(){const B=exBox();if(!B)return null;const key=EX.ver+'|'+B.x0+'|'+B.y0+'|'+B.W+'|'+(_terrOnEX()?1:0)+'|'+(exBaseF()?1:0);if(EX.grid&&EX.grid.key===key)return EX.grid;
@@ -13331,6 +13331,22 @@ function lfAt(x,y,z){if(_lfIn||_rxIn)return z;const C=lfCtx();let out=z;
 {const _pw2LF=pw2;pw2=function(){let h=_pw2LF.apply(this,arguments);try{if(!SOL())return h;h+=`<h3>Rellenos</h3><p class="hint" style="margin:2px 0">Aunque no rellenes el solar entero, bajo la rampa, alrededor de la piscina y bajo el edificio siempre se rellena con tierra compactada.</p><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-lff="1"${OB().rellF!==0?' checked':''} style="width:auto"> Rellenar el frente, de la calle a la fachada, a la altura de la calle</label>`}catch(e){}return h}}
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.lff)return;push();OB().rellF=t.checked?1:0;LFC=null;done();try{pasoBody()}catch(er){}});
 let LFSIG='';{const _doneLF=done;done=function(){LFC=null;try{const sg=JSON.stringify([items.filter(o=>o.t==='rampx'||o.t==='pisc'||(o.t==='cont'&&o.f<=1)),OB().rellF]);if(sg!==LFSIG){LFSIG=sg;if(typeof EX!=='undefined'&&EX){EX.ver++;EX.grid=null}}}catch(e){}return _doneLF.apply(this,arguments)}}
+
+/* ===================== BAJAR EL EDIFICIO PARA QUE EL PARKING QUEDE BAJO TIERRA ===================== */
+/* OB().hund: metros que se baja el edificio respecto al terreno (se excava más) */
+function hundZ(){try{return isMod()?(+OB().hund||0):0}catch(e){return 0}}
+{const _exZ0H=exZ0;exZ0=function(x,y){return _exZ0H.apply(this,arguments)+hundZ()}}
+function hundSamples(){const c=contOf(0)||contOf(aljFG());if(!c)return[];const o=OB(),h0=o.hund;o.hund=0;const S=[];_rxIn++;_lfIn++;try{const E=(SD().ext||.3)/2+.3,R=[[c.x-E,c.y-E],[c.x+c.w+E,c.y-E],[c.x+c.w+E,c.y+c.h+E],[c.x-E,c.y+c.h+E]];R.forEach((p,i)=>{const q=R[(i+1)%4],n=Math.max(2,Math.ceil(Math.hypot(q[0]-p[0],q[1]-p[1])/1));for(let k=0;k<n;k++){try{S.push(tzAt(p[0]+(q[0]-p[0])*k/n,p[1]+(q[1]-p[1])*k/n))}catch(e){}}})}finally{_rxIn--;_lfIn--;o.hund=h0}return S}
+function hundSet(v){push();OB().hund=Math.round(v*20)/20;LFC=null;try{if(typeof EX!=='undefined'&&EX){EX.ver++;EX.grid=null}}catch(e){}try{RXV++}catch(e){}done();try{tabs()}catch(e){}}
+{const _pw2HU=pw2;pw2=function(){let h=_pw2HU.apply(this,arguments);try{if(!st.sot||!SOL())return h;const S=hundSamples();if(!S.length)return h;const mn=Math.min(...S),mx=Math.max(...S),av=S.reduce((a,b)=>a+b,0)/S.length,D=hundZ(),f2=v=>fmt(Math.round(v*100)/100);
+  const lo=mn+D,hi=mx+D,H0=floorH(0);const est=lo>=-.05?'El parking −1 queda <b>enterrado del todo</b>.':(lo<=-H0+.05?`Por el lado más bajo el parking −1 queda <b>entero a la vista</b> (el terreno está ${f2(-lo)} m por debajo de la planta baja).`:`Por el lado más bajo asoman <b>${f2(-lo)} m</b> del parking −1.`);
+  h+=`<h3>Altura del edificio en el terreno</h3><p style="margin:4px 0">${est} ${hi>.05?`Por el lado más alto la planta baja queda ${f2(hi)} m por debajo del terreno.`:''}</p>
+  <div class="pwG"><label>Bajar el edificio (m)<input data-hund="v" type="number" step="0.1" inputmode="decimal" value="${f2(D)}"></label></div>
+  <div class="row"><button data-hund="todo" class="pri">Excavar hasta que el parking quede bajo tierra (${f2(-mn)} m)</button><button data-hund="medio">Enterrado de media (${f2(-av)} m)</button>${D?'<button data-hund="0">Como estaba</button>':''}</div>
+  <p class="hint">Bajar el edificio aumenta la excavación y la rampa desde la calle se alarga; el presupuesto y el 3D se recalculan solos.</p>`}catch(e){console.warn(e)}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-hund]');if(!b||b.tagName==='INPUT')return;e.stopImmediatePropagation();const k=b.dataset.hund,S=hundSamples();if(!S.length)return;
+  const mn=Math.min(...S),av=S.reduce((a,c)=>a+c,0)/S.length;hundSet(k==='todo'?-mn:k==='medio'?-av:0);note=k==='0'?'El edificio vuelve a su altura':'Edificio bajado '+fmt(Math.round(OB().hund*100)/100)+' m: se excava más y el parking queda bajo tierra';try{pasoBody()}catch(er){}render()},true);
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.hund!=='v')return;const v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v))return;hundSet(v);try{pasoBody()}catch(er){}});
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
