@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · pendientes sobre el solar real y pasos en un lateral</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · arreglar la rampa sola</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -13892,6 +13892,17 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 /* ===================== LA BARRA DE PASOS, EN UN LATERAL ===================== */
 {const cs=document.createElement('style');cs.textContent=`#pasos{left:6px!important;top:50%!important;transform:translateY(-50%)!important;flex-direction:column!important;align-items:stretch!important;gap:2px!important;padding:4px!important;max-width:none!important;max-height:calc(100% - 20px);overflow-y:auto;opacity:.93}
 #pasos i{display:none!important}#pasos button{padding:5px 8px!important;font-size:13px!important}#pasos button span{width:20px!important;height:20px!important}`;document.head.appendChild(cs)}
+
+/* ===================== ARREGLAR LA RAMPA SOLA ===================== */
+/* pega el final al muro del nivel al que llega (por fuera y en perpendicular) y la alarga lo que haga falta para que no pase del 15 % */
+function rxFix(it){const c=contOf(it.f)||contOf(0);if(!c||!it.pts||it.pts.length<2)return 'Falta el contorno del nivel al que llega';const E=(SD().ext||.3)/2,R={x0:c.x-E,y0:c.y-E,x1:c.x+c.w+E,y1:c.y+c.h+E},P=it.pts.map(p=>p.slice()),e=P[P.length-1];
+  const cand=[{d:Math.abs(e[0]-R.x0),p:[R.x0,Math.max(R.y0+1.5,Math.min(R.y1-1.5,e[1]))],n:[-1,0]},{d:Math.abs(e[0]-R.x1),p:[R.x1,Math.max(R.y0+1.5,Math.min(R.y1-1.5,e[1]))],n:[1,0]},{d:Math.abs(e[1]-R.y0),p:[Math.max(R.x0+1.5,Math.min(R.x1-1.5,e[0])),R.y0],n:[0,-1]},{d:Math.abs(e[1]-R.y1),p:[Math.max(R.x0+1.5,Math.min(R.x1-1.5,e[0])),R.y1],n:[0,1]}].sort((a,b)=>a.d-b.d)[0];
+  /* si hay más de dos puntos, el penúltimo debe estar fuera, frente al punto de llegada */const end=cand.p,n=cand.n;const g=(it.wg||5)/2,last=Math.max((it.rl??4.5)+g,6);
+  let des=3;try{const G0=rxGeo({...it,pts:[end.map((v,i)=>v+n[i]*30),end]});des=G0.des||Math.abs(G0.zA-G0.zB)||3}catch(er){}const need=(it.ri??4.5)+(it.rl??4.5)+des/.14+2*(it.tr??4)+1;
+  let Q;if(P.length===2)Q=[[end[0]+n[0]*need,end[1]+n[1]*need],end];else{Q=P.slice(0,-1);Q[Q.length-1]=[end[0]+n[0]*last,end[1]+n[1]*last];Q.push(end);let L=0;for(let i=1;i<Q.length;i++)L+=Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]);if(L<need){const a=Q[0],b=Q[1],l=Math.hypot(a[0]-b[0],a[1]-b[1])||1;Q[0]=[a[0]+(a[0]-b[0])/l*(need-L),a[1]+(a[1]-b[1])/l*(need-L)]}}
+  push();it.pts=Q.map(p=>[r2(p[0]),r2(p[1])]);done();let out='';try{const s=SOL();if(s&&typeof rxInSolar==='function'&&!rxInSolar(it.pts[0][0],it.pts[0][1],.1))out=' · ⚠ la entrada queda fuera del solar: gírala o hazla en L'}catch(er){}const G=rxGeo(it);return 'Rampa arreglada'+(G&&isFinite(G.p)?' · pendiente '+fmt(Math.round(G.p*1000)/10)+' %':'')+out}
+{const _pnFX=panel;panel=function(){const r=_pnFX.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp&&!$('#rxFixB')){const W=rxChecks(it);if(W&&W.length){const h=`<div class="row" id="rxFixB"><button data-rxfix="1" style="background:var(--acc);border-color:var(--acc);color:#fff">🔧 Arreglarla sola: pegarla al muro y darle el largo que necesita</button></div>`;const box=[...sp.querySelectorAll('div,p')].find(d=>/No queda tramo|se mete dentro|no toca el muro|pendiente.*%/i.test(d.textContent)&&getComputedStyle(d).borderColor);if(box)box.insertAdjacentHTML('afterend',h);else sp.insertAdjacentHTML('afterbegin',h)}}}catch(e){}return r}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rxfix]');if(!b)return;const it=cur();if(!isRX(it))return;note=rxFix(it);render();panel()});
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
