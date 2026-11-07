@@ -14435,6 +14435,62 @@ function inPres(){const L=[],I=OB().ins;if(I&&I.pts&&I.pts.length){const{m,n}=in
   const E=I&&I.ext;if(E&&E.pts.length){const{n,m}=exMed(),c=k=>n[k]||0;[['ex_zan',m.zan],['ex_de',m.de],['ex_arq',c('arq')+c('arqP')],['ex_pl',m.pl+c('bjP')*3],['ex_prog',c('prog')],['ex_asp',c('asp')],['ex_gote',m.gote],['ex_bal',c('bal')],['ex_foco',c('foco')],['ex_farol',c('farol')],['ex_cab',m.al+m.ot],['ex_motor',c('motor')],['ex_vp',c('vport')],['ex_ench',c('enchX')],['ex_ve',c('ve')]].forEach(([k,q])=>{if(q>0)L.push(['ext',k,r2(q)])})}
   items.filter(isPisc).forEach(it=>{const D=psData(it);L.push(['pis','pi_vaso',r2(D.Hc)],['pis','pi_rev',r2(D.A+D.L*D.dm)],['pis','pi_cor',r2(D.L*psN(it).cw)],['pis','pi_dep',1],['pis','pi_tub',r2(Math.max(20,D.L+8))],['pis','pi_foco',Math.max(1,Math.round(Math.max(it.w,it.h)/4))])});return L}
 
+/* ===================== ZONA DE OBRA: LA PANTALLA ENSEÑA LO QUE SE ESTÁ EDIFICANDO, NO TODO EL SOLAR ===================== */
+let VSOL=0;/* 1 = el usuario ha pedido ver el solar entero */
+/* recuadro de lo que se edifica: todas las plantas, el sótano y lo de fuera (piscina, rampas, aljibes, zonas…) */
+function obZona(){const B={x0:1e9,y0:1e9,x1:-1e9,y1:-1e9},add=(x,y)=>{if(!isFinite(x)||!isFinite(y))return;B.x0=Math.min(B.x0,x);B.y0=Math.min(B.y0,y);B.x1=Math.max(B.x1,x);B.y1=Math.max(B.y1,y)};
+  let nc=0;items.forEach(o=>{if(!o||typeof o!=='object')return;if(o.t==='cont')nc++;if(o.t==='zext'&&o.k==='jardin')return;/* el jardín suele ocupar todo el resto del solar */
+    if(Array.isArray(o.pts)&&o.pts.length){o.pts.forEach(p=>Array.isArray(p)&&add(p[0],p[1]));return}
+    if(typeof o.x1==='number'&&typeof o.y1==='number'){add(o.x1,o.y1);add(o.x2,o.y2);return}
+    if(typeof o.x==='number'&&typeof o.y==='number'){add(o.x,o.y);if(o.w>0&&o.h>0)add(o.x+o.w,o.y+o.h)}});
+  if(!nc)return null;
+  /* el patio de ventilación del sótano y la excavación */try{const X=exc();if(X&&X.pit){add(X.pit.x0,X.pit.y0);add(X.pit.x1,X.pit.y1)}}catch(e){}
+  if(B.x1<B.x0)return null;
+  /* la calle si está cerca: así se ve por dónde se entra */try{const k=OB().calle,R=solarR();if(k&&k.lado&&R){const d=(k.acera??1.5)+(k.ancho??8);
+    if(k.lado==='n'&&B.y0-R.y0<12){B.y0=R.y0-d}if(k.lado==='s'&&R.y1-B.y1<12){B.y1=R.y1+d}if(k.lado==='o'&&B.x0-R.x0<12){B.x0=R.x0-d}if(k.lado==='e'&&R.x1-B.x1<12){B.x1=R.x1+d}}}catch(e){}
+  const m=4;return{x0:B.x0-m,y0:B.y0-m,x1:B.x1+m,y1:B.y1+m}}
+const obZonaOn=()=>{try{return isMod()&&!!SOL()&&!VSOL&&!!obZona()}catch(e){return false}};
+{const _fvZ=fitView;fitView=function(){const r=_fvZ.apply(this,arguments);try{if(fl<=-10)return r;let Z=null;if(obZonaOn())Z=obZona();else if(VSOL&&isMod()&&SOL()){const P=solPts(),xs=P.map(q=>q[0]),ys=P.map(q=>q[1]);Z={x0:Math.min(...xs)-3,y0:Math.min(...ys)-3,x1:Math.max(...xs)+3,y1:Math.max(...ys)+3};try{const k=OB().calle;if(k&&k.lado){const d=(k.acera??1.5)+(k.ancho??8);if(k.lado==='n')Z.y0-=d;if(k.lado==='s')Z.y1+=d;if(k.lado==='o')Z.x0-=d;if(k.lado==='e')Z.x1+=d}}catch(e){}}if(!Z)return r;const R=svg.getBoundingClientRect();if(!R.width||!R.height)return r;
+  const w=Z.x1-Z.x0,h=Z.y1-Z.y0,sc=Math.max(1.5,Math.min(120,Math.min((R.width-40)/w,(R.height-40)/h)));view.s=sc;view.ox=(R.width-w*sc)/2-Z.x0*sc;view.oy=(R.height-h*sc)/2-Z.y0*sc}catch(e){console.warn('zona de obra',e)}return r}}
+/* exteriores: el mismo encuadre (la pendiente y las medidas del terreno sí enseñan el solar entero) */
+{const _exFZ=exFit;exFit=function(){const r=_exFZ.apply(this,arguments);try{if(!obZonaOn()||EX.tool==='pend'||EX.tool==='med')return r;const Z=obZona(),sv=$('#exsv'),R=sv.getBoundingClientRect(),asp=(R.width||1)/(R.height||1);let w=Z.x1-Z.x0+4,h=Z.y1-Z.y0+4;if(w/h<asp)w=h*asp;else h=w/asp;EX.vb={x:(Z.x0+Z.x1)/2-w/2,y:(Z.y0+Z.y1)/2-h/2,w,h}}catch(e){}return r}}
+/* botón «Ver el solar entero» / «Ver la zona de obra», junto al zoom */
+function obZBtn(){try{const z=$('#zoom');if(!z)return;let b=$('#obZB');const on=isMod()&&SOL()&&obZona();if(!on){if(b)b.remove();return}
+  if(!b){z.insertAdjacentHTML('beforeend','<button id="obZB" style="font-size:11px;line-height:1.1;padding:4px 6px;width:auto"></button>');b=$('#obZB')}const t=VSOL?'Zona de obra':'Solar entero';if(b.textContent!==t)b.textContent=t;b.title=VSOL?'Ver solo lo que estás edificando':'Ver el solar entero'}catch(e){}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#obZB');if(!b)return;VSOL=VSOL?0:1;fitView();render()});
+{const _rZB=render;render=function(){const r=_rZB.apply(this,arguments);obZBtn();return r}}
+/* exteriores: lo mismo en su barra de zoom */
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#exZB');if(!b)return;VSOL=VSOL?0:1;exFit();exRender();exZBtn()});
+function exZBtn(){try{const z=$('#exzoom');if(!z)return;let b=$('#exZB');if(!(isMod()&&SOL()&&obZona())){if(b)b.remove();return}if(!b){z.insertAdjacentHTML('beforeend','<button id="exZB" style="font-size:11px;line-height:1.1;padding:4px 6px;width:auto"></button>');b=$('#exZB')}b.textContent=VSOL?'Zona de obra':'Solar entero'}catch(e){}}
+{const _eoZ=exOpen;exOpen=function(){const r=_eoZ.apply(this,arguments);try{exZBtn();exFit();exRender()}catch(e){}return r}}
+/* al cambiar a la pendiente del solar se ve el solar entero; al volver, la zona de obra */
+{const _euZ=exUI;exUI=function(){const t0=EX._tz;const r=_euZ.apply(this,arguments);try{if(t0!==EX.tool){const was=t0==='pend'||t0==='med',is=EX.tool==='pend'||EX.tool==='med';EX._tz=EX.tool;if(was!==is&&obZonaOn()){exFit();exRender()}}}catch(e){}return r}}
+
+/* ===================== CURVAS DE NIVEL DEL SUBSUELO EN TODO EL SOLAR, CORTADAS EN LOS LINDEROS ===================== */
+{const _siZ=subIso;subIso=function(){try{if(!isMod()||!SOL()||!terrOn()||!contOf(0))return _siZ.apply(this,arguments);const G=exGrid();if(!G)return null;const P=solPts(),key=G.key+'|sol|'+JSON.stringify(P);if(SUBC&&SUBC.key===key)return SUBC;
+  const inB=(x,y)=>exPip(x,y,P);let mn=1e9,mx=-1e9;for(let j=0;j<G.N;j++)for(let i=0;i<G.N;i++){const x=G.B.x0+i*G.g,y=G.B.y0+j*G.g;if(!inB(x,y))continue;const z=G.Z[j*G.N+i];if(z<mn)mn=z;if(z>mx)mx=z}
+  const rg=mx-mn,iv=rg>40?2:rg>12?1:.5,L=[];if(rg>.05)for(let v=Math.ceil(mn/iv)*iv;v<=mx;v+=iv)L.push({v,seg:exIso(G,v,inB)});SUBC={key,L,iv};return SUBC}catch(e){console.warn('curvas',e);return _siZ.apply(this,arguments)}}}
+
+/* ===================== METER EL EDIFICIO EN LA ZONA EDIFICABLE ===================== */
+function solMeter(){if(!SOL())return;const f0=solFuera();if(!f0.length){note='El edificio ya está dentro de la zona edificable';render();return}
+  const b=solOut(pbF())||solOut(0),Z=solZona();if(!b||!Z)return;const W=b.x1-b.x0,H=b.y1-b.y0,inZ=(x,y)=>exPip(x,y,Z)||Z.some((p,i)=>exDseg(x,y,p,Z[(i+1)%Z.length])<.02),fits=(x,y)=>[[x,y],[x+W,y],[x+W,y+H],[x,y+H]].every(([a,c])=>inZ(a,c));
+  /* el sitio libre más cercano a donde está ahora (para no deshacer lo que ya has colocado) */let best=null;const xs=Z.map(p=>p[0]),ys=Z.map(p=>p[1]),zx0=Math.min(...xs),zx1=Math.max(...xs),zy0=Math.min(...ys),zy1=Math.max(...ys),st2=.25;
+  for(let x=zx0;x<=zx1-W+1e-6;x+=st2)for(let y=zy0;y<=zy1-H+1e-6;y+=st2){if(!fits(x,y))continue;const d=Math.hypot(x-b.x0,y-b.y0);if(!best||d<best.d)best={x,y,d}}
+  if(!best){const A=Math.abs(solArea(Z));note=`El edificio (${fmt(Math.round(W*10)/10)} × ${fmt(Math.round(H*10)/10)} m) no cabe en la zona edificable (${fmt(Math.round(A))} m²): hazlo más pequeño o revisa las separaciones a los linderos`;render();return}
+  const dx=r2(best.x-b.x0),dy=r2(best.y-b.y0);push();shiftAll(dx,dy);done();note=`Edificio movido ${fmt(Math.round(Math.hypot(dx,dy)*10)/10)} m: ya está dentro de la zona edificable`;try{fitView()}catch(e){}render()}
+/* botón en el paso 1 y en el aviso del plano */
+{const _pw1Z=pw1;pw1=function(){let h=_pw1Z.apply(this,arguments);try{if(SOL()&&solFuera().length)h+=`<div style="border:1px solid #c62828;border-radius:8px;padding:6px 8px;margin:6px 0"><b style="color:#c62828">El edificio se sale de la zona edificable</b><p class="hint" style="margin:2px 0 4px">La zona edificable es el solar menos las separaciones a cada lindero.</p><div class="row"><button data-solm="1" style="background:var(--acc);border-color:var(--acc);color:#fff">Meter el edificio en la zona edificable</button></div></div>`}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-solm]');if(!b)return;solMeter();try{pasoBody()}catch(er){}});
+{const _rMZ=render;render=function(){const r=_rMZ.apply(this,arguments);try{let b=$('#solMB');const on=isMod()&&SOL()&&fl>=0&&solFuera().length;if(!on){if(b)b.remove();return r}
+  if(!b){$('#cvw').insertAdjacentHTML('beforeend','<button id="solMB" data-solm="1" style="position:absolute;left:50%;transform:translateX(-50%);top:10px;z-index:5;background:#c62828;border-color:#c62828;color:#fff;font-size:13px">⚠ Meter el edificio en la zona edificable</button>')}}catch(e){}return r}}
+
+/* ===================== RÓTULOS DEL PLANO QUE NO SE PISEN ===================== */
+function lblSep(){try{const g=svg.querySelector('g[transform^="translate"]');if(!g)return;const T=[...g.querySelectorAll('text')].filter(t=>{if(t.closest('[transform]')!==g&&t.closest('[transform]'))return false;if(t.hasAttribute('transform'))return false;if(!t.textContent.trim())return false;const fs=parseFloat(getComputedStyle(t).fontSize)||12;return fs>=9});
+  if(T.length>400)return;const bx=T.map(t=>{let b;try{b=t.getBBox()}catch(e){return null}return b&&b.width>0?{t,x:b.x,y:b.y,w:b.width,h:b.height,dy:0}:null}).filter(Boolean);
+  /* los más largos e importantes se quedan; los demás se apartan hacia abajo o hacia arriba */bx.sort((a,b)=>b.w-a.w);const placed=[];const hit=(a,b,dy)=>a.x<b.x+b.w-1&&a.x+a.w>b.x+1&&a.y+dy<b.y+b.dy+b.h-1&&a.y+dy+a.h>b.y+b.dy+1;
+  bx.forEach(a=>{let best=0;if(placed.some(p=>hit(a,p,0))){const cand=[];for(let k=1;k<=6;k++){cand.push(k*(a.h*.8),-k*(a.h*.8))}best=cand.find(d=>!placed.some(p=>hit(a,p,d)));if(best==null)best=0}a.dy=best;if(best){const y=parseFloat(a.t.getAttribute('y'))||0;a.t.setAttribute('y',y+best)}placed.push(a)})}catch(e){console.warn('rótulos',e)}}
+{const _rLS=render;render=function(){const r=_rLS.apply(this,arguments);lblSep();return r}}
+
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
