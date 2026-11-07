@@ -14498,7 +14498,7 @@ function nivCont(){let c=null;try{c=contOf(pbF())}catch(e){}return c||contOf(0)}
 function nivCalc(){if(!st.ex||!exHas())return null;const c=nivCont();if(!c)return null;const E=(SD().ext||.3)/2+.1,x0=c.x-E,y0=c.y-E,x1=c.x+c.w+E,y1=c.y+c.h+E,P=[];
   const side=(ax,ay,bx,by)=>{const L=Math.hypot(bx-ax,by-ay),n=Math.max(2,Math.ceil(L/.5));for(let i=0;i<=n;i++){const t=i/n;P.push([ax+(bx-ax)*t,ay+(by-ay)*t])}};
   side(x0,y0,x1,y0);side(x1,y0,x1,y1);side(x1,y1,x0,y1);side(x0,y1,x0,y0);
-  let mx=-1e9,mn=1e9,at=null;P.forEach(([x,y])=>{let z=0;try{z=exZ(x,y,null,true)}catch(e){}if(z>mx){mx=z;at=[x,y]}if(z<mn)mn=z});
+  let mx=-1e9,mn=1e9,at=null;const ex0=st.ex.exp,pz0=st.ex.pz;st.ex.exp=[];st.ex.pz=[];try{P.forEach(([x,y])=>{let z=0;try{z=exZ(x,y,null,true)}catch(e){}if(z>mx){mx=z;at=[x,y]}if(z<mn)mn=z})}finally{st.ex.exp=ex0;st.ex.pz=pz0}
   const up=Math.max(0,+(st.ex.pbUp||0)),sh=r2(mx+up);return{mx:r2(mx),mn:r2(mn),at,up,sh}}
 /* sube o baja todo el terreno a la vez (no cambia la forma) */
 function nivApply(up){const S=exS();S.pbUp=Math.max(0,r2(up||0));const N=nivCalc();if(!N)return null;const d=N.sh;if(Math.abs(d)<.005)return N;
@@ -14513,7 +14513,8 @@ function nivDlg(){const N=nivCalc();$('#nivP')&&$('#nivP').remove();if(!N){note=
   <p>Ahora ese punto está a <b>${f2(N.mx)} m</b> respecto a la planta baja, y el más bajo a <b>${f2(N.mn)} m</b>.</p>
   <label style="display:block;margin:8px 0">Subir la planta baja sobre el terreno (m)<input id="nivUp" type="number" step="0.05" min="0" inputmode="decimal" value="${N.up}" style="display:block;width:100%"></label>
   <p id="nivTx" class="hint"></p>
-  <div class="row" style="gap:8px;flex-wrap:wrap"><button id="nivGo" style="background:var(--acc);border-color:var(--acc);color:#fff">Aplicar</button><button id="nivNo">Cancelar</button></div></div></div>`);nivTx()}
+  <div class="row" style="gap:8px;flex-wrap:wrap"><button id="nivGo" style="background:var(--acc);border-color:var(--acc);color:#fff">Aplicar</button><button id="nivNo">Cancelar</button><button data-nivrev="1">Solo revisar escaleras, rampas y puertas</button></div></div></div>`);nivTx()}
+document.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('[data-nivrev]');if(!t)return;$('#nivP')&&$('#nivP').remove();nivRevDlg()});
 function nivTx(){const el=$('#nivTx');if(!el)return;const N=nivCalc();if(!N)return;let up=parseFloat(String($('#nivUp').value).replace(',','.'));if(!(up>=0))up=0;const d=r2(N.mx+up),f2=v=>fmt(Math.round(Math.abs(v)*100)/100);
   el.innerHTML=Math.abs(d)<.005?'Ya está así: no cambia nada.':`Todas las cotas del terreno ${d>0?'bajan':'suben'} <b>${f2(d)} m</b> a la vez (la forma del terreno no cambia). Quedará: punto más alto a ${fmt(-r2(up))} m y punto más bajo a ${fmt(r2(N.mn-d))} m. Se puede deshacer.`}
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='nivUp')nivTx()});
@@ -14522,7 +14523,24 @@ document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;
   if(t.closest('#nivNo')){$('#nivP')&&$('#nivP').remove();return}
   if(t.closest('#nivGo')){let up=parseFloat(String($('#nivUp').value).replace(',','.'));if(!(up>=0))up=0;const R=nivApply(up);$('#nivP')&&$('#nivP').remove();
     note=R&&R.d!=null?`Planta baja a nivel del terreno${up?` (+${fmt(up)} m)`:''}: las cotas ${R.d>0?'bajan':'suben'} ${fmt(Math.round(Math.abs(R.d)*100)/100)} m`:'Ya estaba a nivel';
-    try{done()}catch(e){try{save()}catch(e2){}}try{render()}catch(e){}try{if($('#exw')&&!$('#exw').hidden){exRender();exPanel()}}catch(e){}return}},true);
+    try{done()}catch(e){try{save()}catch(e2){}}try{render()}catch(e){}try{if($('#exw')&&!$('#exw').hidden){exRender();exPanel()}}catch(e){}nivRevDlg(1);return}
+  const R=t.closest('[data-nivr]');if(R){e.stopPropagation();const[k,id]=R.dataset.nivr.split(':'),it=items.find(i=>i.id===+id);if(!it)return;
+    if(k==='fix'&&isRX(it)){note=rxFix(it);try{done()}catch(er){}render();nivRevDlg();return}
+    $('#nivR')&&$('#nivR').remove();try{if($('#exw')&&!$('#exw').hidden)$('#exw').hidden=true}catch(er){}fl=it.f;sel=it.id;try{tabs()}catch(er){}render();try{panel()}catch(er){}return}
+  if(t.closest('#nivRNo')){$('#nivR')&&$('#nivR').remove();render();return}},true);
+/* después de cambiar el nivel: huecos de escalera, rampas, escaleras exteriores y puertas que hayan quedado mal */
+function nivRev(){const L=[],f2=v=>fmt(Math.round(Math.abs(v)*100)/100);
+  items.forEach(it=>{try{if(isRX(it)){const W=rxChecks(it);if(W&&W.length)L.push({it,k:'rx',t:'Rampa'+(it.name?' «'+esc(it.name)+'»':''),m:W[0],fix:1})}}catch(e){}});
+  items.filter(i=>i.t==='escx').forEach(it=>{try{const G=escxGeo(it);if(G&&G.none)L.push({it,k:'esc',t:'Escalera exterior',m:'Con el terreno nuevo la puerta queda a la altura del suelo de fuera: ya no hace falta. Tócala y bórrala si quieres.'})}catch(e){}});
+  if(terrOn())items.filter(i=>(i.t==='door'||i.t==='arco')&&i.f===pbF()).forEach(o=>{try{if(o.rx||items.some(i=>i.t==='escx'&&i.host===o.id))return;const S=opSides(o)||[];if(!S.some(isOut)||S.some(r=>r&&r.patio))return;
+    const g=opGeo(o),ko=S.findIndex(isOut),d={...g,sg:ko===1?1:-1},q=rzPt(d,g.w/2,g.T/2+.6),df=r2(tzAt(q[0],q[1]));if(Math.abs(df)<.15)return;
+    L.push({it:o,k:'door',t:o.t==='arco'?'Arco a fuera':'Puerta a fuera',m:df>0?`El terreno queda ${f2(df)} m más alto que el umbral: la puerta queda enterrada. Ponle una rampa que baje o escalones.`:`El terreno queda ${f2(df)} m más bajo que el umbral: la puerta queda colgando. Ponle escalones, una rampa o un muro de contención.`})}catch(e){}});
+  return L}
+function nivRevDlg(auto){const L=nivRev();$('#nivR')&&$('#nivR').remove();if(!L.length){if(!auto){note='Escaleras, rampas y puertas: todo bien con el terreno';render()}else{note+='. Escaleras, rampas y puertas: todo bien';render()}return}
+  const row=q=>`<div style="border-top:1px solid var(--line);padding:8px 0"><b>${q.t}</b><p class="hint" style="margin:2px 0 6px">${q.m}</p><div class="row" style="gap:6px;flex-wrap:wrap">${q.fix?`<button data-nivr="fix:${q.it.id}" style="background:var(--acc);border-color:var(--acc);color:#fff">Arreglarla sola</button>`:''}<button data-nivr="ver:${q.it.id}">Ver en el plano</button></div></div>`;
+  document.body.insertAdjacentHTML('beforeend',`<div id="nivR" class="dlgw" role="dialog" aria-label="Revisión de huecos y rampas" style="position:fixed;inset:0;z-index:90;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:520px;width:100%;max-height:90vh;overflow:auto;font-size:16px;line-height:1.45">
+  <h2 style="margin:0 0 6px">Revisa esto con el terreno nuevo</h2><p class="hint" style="margin:0 0 6px">${auto?esc(note)+'. ':''}Los forjados, los huecos de escalera y ascensor y las rampas de dentro no cambian (la altura entre plantas es la misma). Lo de fuera sí depende del terreno:</p>${L.map(row).join('')}
+  <div class="row" style="margin-top:8px"><button id="nivRNo">Cerrar</button></div></div></div>`)}
 /* aviso flotante en el plano cuando la planta baja no está a nivel */
 {const _rNV=render;render=function(){const r=_rNV.apply(this,arguments);try{let b=$('#nivMB');const N=isMod()&&!(typeof solFuera==='function'&&solFuera().length)?nivOff():null;
   if(!N){if(b)b.remove()}else{if(!b){$('#cvw').insertAdjacentHTML('beforeend','<button id="nivMB" style="position:absolute;left:50%;transform:translateX(-50%);top:10px;z-index:5;background:#c62828;border-color:#c62828;color:#fff;font-size:13px;max-width:90%;white-space:normal"></button>');b=$('#nivMB')}
