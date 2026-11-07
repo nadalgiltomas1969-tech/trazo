@@ -12092,10 +12092,12 @@ function rxDlg(){const old=$('#rxDP');if(old)old.remove();if(!isSotF(fl)){note='
   document.body.insertAdjacentHTML('beforeend',`<div id="rxDP" style="position:fixed;inset:0;z-index:80;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:460px;width:100%;max-height:90vh;overflow:auto">
   <h2>Rampa exterior al ${esc(fname(fl).toLowerCase())}</h2>
   <p class="hint">Va por fuera del edificio, dentro del solar: baja desde la calle, con rellanos en la entrada, en cada giro y al final, delante de la puerta del muro. Trazo calcula la pendiente con el desnivel real y pone la puerta de garaje sola.</p>
-  <div class="row" style="flex-wrap:wrap"><button data-rxa="izq">Por la izquierda, entrada lateral</button><button data-rxa="der">Por la derecha, entrada lateral</button></div><div class="row" style="flex-wrap:wrap"><button data-rxa="fizq">Por la izquierda, entrada por el fondo</button><button data-rxa="fder">Por la derecha, entrada por el fondo</button></div>
+  <h3 style="margin:8px 0 4px">Entra por la fachada de delante</h3><div class="row" style="flex-wrap:wrap"><button data-rxa="nizq">Recta, por la izquierda</button><button data-rxa="nder">Recta, por la derecha</button></div><h3 style="margin:8px 0 4px">Baja por un lateral y entra por el lado del edificio</h3><div class="row" style="flex-wrap:wrap"><button data-rxa="izq">Lateral izquierdo</button><button data-rxa="der">Lateral derecho</button></div><h3 style="margin:8px 0 4px">Baja por un lateral, rodea y entra por detrás del edificio</h3><div class="row" style="flex-wrap:wrap"><button data-rxa="fizq">Por la izquierda</button><button data-rxa="fder">Por la derecha</button></div>
   <div class="row"><button data-rxa="mano" style="background:var(--acc);border-color:var(--acc);color:#fff">Dibujarla a mano</button><button data-rxa="x">Cerrar</button></div>
   <p class="hint">«Izquierda» y «derecha» mirando al solar desde la calle. Después se puede mover cada punto, cambiar el ancho, los rellanos y la puerta.</p></div></div>`)}
-document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rxa]');if(!b)return;const k=b.dataset.rxa,P=$('#rxDP');P&&P.remove();if(k==='mano')rxStart();else if(['izq','der','fizq','fder'].includes(k))rxAuto(fl,k)});
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rxa]');if(!b)return;const k=b.dataset.rxa,P=$('#rxDP');P&&P.remove();if(k==='mano')rxStart();else if(k==='nizq'||k==='nder')rxMake('frente',k.slice(1));else if(['izq','der','fizq','fder'].includes(k)){rxAutoRep();rxAuto(fl,k)}});
+function rxAutoRep(){/* la rampa nueva sustituye a la que se hizo sola antes */const old=items.filter(o=>o.t==='rampx'&&o.auto);if(!old.length)return;push();old.forEach(o=>{items=items.filter(q=>q!==o&&!(q.t==='door'&&q.rxid===o.id))});done()}
+{const _rxA=rxAuto;rxAuto=function(){const n0=nid,r=_rxA.apply(this,arguments);try{items.forEach(o=>{if(o.t==='rampx'&&o.id>=n0)o.auto=1})}catch(e){}return r}}
 /* ---------- panel de la rampa ---------- */
 const _panelRX=panel;panel=function(){const r=_panelRX.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp){const G=rxGeo(it),W=rxChecks(it),RL=G?rxRellanos(G):[],Lv=[0,...s2Levels()].filter(f=>contOf(f));
   const inp=(k,l,v,st2)=>`<label>${l}<input data-rxk="${k}" type="number" step="${st2||.1}" inputmode="decimal" value="${v}"></label>`;
@@ -12124,7 +12126,7 @@ function rxMesh3(T,G,base,mat,wmat){const grp=new T.Group(),n=G.seg.length,{R,W}
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();grp.add(new T.Mesh(g,mat))});
   /* muros: contención donde hay tierra, pretil de 1 m donde no */
   W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);if(L<.02)return;const N=Math.max(1,Math.ceil(L/.4)),pos=[],idx=[],no=[-w.nin[0]*.25,-w.nin[1]*.25];
-    for(let i=0;i<=N;i++){const x=w.a[0]+(w.b[0]-w.a[0])*i/N,y=w.a[1]+(w.b[1]-w.a[1])*i/N,zr=rxZnear(G,x+w.nin[0]*.35,y+w.nin[1]*.35),zt=rxTerr(x-w.nin[0]*.4,y-w.nin[1]*.4),top=zr>zt-.05?zr+1:zt+.12;pos.push(x,base+zr-.3,y,x,base+top,y);if(i<N){const a=2*i;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
+    for(let i=0;i<=N;i++){const x=w.a[0]+(w.b[0]-w.a[0])*i/N,y=w.a[1]+(w.b[1]-w.a[1])*i/N,zr=rxZnear(G,x+w.nin[0]*.35,y+w.nin[1]*.35),zt=rxTerr(x-w.nin[0]*.4,y-w.nin[1]*.4),top=zr>zt-.05?zr+1:(rxNoWall(G,zt-zr)?zr+.15:zt+.12);pos.push(x,base+zr-.3,y,x,base+top,y);if(i<N){const a=2*i;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();grp.add(new T.Mesh(g,wmat));const m2=new T.Mesh(g.clone(),wmat);m2.position.set(no[0],0,no[1]);grp.add(m2);
     const tp=[],ti=[];for(let i=0;i<=N;i++){const X=pos[6*i+3],Y=pos[6*i+4],Z=pos[6*i+5];tp.push(X,Y,Z,X+no[0],Y,Z+no[1]);if(i<N){const a=2*i;ti.push(a,a+2,a+1,a+1,a+2,a+3)}}const g3=new T.BufferGeometry();g3.setAttribute('position',new T.Float32BufferAttribute(tp,3));g3.setIndex(ti);g3.computeVertexNormals();grp.add(new T.Mesh(g3,wmat))});
   return grp}
@@ -12133,7 +12135,7 @@ const _bldAll3RX=bldAll3;bldAll3=function(){const B=_bldAll3RX.apply(this,argume
   /* el suelo de alrededor, con el hueco de la casa y de la rampa */
   const c0=contOf(0),E=SD().ext||.6;let gr=null;B.sc.children.forEach(ch=>{if(!gr&&ch.isMesh&&ch.geometry&&ch.geometry.type==='ShapeGeometry'&&Math.abs(ch.position.y-(base-.02))<.01)gr=ch});
   if(gr&&c0&&GS.length){const h=.25,X0=c0.x+c0.w/2-(c0.w+30)/2,Y0=c0.y+c0.h/2-(c0.h+30)/2,nx=Math.ceil((c0.w+30)/h),ny=Math.ceil((c0.h+30)/h),hx0=c0.x-E/2,hx1=c0.x+c0.w+E/2,hy0=c0.y-E/2,hy1=c0.y+c0.h+E/2,pos=[];
-    const bbs=GS.map(G=>rxBB(G,.4));for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=X0+(i+.5)*h,y=Y0+(j+.5)*h;if(x>hx0&&x<hx1&&y>hy0&&y<hy1)continue;let hole=false;for(let k=0;k<GS.length&&!hole;k++){const bb=bbs[k];if(x<bb[0]||x>bb[2]||y<bb[1]||y>bb[3])continue;if(rxAt(GS[k],x,y,.38))hole=true}if(hole)continue;
+    const bbs=GS.map(G=>rxBB(G,.4));for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const x=X0+(i+.5)*h,y=Y0+(j+.5)*h;if(x>hx0&&x<hx1&&y>hy0&&y<hy1)continue;let hole=false;for(let k=0;k<GS.length&&!hole;k++){const bb=bbs[k];if(x<bb[0]||x>bb[2]||y<bb[1]||y>bb[3])continue;if(rxAt(GS[k],x,y,.38)||rxTalHole(GS[k],x,y))hole=true}if(hole)continue;
       const a=X0+i*h,b=Y0+j*h;pos.push(a,-b,0,a+h,-b,0,a+h,-(b+h),0,a,-b,0,a+h,-(b+h),0,a,-(b+h),0)}
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.computeVertexNormals();gr.geometry=g;if(gr.material){gr.material=gr.material.clone();gr.material.side=T.DoubleSide}}
   }catch(e){console.warn('rampa 3D',e)}return B};
@@ -13167,7 +13169,7 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 
 /* ===================== PRESUPUESTO: RAMPA Y BARRERAS ===================== */
 function rampMed(){let A=0,Wm=0,Lb=0;items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(!G)return;try{const{R,W}=rxParts(G);R.forEach(r=>{const p=r.P;let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}A+=Math.abs(a)/2});
-  W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]),m=[(w.a[0]+w.b[0])/2,(w.a[1]+w.b[1])/2],zr=rxZnear(G,m[0]+w.nin[0]*.35,m[1]+w.nin[1]*.35),zt=rxTerr(m[0]-w.nin[0]*.4,m[1]-w.nin[1]*.4);Wm+=L*Math.max(.4,zt-zr+.5)})}catch(e){}
+  W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]),m=[(w.a[0]+w.b[0])/2,(w.a[1]+w.b[1])/2],zr=rxZnear(G,m[0]+w.nin[0]*.35,m[1]+w.nin[1]*.35),zt=rxTerr(m[0]-w.nin[0]*.4,m[1]-w.nin[1]*.4);Wm+=L*(zt-zr>.05&&rxNoWall(G,zt-zr)?.25:Math.max(.4,zt-zr+.5))})}catch(e){}
   if(rxBarOn(it))rxBarSegs(G).forEach(q=>q.P.forEach((p,i)=>{if(i)Lb+=Math.hypot(p[0]-q.P[i-1][0],p[1]-q.P[i-1][1])}))});return{A,Wm,Lb,nB:items.filter(isBar).length}}
 
 /* ===================== 3D: ENCUADRE CENTRADO EN LO QUE SE VE ===================== */
@@ -13281,7 +13283,7 @@ function rxFrame(){const s=SOL();if(!s)return null;const P=solPts(s),ed=solEd(s)
   const mm=(A,k)=>[Math.min(...A.map(p=>p[k])),Math.max(...A.map(p=>p[k]))];const[su0,su1]=mm(S,0),[sv0,sv1]=mm(S,1),[cu0,cu1]=mm(C,0),[cv0,cv1]=mm(C,1);const lf=[n[1],-n[0]],lowIzq=(d[0]*lf[0]+d[1]*lf[1])<0;return{xy,su0,su1,sv1,cu0,cu1,cv0,cv1,lowIzq}}
 function rxMake(modo,lado){const F=rxFrame();if(!F){note='Primero el solar con su calle (paso 1) y el contorno del sótano (paso 2)';return render()}
   if(!st.sot){note='No hay sótano: ponlo en el paso 2';return render()}
-  const W=3,G=5,ri=4.5,rl=4.5,des=Math.max(.5,zCalle()+floorH(0)),need=ri+rl+des/.16+4,gL=F.cu0-F.su0,gR=F.su1-F.cu1;let pts,warn='';
+  const W=3,G=5,ri=4.5,rl=0,des=Math.max(.5,zCalle()+floorH(0)),need=ri+rl+des/.16+4,gL=F.cu0-F.su0,gR=F.su1-F.cu1;let pts,warn='';
   const lowS=F.lowIzq?'izq':'der',hiS=F.lowIzq?'der':'izq',side=lado||(gL>=gR?lowS:hiS),low=side===lowS;
   if(modo==='frente'){const u=low?F.cu0+W/2+.6:F.cu1-W/2-.6;pts=[F.xy(u,0),F.xy(u,F.cv0)];if(F.cv0<need)warn=`El frente mide ${fmt(r2(F.cv0))} m y la rampa recta necesita unos ${fmt(Math.ceil(need))} m: saldrá muy empinada. Mejor por detrás, o alarga el retranqueo.`}
   else{const gap=low?gL:gR;if(gap<G+.3)warn=`El paso lateral (${side==='izq'?'izquierdo':'derecho'}) mide ${fmt(r2(gap))} m y la rampa con sus giros necesita ${fmt(G+.3)} m.`;
@@ -13292,9 +13294,10 @@ function rxMake(modo,lado){const F=rxFrame();if(!F){note='Primero el solar con s
   const G2=rxGeo(o);note=(modo==='frente'?'Rampa por el frente':'Rampa por detrás, por el lateral '+(side==='izq'?'izquierdo':'derecho'))+(G2&&isFinite(G2.p)?` · pendiente ${fmt(Math.round(G2.p*1000)/10)} %`:'')+(warn?' · ⚠ '+warn:'')+' · arrastra los puntos naranjas para ajustarla';render()}
 {const _pw2RX=pw2;pw2=function(){let h=_pw2RX.apply(this,arguments);try{if(!st.sot)return h;const R=items.find(o=>o.t==='rampx');const G=R&&rxGeo(R);
   h+=`<h3>Rampa de entrada al parking</h3>`+pwRow(!!R,R?`Rampa exterior${G&&isFinite(G.p)?' · '+fmt(Math.round(G.p*1000)/10)+' %':''}`:'Rampa exterior','Desde la calle hasta el muro del sótano, con su meseta de espera, curvas suaves y puerta de garaje. Elige por dónde entra:',
-   `${pwBtn('rxF','Por el frente',!R)}${pwBtn('rxT','Por detrás (por el lateral)')}`)+`<div class="pwG"><label>Lado<select id="rxLado"><option value="">El que tenga más sitio</option><option value="izq">Izquierdo, mirando desde la calle</option><option value="der">Derecho, mirando desde la calle</option></select></label></div>`}catch(e){}return h}}
-document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-pw="rxF"],#pwP [data-pw="rxT"]');if(!b)return;e.stopImmediatePropagation();const lado=($('#rxLado')||{}).value||'';try{pasoClose()}catch(er){}rxMake(b.dataset.pw==='rxF'?'frente':'detras',lado)},true);
-(function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-rxg]'))return;[['frente','Rampa de entrada por el frente'],['detras','Rampa de entrada por detrás']].forEach(([k,t])=>{const b=document.createElement('button');b.dataset.rxg=k;b.textContent=t;b.onclick=()=>{try{closeMenus()}catch(e){}rxMake(k,'')};m.pop.appendChild(b)})}catch(e){}})();
+   `${pwBtn('rxF','Por el frente',!R)}${pwBtn('rxL','Por el lateral')}${pwBtn('rxT','Por detrás del edificio')}`)+`<div class="pwG"><label>Lado<select id="rxLado"><option value="">El que tenga más sitio</option><option value="izq">Izquierdo, mirando desde la calle</option><option value="der">Derecho, mirando desde la calle</option></select></label></div>`}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-pw="rxF"],#pwP [data-pw="rxT"],#pwP [data-pw="rxL"]');if(!b)return;e.stopImmediatePropagation();let lado=($('#rxLado')||{}).value||'';try{pasoClose()}catch(er){}const k=b.dataset.pw;if(k==='rxF')return rxMake('frente',lado);
+  if(!lado){const F=rxFrame();lado=F&&(F.su1-F.cu1)>(F.cu0-F.su0)?'der':'izq'}rxAutoRep();rxAuto(0,(k==='rxT'?'f':'')+lado)},true);
+(function(){try{const m=MENUS.find(m=>m.name==='Bajo tierra'||m.name==='Aparcamiento');if(!m||m.pop.querySelector('[data-rxg]'))return;[].forEach(([k,t])=>{const b=document.createElement('button');b.dataset.rxg=k;b.textContent=t;b.onclick=()=>{try{closeMenus()}catch(e){}rxMake(k,'')};m.pop.appendChild(b)})}catch(e){}})();
 
 /* ===================== 3D DEL EDIFICIO: EL TERRENO CON SU DESNIVEL ===================== */
 function ter3(T,B){const s=SOL();if(!s)return;const P=solPts(s),c=contOf(0)||contOf(aljFG());if(!c)return;const E=(SD().ext||.3)/2,base=st.sot?rasante():0;
@@ -13974,6 +13977,38 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 {const _st=stBuild3;stBuild3=function(){const B=_st.apply(this,arguments);try{if(!B||!B.sc||!window.THREE)return B;const F=fosList();if(!F.length)return B;const brown=new THREE.Color('#7a5c3a'),pe=new THREE.Color('#3f4a3c');
   B.sc.traverse(o=>{if(!o.isMesh||!o.material||!o.material.transparent)return;const p=o.position;F.forEach(a=>{const ob=aljO(a);if(p.x>ob.x&&p.x<ob.x+ob.w&&p.z>ob.y&&p.z<ob.y+ob.h&&Math.abs(o.material.opacity-.6)<.01){o.material=o.material.clone();o.material.color=brown}})});
   F.filter(a=>a.mt==='pref').forEach(a=>{const ob=aljO(a);B.sc.traverse(o=>{if(!o.isMesh||!o.material||o.material.transparent)return;const p=o.position;if(p.x>=ob.x-.01&&p.x<=ob.x+ob.w+.01&&p.z>=ob.y-.01&&p.z<=ob.y+ob.h+.01&&o.userData.k==='cim'){o.material=o.material.clone();o.material.color=pe}})})}catch(e){console.warn('fosa 3D',e)}return B}}
+
+/* ===================== RAMPA HUNDIDA EN EL TERRENO: MURETES DE HORMIGÓN SOLO SI HACEN FALTA POR EL TERRENO ===================== */
+const RXMUR=[['auto','Según el terreno'],['muro','Siempre muro de hormigón'],['talud','Talud de tierra, sin muro']];
+{const _rxG=rxGeo;rxGeo=function(it){const G=_rxG.apply(this,arguments);if(G&&it)G.mur=it.mur||'auto';return G}}
+const rxRoca=()=>{try{return espF()>=1.4}catch(e){return false}};
+function rxTal(){const t=OB().talud;return t==null?1:+t}
+/* altura máxima que aguanta un talud sin muro, según el terreno */
+function rxHmax(){if(rxRoca())return 99;const t=rxTal();return t===0?0:t<=.5?1.2:t<=1?.8:.5}
+/* ¿en este punto basta el terreno, sin muro? */
+function rxNoWall(G,h){const m=(G&&G.mur)||'auto';if(m==='muro')return false;if(m==='talud')return true;return h<=rxHmax()}
+/* anchura del talud por cada metro de alto (en roca el corte queda vertical) */
+function rxTalW(G){if(((G&&G.mur)||'auto')!=='talud'&&rxRoca())return 0;const t=rxTal();return t>0?t:1}
+function rxEdge(G,x,y){let best=null;G.seg.forEach((q,k)=>{const dx=x-q.a[0],dy=y-q.a[1],t=dx*q.d[0]+dy*q.d[1],v=dx*q.n[0]+dy*q.n[1];if(t<-G.g/2||t>q.L+G.g/2)return;const s=Math.max(0,Math.min(G.Lt,q.s0+Math.max(0,Math.min(q.L,t)))),inT=(k>0&&t<G.g/2)||(k<G.seg.length-1&&t>q.L-G.g/2),hw=inT?G.g/2:Math.max(G.w,G.wr||0)/2,d=Math.abs(v)-hw;if(d<0)return;if(!best||d<best.d)best={d,z:G.zs(s)}});return best}
+/* el terreno junto a la rampa: talud donde no hace falta muro */
+{const _rxC=rxCut;rxCut=function(x,y,z){let out=_rxC.apply(this,arguments);if(_rxIn||!items||!items.length)return out;_rxIn++;try{for(const it of items){if(!isRX(it))continue;const G=rxGeo(it);if(!G)continue;const B=G.bbT||(G.bbT=rxBB(G,4.5));if(x<B[0]||x>B[2]||y<B[1]||y>B[3])continue;const e=rxEdge(G,x,y);if(!e||e.d<=.3||e.d>4.5)continue;const h=z-e.z;if(h<=.05||!rxNoWall(G,h))continue;const tw=rxTalW(G);if(tw<=0)continue;out=Math.min(out,e.z+.15+(e.d-.3)/tw)}}catch(er){}finally{_rxIn--}return out}}
+/* medidas de los bordes: muro, talud o pretil */
+function rxMurMed(G){const o={muro:0,hmax:0,tal:0,pre:0};try{const{W}=rxParts(G);W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]),N=Math.max(1,Math.ceil(L/.5));for(let i=0;i<N;i++){const f=(i+.5)/N,x=w.a[0]+(w.b[0]-w.a[0])*f,y=w.a[1]+(w.b[1]-w.a[1])*f,zr=rxZnear(G,x+w.nin[0]*.35,y+w.nin[1]*.35),zt=rxTerr(x-w.nin[0]*.4,y-w.nin[1]*.4),h=zt-zr,l=L/N;
+  if(h<=.05)o.pre+=l;else if(rxNoWall(G,h))o.tal+=l;else{o.muro+=l;o.hmax=Math.max(o.hmax,h)}}})}catch(e){}for(const k in o)o[k]=Math.round(o[k]*10)/10;return o}
+const rxMurE=h=>h<=1.5?.2:h<=3?.25:.3;
+/* panel de la rampa */
+{const _pnMU=panel;panel=function(){const r=_pnMU.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp&&!$('#rxMU')){const G=rxGeo(it);if(!G)return r;const M=rxMurMed(G),t=rxTal(),tn=rxRoca()?'roca':t===0?'sin sitio para talud (corte vertical)':t<=.5?'terreno firme':t<=1?'terreno normal':'terreno flojo';
+  const h=`<div id="rxMU" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0"><b>Muros laterales</b>
+  <label>Donde la rampa queda bajo el terreno<select data-rxmur="1">${RXMUR.map(([v,l])=>`<option value="${v}"${(it.mur||'auto')===v?' selected':''}>${l}</option>`).join('')}</select></label>
+  <p class="hint" style="margin:4px 0">${M.muro?`<b>${fmt(M.muro)} m de muro de hormigón armado</b> de ${Math.round(rxMurE(M.hmax)*100)} cm, hasta ${fmt(Math.round(M.hmax*10)/10)} m de alto. `:'Sin muros de contención. '}${M.tal?`${fmt(M.tal)} m ${rxTalW(G)>0?'con talud de tierra':'con el corte en roca, sin muro'} y un bordillo de 15 cm. `:''}${M.pre?`${fmt(M.pre)} m por encima del terreno, con pretil. `:''}${(it.mur||'auto')==='auto'?`Según el terreno de la obra (${tn}): sin muro mientras el corte no pase de ${rxHmax()>50?'lo que haga falta':fmt(rxHmax())+' m'}. El tipo de terreno se cambia en el movimiento de tierras (talud y esponjamiento).`:''}</p></div>`;
+  const a=$('#rxBR');if(a)a.insertAdjacentHTML('afterend',h);else sp.insertAdjacentHTML('beforeend',h)}}catch(e){console.warn('muros rampa panel',e)}return r}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.rxmur==null)return;const it=cur();if(!isRX(it))return;push();if(t.value==='auto')delete it.mur;else it.mur=t.value;try{RXV++}catch(er){}done();render();panel()});
+/* terreno llano (sin pendientes): dibujar el talud como una banda de tierra junto a la rampa */
+{const _bRM=bldAll3;bldAll3=function(){const B=_bRM.apply(this,arguments);try{if(!B||!B.sc||!window.THREE)return B;if(typeof pfHas==='function'&&pfHas())return B;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return B;const T=THREE,base=rxBase(),mt=new T.MeshLambertMaterial({color:'#8d7a5a',side:T.DoubleSide});
+  items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(!G)return;const tw=rxTalW(G);if(tw<=0)return;const{W}=rxParts(G);W.forEach(w=>{const L=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);if(L<.05)return;const N=Math.max(1,Math.ceil(L/.4)),pos=[],idx=[];let ok=0;
+    for(let i=0;i<=N;i++){const x=w.a[0]+(w.b[0]-w.a[0])*i/N,y=w.a[1]+(w.b[1]-w.a[1])*i/N,zr=rxZnear(G,x+w.nin[0]*.35,y+w.nin[1]*.35),h=-zr,use=h>.05&&rxNoWall(G,h),d=use?h*tw:0;if(use)ok=1;pos.push(x,base+(use?zr+.15:0),y,x-w.nin[0]*(d+.25),base-.01,y-w.nin[1]*(d+.25));if(i<N){const a=2*i;idx.push(a,a+2,a+1,a+1,a+2,a+3)}}
+    if(!ok)return;const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();const me=new T.Mesh(g,mt);me.userData.rxTal=1;B.sc.add(me)})})}catch(e){console.warn('talud rampa 3D',e)}return B}}
+function rxTalHole(G,x,y){try{const e=rxEdge(G,x,y);if(!e||e.d<=.3)return false;const h=-e.z;if(h<=.05||!rxNoWall(G,h))return false;const tw=rxTalW(G);return tw>0&&e.d<.3+h*tw}catch(er){return false}}
 
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
