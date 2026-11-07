@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · rejas clásicas y modernas, puertas a juego y peatonal</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · pendientes sobre el solar real y pasos en un lateral</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -11200,7 +11200,7 @@ EXT_T.pend='Pendiente fácil';try{EXT_H.pend=''}catch(e){}
 const PF={m:'esq',dir:180,val:8,unit:'pct',sp:0,tab:null,pdir:'ns',pz:null,arrow:0,a0:null};
 const PFM=[['esq','Cotas en las esquinas'],['fle','Flecha y porcentaje'],['tab','Tabla de cotas'],['per','Perfil arrastrando']];
 const PFK={esq:'las esquinas',tab:'la tabla',per:'el perfil'};
-const pfR=()=>{const B=exBox();return B?{x0:B.rx0,y0:B.ry0,x1:B.rx1,y1:B.ry1,cx:B.cx,cy:B.cy}:null};
+let pfR=()=>{const B=exBox();return B?{x0:B.rx0,y0:B.ry0,x1:B.rx1,y1:B.ry1,cx:B.cx,cy:B.cy}:null};
 const pfZ=(x,y)=>{try{return Math.round(exZ(x,y)*20)/20}catch(e){return 0}};
 const pfF=v=>fmt(Math.round(v*100)/100);
 /* poner un juego de cotas de un tipo: quita las de ese tipo y las que caen encima de las nuevas */
@@ -13870,6 +13870,26 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
   else if(P.reja==='rombos'){r+=`<clipPath id="rbC"><rect x="${X0}" y="${y0}" width="${W}" height="${Hr}"/></clipPath><g clip-path="url(#rbC)">`;for(let x=X0-Hr;x<X0+W+Hr;x+=15)r+=`<line x1="${x}" y1="${y1}" x2="${x+Hr}" y2="${y0}" stroke="#1e2326" stroke-width="1.3"/><line x1="${x+Hr}" y1="${y1}" x2="${x}" y2="${y0}" stroke="#1e2326" stroke-width="1.3"/>`;r+=`</g><line x1="${X0}" y1="${y0+4}" x2="${X0+W}" y2="${y0+4}" stroke="#1e2326" stroke-width="2"/><line x1="${X0}" y1="${y1-4}" x2="${X0+W}" y2="${y1-4}" stroke="#1e2326" stroke-width="2"/>`}
   else if(P.reja==='volutas'){for(let x=X0;x<=X0+W;x+=9)r+=`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y1}" stroke="#1e2326" stroke-width="1.5"/><path d="M${x-2.5} ${y0}L${x} ${y0-8}L${x+2.5} ${y0}Z" fill="#1e2326"/>`;for(let x=X0+9;x<X0+W-9;x+=18)r+=`<path d="M${x} ${y0+16}c-7 0 -7 -9 0 -9M${x} ${y0+16}c7 0 7 9 0 9" fill="none" stroke="#1e2326" stroke-width="1.5"/>`;r+=`<line x1="${X0}" y1="${y0+5}" x2="${X0+W}" y2="${y0+5}" stroke="#1e2326" stroke-width="2"/><line x1="${X0}" y1="${y1-8}" x2="${X0+W}" y2="${y1-8}" stroke="#1e2326" stroke-width="2"/>`}
   /* las rejas van detrás de los pilares */const k=h.indexOf('<rect',h.indexOf('pilar')>0?0:0);const i=h.search(/<rect x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+" fill="#(c9a074|e2c79c)" stroke="#(7b5a3a|9c7a4f)"\/><rect x="[\d.-]+" y="[\d.]+" width="[\d.]+" height="8"/);h=i>0?h.slice(0,i)+r+h.slice(i):h.replace('</svg>',r+'</svg>')}catch(e){}return h}}
+
+/* ===================== PENDIENTES SOBRE EL SOLAR DE VERDAD (también irregular) ===================== */
+const pfSolP=()=>{try{if(!isMod())return null;const s=SOL();return s?solPts(s):null}catch(e){return null}};
+pfR=()=>{const P=pfSolP();if(P&&P.length>=3){const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}}const B=exBox();return B?{x0:B.rx0,y0:B.ry0,x1:B.rx1,y1:B.ry1,cx:B.cx,cy:B.cy}:null};
+{const _pfH=pfHTML;pfHTML=function(){let h=_pfH.apply(this,arguments);try{const P=pfSolP();if(!P||PF.m!=='esq')return h;const s=SOL(),n=P.length,rumbo=(x,y)=>{const R=pfR();return (y<R.cy?'norte':'sur')+(x<R.cx?'oeste':'este')};
+  const ins=P.map((p,i)=>`<label>Esquina ${i+1} <small>(${esc(lindN(s,(i-1+n)%n).toLowerCase())} con ${esc(lindN(s,i).toLowerCase())}, al ${rumbo(p[0],p[1])})</small><input id="pf_v${i}" type="number" step="0.05" inputmode="decimal" value="${pfZ(p[0],p[1])}"></label>`).join('');
+  const a=h.indexOf('<p class="hint" style="margin-top:8px">Escribe la altura de cada esquina'),b=h.indexOf('data-pfa="esq"',a),e=h.indexOf('</div>',b)+6;if(a<0||b<0)return h;
+  h=h.slice(0,a)+`<p class="hint" style="margin-top:8px">Escribe la altura de cada esquina del solar, como las da el topógrafo (los números son los del plano). Trazo hace el terreno entre ellas; la forma del solar no cambia.</p><div class="g2">${ins}</div><div class="row"><button data-pfa="esqp" style="background:var(--acc);border-color:var(--acc);color:#fff">Aplicar las cotas</button></div>`+h.slice(e)}catch(er){console.warn(er)}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-pfa="esqp"]');if(!b)return;e.stopImmediatePropagation();const P=pfSolP();if(!P)return;pfPut('esq',P.map((p,i)=>{const v=parseFloat(String(($('#pf_v'+i)||{}).value).replace(',','.'));return{x:p[0],y:p[1],z:isNaN(v)?0:v}}));exDone('Cotas de las esquinas del solar puestas')},true);
+/* en la vista del terreno: el solar con su forma y sus esquinas numeradas */
+{const _exRS=exRender;exRender=function(){const r=_exRS.apply(this,arguments);try{const sv=$('#exsv');const P=pfSolP();if(!sv||!P||$('#exw').hidden)return r;const o=sv.querySelector('#pfSol');if(o)o.remove();const k=EX.vb?EX.vb.w/Math.max(1,sv.getBoundingClientRect().width):.1,fs=12*k;
+  /* quitar las esquinas del cuadrado del terreno (no son el solar) */const ov=sv.querySelector('#pfOv');if(ov&&EX.tool==='pend'&&PF.m==='esq')[...ov.querySelectorAll('circle,text')].forEach(x=>x.remove());
+  let h=`<polygon points="${P.map(p=>p.join(',')).join(' ')}" fill="#e8f3c8" fill-opacity=".35" stroke="#8d5a2b" stroke-width="${3*k}"/>`;P.forEach((p,i)=>{const z=pfZ(p[0],p[1]);h+=`<circle cx="${p[0]}" cy="${p[1]}" r="${6*k}" fill="#1f6feb" stroke="#fff" stroke-width="${2*k}"/><text x="${p[0]+8*k}" y="${p[1]-7*k}" style="font-size:${fs*1.1}px;font-weight:700;fill:#1f6feb;paint-order:stroke;stroke:#fff;stroke-width:${3*k}px">${i+1} · ${pfF(z)} m</text>`});
+  h+=`<text x="${P[0][0]}" y="${P[0][1]-22*k}" style="font-size:${fs}px;fill:#8d5a2b;paint-order:stroke;stroke:#fff;stroke-width:${3*k}px">Solar</text>`;sv.insertAdjacentHTML('beforeend',`<g id="pfSol" pointer-events="none">${h}</g>`)}catch(er){console.warn(er)}return r}}
+
+/* el terreno siempre abarca todo el solar */
+{const _exOpS=exOpen;exOpen=function(){try{const P=pfSolP();if(P){const R=pfR(),e=exS(),need=Math.ceil((Math.max(R.x1-R.x0,R.y1-R.y0)+40)/10)*10,B=exBox();const inside=B&&R.x0>=B.x0&&R.x1<=B.x1&&R.y0>=B.y0&&R.y1<=B.y1;if(!inside){if((e.w||150)<need){e.w=need;e.h=need}e.ax=r2(R.cx);e.ay=r2(R.cy);try{EX.ver++}catch(er){}}}}catch(er){}return _exOpS.apply(this,arguments)}}
+/* ===================== LA BARRA DE PASOS, EN UN LATERAL ===================== */
+{const cs=document.createElement('style');cs.textContent=`#pasos{left:6px!important;top:50%!important;transform:translateY(-50%)!important;flex-direction:column!important;align-items:stretch!important;gap:2px!important;padding:4px!important;max-width:none!important;max-height:calc(100% - 20px);overflow-y:auto;opacity:.93}
+#pasos i{display:none!important}#pasos button{padding:5px 8px!important;font-size:13px!important}#pasos button span{width:20px!important;height:20px!important}`;document.head.appendChild(cs)}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
