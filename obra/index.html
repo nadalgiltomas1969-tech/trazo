@@ -12042,7 +12042,7 @@ function rxSvg(it,ghost){const G=rxGeo(it);if(!G)return '';const S=view.s,{R,W}=
     h+=`<path d="M${a[0]*S} ${a[1]*S}L${hx} ${hy}M${hx-ah*Math.cos(an-.5)} ${hy-ah*Math.sin(an-.5)}L${hx} ${hy}L${hx-ah*Math.cos(an+.5)} ${hy-ah*Math.sin(an+.5)}" stroke="#3a2a10" stroke-width="1.4" fill="none"/>`});
   /* rótulos de los rellanos */R.filter(r=>r.k!=='t').forEach(r=>{const cx=r.P.reduce((t,p)=>t+p[0],0)/4,cy=r.P.reduce((t,p)=>t+p[1],0)/4;h+=`<text class="dm" x="${cx*S}" y="${cy*S+4}" text-anchor="middle" style="font-size:10px;fill:#4a4030;paint-order:stroke;stroke:#e6e0d1;stroke-width:3px">Rellano${r.k==='g'?' de giro':' de acceso'}</text>`});
   const q0=G.seg[0],tl=[q0.a[0]+q0.d[0]*Math.min(2,q0.L/2)+q0.n[0]*(G.w/2+.6),q0.a[1]+q0.d[1]*Math.min(2,q0.L/2)+q0.n[1]*(G.w/2+.6)],up=isFinite(G.p)&&G.p<-.005,bad=!isFinite(G.p)||G.p>.15||up;
-  h+=`<text class="dm" x="${tl[0]*S}" y="${tl[1]*S}" style="font-size:12px;font-weight:700;fill:${bad?'#c62828':'#3a2a10'};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${up?`Rampa ⚠ sube ${fmt(Math.round(-G.des*100)/100)} m: tócala y pulsa «Arreglarla sola»`:`Rampa ↓ ${fmt(Math.round(G.des*100)/100)} m · ${isFinite(G.p)?fmt(Math.round(G.p*1000)/10)+' %'+(G.p>.15?' ⚠ muy empinada: tócala y pulsa «Arreglarla sola»':''):'⚠ sin tramo inclinado: alárgala'}`}</text>`;
+  h+=`<text class="dm" x="${tl[0]*S}" y="${tl[1]*S}" style="font-size:12px;font-weight:700;fill:${bad?'#c62828':'#3a2a10'};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${up?`Rampa ⚠ sube ${fmt(Math.round(-G.des*100)/100)} m`:`Rampa ↓ ${fmt(Math.round(G.des*100)/100)} m · ${isFinite(G.p)?fmt(Math.round(G.p*1000)/10)+' %'+(G.p>.15?' ⚠':''):'⚠ sin tramo inclinado'}`}</text>`;
   if(sl&&!ghost){h+=`<path d="M${P(G.P)}" fill="none" stroke="#d0661e" stroke-width="1.5" stroke-dasharray="6 4"/>`;G.P.forEach((p,i)=>{h+=`<circle cx="${p[0]*S}" cy="${p[1]*S}" r="8" fill="#fff" stroke="#d0661e" stroke-width="2.5" data-h="v${i}" style="cursor:move"/>`})}
   return ghost?`<g pointer-events="none" opacity=".45">${h}</g>`:`<g data-id="${it.id}"${sl?' class="sel"':''}>${h}</g>`}
 const _drawRX=draw;draw=function(it,g){if(isRX(it))return rxSvg(it,!!g);return _drawRX.apply(this,arguments)};
@@ -14491,6 +14491,52 @@ function lblSep(){try{const g=svg.querySelector('g[transform^="translate"]');if(
   bx.forEach(a=>{let best=0;if(placed.some(p=>hit(a,p,0))){const cand=[];for(let k=1;k<=6;k++){cand.push(k*(a.h*.8),-k*(a.h*.8))}best=cand.find(d=>!placed.some(p=>hit(a,p,d)));if(best==null)best=0}a.dy=best;if(best){const y=parseFloat(a.t.getAttribute('y'))||0;a.t.setAttribute('y',y+best)}placed.push(a)})}catch(e){console.warn('rótulos',e)}}
 {const _rLS=render;render=function(){const r=_rLS.apply(this,arguments);lblSep();return r}}
 
+
+/* ===================== LA PLANTA BAJA A NIVEL DEL TERRENO: en el punto más alto del contorno de la vivienda, más lo que indique el usuario ===================== */
+function nivCont(){let c=null;try{c=contOf(pbF())}catch(e){}return c||contOf(0)}
+/* terreno alrededor del contorno, medido justo fuera del muro (respecto a la planta baja de ahora) */
+function nivCalc(){if(!st.ex||!exHas())return null;const c=nivCont();if(!c)return null;const E=(SD().ext||.3)/2+.1,x0=c.x-E,y0=c.y-E,x1=c.x+c.w+E,y1=c.y+c.h+E,P=[];
+  const side=(ax,ay,bx,by)=>{const L=Math.hypot(bx-ax,by-ay),n=Math.max(2,Math.ceil(L/.5));for(let i=0;i<=n;i++){const t=i/n;P.push([ax+(bx-ax)*t,ay+(by-ay)*t])}};
+  side(x0,y0,x1,y0);side(x1,y0,x1,y1);side(x1,y1,x0,y1);side(x0,y1,x0,y0);
+  let mx=-1e9,mn=1e9,at=null;P.forEach(([x,y])=>{let z=0;try{z=exZ(x,y,null,true)}catch(e){}if(z>mx){mx=z;at=[x,y]}if(z<mn)mn=z});
+  const up=Math.max(0,+(st.ex.pbUp||0)),sh=r2(mx+up);return{mx:r2(mx),mn:r2(mn),at,up,sh}}
+/* sube o baja todo el terreno a la vez (no cambia la forma) */
+function nivApply(up){const S=exS();S.pbUp=Math.max(0,r2(up||0));const N=nivCalc();if(!N)return null;const d=N.sh;if(Math.abs(d)<.005)return N;
+  exPush();push();S.off=r2((S.off||0)-d);S.cot.forEach(q=>q.z=r2(q.z-d));S.exp.forEach(o=>o.z=r2((o.z??0)-d));(S.pz||[]).forEach(o=>{if(o.z!=null)o.z=r2(o.z-d)});
+  EX.ver++;EXM=null;try{TC_t=0}catch(e){}return Object.assign(N,{d})}
+const nivOff=()=>{try{const N=nivCalc();return N&&Math.abs(N.sh)>=.3?N:null}catch(e){return null}};
+function nivDlg(){const N=nivCalc();$('#nivP')&&$('#nivP').remove();if(!N){note='Primero pon las cotas del terreno y el contorno de la vivienda';render();return}
+  const f2=v=>fmt(Math.round(v*100)/100);
+  document.body.insertAdjacentHTML('beforeend',`<div id="nivP" class="dlgw" role="dialog" aria-label="Planta baja a nivel del terreno" style="position:fixed;inset:0;z-index:90;background:#0005;display:flex;align-items:center;justify-content:center;padding:12px"><div class="card" style="max-width:480px;width:100%;max-height:90vh;overflow:auto;font-size:16px;line-height:1.45">
+  <h2 style="margin:0 0 8px">Planta baja a nivel del terreno</h2>
+  <p>La planta baja es la cota ±0: de ella salen los demás forjados (los sótanos por debajo y las plantas por encima). Se pone a la altura del <b>punto más alto del terreno en el contorno de la vivienda</b>, más lo que tú indiques.</p>
+  <p>Ahora ese punto está a <b>${f2(N.mx)} m</b> respecto a la planta baja, y el más bajo a <b>${f2(N.mn)} m</b>.</p>
+  <label style="display:block;margin:8px 0">Subir la planta baja sobre el terreno (m)<input id="nivUp" type="number" step="0.05" min="0" inputmode="decimal" value="${N.up}" style="display:block;width:100%"></label>
+  <p id="nivTx" class="hint"></p>
+  <div class="row" style="gap:8px;flex-wrap:wrap"><button id="nivGo" style="background:var(--acc);border-color:var(--acc);color:#fff">Aplicar</button><button id="nivNo">Cancelar</button></div></div></div>`);nivTx()}
+function nivTx(){const el=$('#nivTx');if(!el)return;const N=nivCalc();if(!N)return;let up=parseFloat(String($('#nivUp').value).replace(',','.'));if(!(up>=0))up=0;const d=r2(N.mx+up),f2=v=>fmt(Math.round(Math.abs(v)*100)/100);
+  el.innerHTML=Math.abs(d)<.005?'Ya está así: no cambia nada.':`Todas las cotas del terreno ${d>0?'bajan':'suben'} <b>${f2(d)} m</b> a la vez (la forma del terreno no cambia). Quedará: punto más alto a ${fmt(-r2(up))} m y punto más bajo a ${fmt(r2(N.mn-d))} m. Se puede deshacer.`}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='nivUp')nivTx()});
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;
+  if(t.closest('[data-nivpb],#nivMB')){e.stopPropagation();nivDlg();return}
+  if(t.closest('#nivNo')){$('#nivP')&&$('#nivP').remove();return}
+  if(t.closest('#nivGo')){let up=parseFloat(String($('#nivUp').value).replace(',','.'));if(!(up>=0))up=0;const R=nivApply(up);$('#nivP')&&$('#nivP').remove();
+    note=R&&R.d!=null?`Planta baja a nivel del terreno${up?` (+${fmt(up)} m)`:''}: las cotas ${R.d>0?'bajan':'suben'} ${fmt(Math.round(Math.abs(R.d)*100)/100)} m`:'Ya estaba a nivel';
+    try{done()}catch(e){try{save()}catch(e2){}}try{render()}catch(e){}try{if($('#exw')&&!$('#exw').hidden){exRender();exPanel()}}catch(e){}return}},true);
+/* aviso flotante en el plano cuando la planta baja no está a nivel */
+{const _rNV=render;render=function(){const r=_rNV.apply(this,arguments);try{let b=$('#nivMB');const N=isMod()&&!(typeof solFuera==='function'&&solFuera().length)?nivOff():null;
+  if(!N){if(b)b.remove()}else{if(!b){$('#cvw').insertAdjacentHTML('beforeend','<button id="nivMB" style="position:absolute;left:50%;transform:translateX(-50%);top:10px;z-index:5;background:#c62828;border-color:#c62828;color:#fff;font-size:13px;max-width:90%;white-space:normal"></button>');b=$('#nivMB')}
+    b.textContent=`⚠ El terreno queda ${fmt(Math.round(Math.abs(N.sh)*10)/10)} m ${N.sh<0?'por debajo':'por encima'} de la planta baja: ponerla a nivel`}}catch(e){}return r}}
+/* en el panel de la rampa y en las medidas del terreno */
+{const _pnNV=panel;panel=function(){const r=_pnNV.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp&&!$('#nivRB')&&nivOff()){const h=`<div class="row" id="nivRB"><button data-nivpb="1">Poner la planta baja a nivel del terreno</button></div><p class="hint" style="margin:2px 0 6px">La rampa no puede bajar al sótano mientras el terreno quede tan lejos de la planta baja.</p>`;const fx=$('#rxFixB');if(fx)fx.insertAdjacentHTML('afterend',h);else sp.insertAdjacentHTML('afterbegin',h)}}catch(e){}return r}}
+{const _emNV=exMedHTML;exMedHTML=function(){let h=_emNV.apply(this,arguments);try{if(contOf(0)&&exHas())h+=`<h3 style="margin:10px 0 4px">Planta baja a nivel del terreno</h3><p class="hint">Si tus cotas son reales (sobre el mar), pon la planta baja en el punto más alto del terreno del contorno.</p><button data-nivpb="1">Poner la planta baja a nivel del terreno…</button>`}catch(e){}return h}}
+
+/* rótulos que se salen de la pantalla: se meten dentro */
+function lblIn(){try{const g=svg.querySelector('g[transform^="translate"]');if(!g)return;const sr=svg.getBoundingClientRect();if(!sr.width)return;
+  g.querySelectorAll('text').forEach(t=>{if(t.hasAttribute('transform')||(t.closest('[transform]')!==g&&t.closest('[transform]')))return;const r=t.getBoundingClientRect();if(!r.width||r.width>sr.width-16)return;
+    if(r.bottom<sr.top||r.top>sr.bottom)return;let bb;try{bb=t.getBBox()}catch(e){return}const k=bb.width/r.width||1;let dx=0;if(r.right>sr.right-6)dx=-(r.right-sr.right+8);else if(r.left<sr.left+6)dx=sr.left+8-r.left;
+    if(dx){const a=t.getAttribute('text-anchor');t.setAttribute('x',(parseFloat(t.getAttribute('x'))||0)+dx*k)}})}catch(e){}}
+{const _rLI=render;render=function(){const r=_rLI.apply(this,arguments);lblIn();return r}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
