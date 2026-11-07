@@ -14021,6 +14021,42 @@ function rxFlip(it){it.pts=it.pts.map(p=>p.slice()).reverse();delete it.za;try{R
 {const _pnRV=panel;panel=function(){const r=_pnRV.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp&&!$('#rxRevB')){const b=$('#rxFixB');const h=`<button id="rxRevB" data-rxrev="1" style="margin:4px 0">⇅ Darle la vuelta (cambiar el principio por el final)</button>`;if(b)b.insertAdjacentHTML('afterend',h);else{const R=$('#rxMU')||$('#rxBR');if(R)R.insertAdjacentHTML('beforebegin',h);else sp.insertAdjacentHTML('beforeend',h)}}}catch(e){}return r}}
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rxrev]');if(!b)return;const it=cur();if(!isRX(it))return;push();rxFlip(it);done();note='Rampa girada: ahora empieza en el otro extremo';render();panel()});
 
+/* ===================== COTAS EN 3D, RESPECTO AL PUNTO MÁS ALTO DEL SOLAR ===================== */
+let COT3=true;
+const cotZg=()=>st.sot?rasante():0;
+function cotTer(x,y){let t=0;try{t=tzAt(x,y)}catch(e){}return cotZg()+t}
+function cotRef(){const S=SOL();if(!S)return null;let P=null;try{P=solPts(S)}catch(e){}if(!P||P.length<3)return null;let best={z:-1e9,x:P[0][0],y:P[0][1]};const chk=(x,y)=>{const z=cotTer(x,y);if(z>best.z+1e-6)best={z,x,y}};
+  P.forEach(p=>chk(p[0],p[1]));const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),n=24,inP=(x,y)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const a=P[i],b=P[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+  for(let i=0;i<=n;i++)for(let j=0;j<=n;j++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*j/n;if(inP(x,y))chk(x,y)}return{...best,P}}
+const cotF=v=>(Math.abs(v)<.005?'±':v>0?'+':'−')+fmt(Math.abs(Math.round(v*100)/100)).replace(/^(\d+)$/,'$1,00').replace(/,(\d)$/,',$10');
+/* lista de cotas: {x,y,z,t (texto),k (tipo)} */
+function cotList(){const R=cotRef();if(!R)return null;const z0=R.z,L=[],add=(x,y,z,t,k)=>L.push({x,y,z,t:(t?t+' ':'')+cotF(z-z0),k:k||'n'});
+  add(R.x,R.y,R.z,'Punto más alto','ref');
+  R.P.forEach((p,i)=>{if(Math.hypot(p[0]-R.x,p[1]-R.y)<.5)return;add(p[0],p[1],cotTer(p[0],p[1]),'Esquina '+(i+1),'sol')});
+  /* la excavación */let X=null;try{X=exc()}catch(e){}const P=X&&X.pit;if(P){const zb=P.z-P.dep,cx=(P.x0+P.x1)/2,cy=(P.y0+P.y1)/2;add(cx,cy,zb,'Fondo de la excavación','fon');
+    [[cx,P.y0,0,-1],[cx,P.y1,0,1],[P.x0,cy,-1,0],[P.x1,cy,1,0]].forEach(([x,y,dx,dy])=>{let zt=cotTer(x,y),d=0;const ts=(P.ts||{})[dy<0?'n':dy>0?'s':dx<0?'o':'e']??P.t??1;for(let k=0;k<60;k++){const xx=x+dx*d,yy=y+dy*d,zp=zb+d/(ts>.01?ts:1e-3);zt=cotTer(xx,yy);if(zp>=zt-.02)break;d+=.25}
+      const bx=x+dx*d,by=y+dy*d;add(bx,by,cotTer(bx,by),'Borde','bor');L.push({x:bx,y:by,z:zb,z2:cotTer(bx,by),t:cotF(cotTer(bx,by)-zb).slice(1)+' m de corte',k:'alt'})})}
+  /* plantas bajo tierra y planta baja */try{const sh=st.sot?1:0,c=contOf(sh)||contOf(0);if(c){const lv=[];try{lv.push(...pkAllLevels().filter(f=>f<=-10||(st.sot&&f===0)))}catch(e){if(st.sot)lv.push(0)}lv.push(sh);[...new Set(lv)].forEach((f,i)=>{add(c.x+c.w,c.y+c.h,floorZ(f),'Suelo '+(f===sh?'planta baja':fname(f).toLowerCase()),'pl')})}}catch(e){}
+  /* rampas exteriores */try{items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(!G)return;const b=rxBase(),p0=it.pts[0],p1=it.pts[it.pts.length-1];add(p0[0],p0[1],b+G.zA,'Rampa: entrada','rx');add(p1[0],p1[1],b+G.zB,'Rampa: llegada','rx')})}catch(e){}
+  /* aljibes, pozos negros y depuradoras */try{aljList().forEach(a=>{const Z=aljZ(a);add(a.x+a.w/2,a.y+a.h/2,Z.bot,'Fondo '+(typeof fosNm==='function'?fosNm(a).toLowerCase():'aljibe'),'alj')})}catch(e){}
+  return{L,R}}
+function cotSprite(T,txt,col,h){const cv=document.createElement('canvas'),g=cv.getContext('2d'),fs=40;g.font=`600 ${fs}px system-ui,sans-serif`;const w=Math.ceil(g.measureText(txt).width)+28;cv.width=w;cv.height=fs+22;g.font=`600 ${fs}px system-ui,sans-serif`;
+  g.fillStyle='rgba(255,255,255,.92)';g.strokeStyle=col;g.lineWidth=4;const r=12;g.beginPath();g.moveTo(r,2);g.lineTo(w-r,2);g.quadraticCurveTo(w-2,2,w-2,r);g.lineTo(w-2,cv.height-r);g.quadraticCurveTo(w-2,cv.height-2,w-r,cv.height-2);g.lineTo(r,cv.height-2);g.quadraticCurveTo(2,cv.height-2,2,cv.height-r);g.lineTo(2,r);g.quadraticCurveTo(2,2,r,2);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#1d2a36';g.textBaseline='middle';g.fillText(txt,14,cv.height/2+1);const tx=new T.CanvasTexture(cv);try{tx.minFilter=T.LinearFilter}catch(e){}const sp=new T.Sprite(new T.SpriteMaterial({map:tx,depthTest:false,transparent:true}));sp.scale.set(h*w/cv.height,h,1);sp.renderOrder=999;return sp}
+const COTC={ref:'#c62828',sol:'#6d8f3a',fon:'#4f3420',bor:'#8a5a2b',alt:'#8a5a2b',pl:'#1f5fa8',rx:'#d35400',alj:'#2f5f8f'};
+function cot3Add(B){if(!B||!B.sc||!window.THREE)return;const T=THREE,C=cotList();if(!C||!C.L.length)return;const grp=new T.Group();grp.userData.cot=1;grp.visible=COT3;
+  const I=B.I||{x0:0,y0:0,x1:30,y1:30},diag=Math.hypot(I.x1-I.x0,I.y1-I.y0),h=Math.max(.45,Math.min(1.6,diag/55)),lift=h*1.6,used=[];
+  const line=(a,b,col)=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([a[0],a[1],a[2],b[0],b[1],b[2]],3));const l=new T.Line(g,new T.LineBasicMaterial({color:col,depthTest:false}));l.renderOrder=998;grp.add(l)};
+  C.L.forEach(c=>{const col=COTC[c.k]||'#333';if(c.k==='alt'){line([c.x,c.z,c.y],[c.x,c.z2,c.y],col);const tk=h*.3;line([c.x-tk,c.z,c.y],[c.x+tk,c.z,c.y],col);line([c.x-tk,c.z2,c.y],[c.x+tk,c.z2,c.y],col);const s=cotSprite(T,c.t,col,h*.8);s.position.set(c.x+h*.3,(c.z+c.z2)/2,c.y);grp.add(s);return}
+    /* que no se pisen: si hay otra etiqueta cerca, ésta sube un poco más */let up=lift;used.forEach(u=>{if(Math.hypot(u.x-c.x,u.y-c.y)<h*4&&Math.abs(u.z-(c.z+up))<h*1.1)up+=h*1.2});used.push({x:c.x,y:c.y,z:c.z+up});
+    line([c.x,c.z,c.y],[c.x,c.z+up-h*.5,c.y],col);const dot=new T.Mesh(new T.SphereGeometry(h*.12,10,8),new T.MeshBasicMaterial({color:col,depthTest:false}));dot.position.set(c.x,c.z,c.y);dot.renderOrder=998;grp.add(dot);
+    const s=cotSprite(T,c.t,col,c.k==='ref'?h*1.15:h);s.position.set(c.x,c.z+up,c.y);grp.add(s)});
+  B.sc.add(grp);B.cot=grp}
+{const _b3C=build3;build3=function(R){const B=_b3C.apply(this,arguments);try{if(R&&(R.allView||R.stView))cot3Add(B)}catch(e){console.warn('cotas 3D',e)}return B}}
+/* botón en la barra del 3D */
+{const _o3C=open3D;open3D=function(R){const r=_o3C.apply(this,arguments);if(R&&(R.allView||R.stView)){const add=n=>{const fb=$('#v3d .fb');if(!fb){if(n<60)setTimeout(()=>add(n+1),150);return}$('#v3cot')&&$('#v3cot').remove();fb.insertAdjacentHTML('beforeend',`<button id="v3cot" aria-pressed="${COT3}" title="Cotas respecto al punto más alto del solar">📏 Cotas</button>`)};setTimeout(()=>add(0),200)}else{const b=$('#v3cot');if(b)b.remove()}return r}}
+document.addEventListener('click',e=>{if(!e.target||e.target.id!=='v3cot')return;COT3=!COT3;e.target.setAttribute('aria-pressed',String(COT3));const sc=(V3&&V3.B&&V3.B.sc)||(STB3&&STB3.sc);if(sc)sc.traverse(o=>{if(o.userData&&o.userData.cot)o.visible=COT3})});
+
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
