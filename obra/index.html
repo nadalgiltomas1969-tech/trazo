@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · bajar el edificio hasta que el parking quede enterrado</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · huecos en el forjado para las rampas</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -13347,6 +13347,34 @@ function hundSet(v){push();OB().hund=Math.round(v*20)/20;LFC=null;try{if(typeof 
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-hund]');if(!b||b.tagName==='INPUT')return;e.stopImmediatePropagation();const k=b.dataset.hund,S=hundSamples();if(!S.length)return;
   const mn=Math.min(...S),av=S.reduce((a,c)=>a+c,0)/S.length;hundSet(k==='todo'?-mn:k==='medio'?-av:0);note=k==='0'?'El edificio vuelve a su altura':'Edificio bajado '+fmt(Math.round(OB().hund*100)/100)+' m: se excava más y el parking queda bajo tierra';try{pasoBody()}catch(er){}render()},true);
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.hund!=='v')return;const v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v))return;hundSet(v);try{pasoBody()}catch(er){}});
+
+/* ===================== HUECOS EN EL FORJADO PARA LAS RAMPAS ENTRE PLANTAS ===================== */
+/* la rampa de un nivel sube al de arriba: en el suelo de arriba queda un hueco del tamaño de la rampa (más 30 cm) */
+function rpRects(o){const b=bboxOf(o);if(!b)return[];const m=.15,R=[{x:b.x-m,y:b.y-m,w:b.w+2*m,h:b.h+2*m}];const L=rpL(o);if(L)[L.C,L.L2].forEach(q=>R.push({x:q.x-m,y:q.y-m,w:q.w+2*m,h:q.h+2*m}));return R}
+function rpHolesOn(f){let b=null;try{b=below(f)}catch(e){}if(b==null)return[];return items.filter(o=>o.t==='rampa'&&o.f===b).map(o=>({o,R:rpRects(o)}))}
+/* plano: el hueco en la planta de arriba */
+{const _rRPH=render;render=function(){const r=_rRPH.apply(this,arguments);try{if(!isMod())return r;const H=rpHolesOn(fl);if(!H.length)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='<g pointer-events="none">';
+  H.forEach(({R})=>R.forEach(q=>{h+=`<rect x="${q.x*S}" y="${q.y*S}" width="${q.w*S}" height="${q.h*S}" fill="#fff" fill-opacity=".55" stroke="#b71c1c" stroke-width="2" stroke-dasharray="8 4"/><path d="M${q.x*S} ${q.y*S}L${(q.x+q.w)*S} ${(q.y+q.h)*S}M${(q.x+q.w)*S} ${q.y*S}L${q.x*S} ${(q.y+q.h)*S}" stroke="#b71c1c" stroke-width="1" opacity=".6"/>`}));
+  const q=H[0].R[0];h+=`<text x="${(q.x+q.w/2)*S}" y="${(q.y+q.h/2)*S+4}" text-anchor="middle" style="font-size:12px;font-weight:700;fill:#b71c1c;paint-order:stroke;stroke:var(--bg);stroke-width:4px">Hueco de la rampa</text></g>`;g.insertAdjacentHTML('beforeend',h)}catch(e){console.warn('hueco rampa',e)}return r}}
+/* no dejar poner cosas en el hueco */
+{const _ihRP=inHole;inHole=function(it){const h=_ihRP.apply(this,arguments);if(h)return h;try{if(!it||it.t==='rampa'||!isMod())return null;const b=bboxOf(it);if(!b)return null;const H=rpHolesOn(it.f);for(const{o,R}of H)for(const q of R)if(b.x<q.x+q.w-.05&&b.x+b.w>q.x+.05&&b.y<q.y+q.h-.05&&b.y+b.h>q.y+.05)return{e:o,rampa:1}}catch(e){}return null}}
+{const _vmRP=vmsg;vmsg=function(it){let m=_vmRP.apply(this,arguments);try{const h=inHole(it);if(h&&h.rampa)m='Ahí está el hueco de la rampa que sube desde '+nmF(h.e.f).toLowerCase()+': esa zona queda libre'}catch(e){}return m}}
+/* 3D: partir las losas horizontales que tapan el hueco */
+function slabCut(sc,holes,T){if(!holes.length)return;const todo=[];sc.traverse(m=>{if(!m.isMesh||!m.geometry||!m.geometry.parameters||m.userData.terr)return;const p=m.geometry.parameters,ty=m.geometry.type;let w,h,d;
+    if(ty==='BoxGeometry'){if(Math.abs(m.rotation.x)>.01||Math.abs(m.rotation.y)>.01||Math.abs(m.rotation.z)>.01)return;w=p.width;h=p.height;d=p.depth;if(h>.8||w<1||d<1)return}
+    else if(ty==='PlaneGeometry'){if(Math.abs(Math.abs(m.rotation.x)-Math.PI/2)>.01||Math.abs(m.rotation.y)>.01||Math.abs(m.rotation.z)>.01)return;w=p.width;d=p.height;h=0}else return;
+    const wp=new T.Vector3();m.getWorldPosition(wp);const x0=wp.x-w/2,x1=wp.x+w/2,z0=wp.z-d/2,z1=wp.z+d/2,y0=wp.y-h/2,y1=wp.y+h/2;
+    const hs=holes.filter(H=>y1>H.y-.75&&y0<H.y+.2&&H.x0<x1-.02&&H.x1>x0+.02&&H.z0<z1-.02&&H.z1>z0+.02);if(hs.length)todo.push({m,x0,x1,z0,z1,w,h,d,hs,ty})});
+  todo.forEach(({m,x0,x1,z0,z1,h,hs,ty})=>{let rects=[{x0,x1,z0,z1}];hs.forEach(H=>{const out=[];rects.forEach(r=>{if(!(H.x0<r.x1&&H.x1>r.x0&&H.z0<r.z1&&H.z1>r.z0)){out.push(r);return}
+      const ix0=Math.max(r.x0,H.x0),ix1=Math.min(r.x1,H.x1);if(H.x0>r.x0)out.push({x0:r.x0,x1:ix0,z0:r.z0,z1:r.z1});if(H.x1<r.x1)out.push({x0:ix1,x1:r.x1,z0:r.z0,z1:r.z1});if(H.z0>r.z0)out.push({x0:ix0,x1:ix1,z0:r.z0,z1:Math.max(r.z0,H.z0)});if(H.z1<r.z1)out.push({x0:ix0,x1:ix1,z0:Math.min(r.z1,H.z1),z1:r.z1})});rects=out.filter(q=>q.x1-q.x0>.02&&q.z1-q.z0>.02)});
+    const par=m.parent,wp=new T.Vector3();m.getWorldPosition(wp);rects.forEach(q=>{const geo=ty==='BoxGeometry'?new T.BoxGeometry(q.x1-q.x0,h,q.z1-q.z0):new T.PlaneGeometry(q.x1-q.x0,q.z1-q.z0),n=new T.Mesh(geo,m.material);n.rotation.copy(m.rotation);n.castShadow=m.castShadow;n.receiveShadow=m.receiveShadow;n.userData={...m.userData};
+      const lp=par.worldToLocal(new T.Vector3((q.x0+q.x1)/2,wp.y,(q.z0+q.z1)/2));n.position.copy(lp);par.add(n)});m.visible=false;m.userData.cut=1});
+  /* canto del hueco: un borde de hormigón para que se lea */holes.forEach(H=>{const M=new T.MeshLambertMaterial({color:'#8d8a84'}),e=(w,d,x,z)=>{const b=new T.Mesh(new T.BoxGeometry(w,.3,d),M);b.position.set(x,H.y-.15,z);sc.add(b)};e(H.x1-H.x0,.06,(H.x0+H.x1)/2,H.z0);e(H.x1-H.x0,.06,(H.x0+H.x1)/2,H.z1);e(.06,H.z1-H.z0,H.x0,(H.z0+H.z1)/2);e(.06,H.z1-H.z0,H.x1,(H.z0+H.z1)/2)})}
+let RPH=[];
+{const _ex3RPH=extras3;extras3=function(T,f,g,z,opt){const r=_ex3RPH.apply(this,arguments);try{if(isMod())items.filter(o=>o.t==='rampa'&&o.f===f).forEach(o=>{const y=z+(typeof floorH==='function'?floorH(o.f):3)+.3;rpRects(o).forEach(q=>RPH.push({x0:q.x,x1:q.x+q.w,z0:q.y,z1:q.y+q.h,y}))})}catch(e){}return r}}
+{const _bRPH=bldAll3;bldAll3=function(){RPH=[];const B=_bRPH.apply(this,arguments);try{if(B&&B.sc&&window.THREE&&isMod())slabCut(B.sc,RPH,THREE)}catch(e){console.warn('hueco 3D',e)}return B}}
+{const _stRPH=stBuild3;stBuild3=function(){const B=_stRPH.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const H=[];const L=pkAllLevels();items.filter(o=>o.t==='rampa').forEach(o=>{const i=L.indexOf(o.f),up=i>=0?L[i+1]:null;if(up==null)return;const y=floorZ(up);rpRects(o).forEach(q=>H.push({x0:q.x,x1:q.x+q.w,z0:q.y,z1:q.y+q.h,y}))});slabCut(B.sc,H,THREE)}catch(e){console.warn('hueco 3D estructura',e)}return B}}
+/* presupuesto y medición: el hueco no lleva forjado */
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
