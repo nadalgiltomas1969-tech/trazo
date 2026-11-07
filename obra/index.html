@@ -14011,6 +14011,16 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dat
     if(!ok)return;const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();const me=new T.Mesh(g,mt);me.userData.rxTal=1;B.sc.add(me)})})}catch(e){console.warn('talud rampa 3D',e)}return B}}
 function rxTalHole(G,x,y){try{const e=rxEdge(G,x,y);if(!e||e.d<=.3)return false;const h=-e.z;if(h<=.05||!rxNoWall(G,h))return false;const tw=rxTalW(G);return tw>0&&e.d<.3+h*tw}catch(er){return false}}
 
+/* ===================== RAMPA AL REVÉS: EMPIEZA EN EL EDIFICIO Y ACABA LEJOS (EN 3D SUBE HACIA EL PARKING) ===================== */
+function rxWallD(f,p){const c=contOf(f)||contOf(0);if(!c)return 1e9;const E=(SD().ext||.3)/2,x0=c.x-E,y0=c.y-E,x1=c.x+c.w+E,y1=c.y+c.h+E,dx=Math.max(x0-p[0],0,p[0]-x1),dy=Math.max(y0-p[1],0,p[1]-y1);if(dx||dy)return Math.hypot(dx,dy);return -Math.min(p[0]-x0,x1-p[0],p[1]-y0,y1-p[1])}
+function rxRev(it){if(!it||!it.pts||it.pts.length<2)return false;const a=rxWallD(it.f,it.pts[0]),b=rxWallD(it.f,it.pts[it.pts.length-1]);return a<1.5&&b>a+2}
+function rxFlip(it){it.pts=it.pts.map(p=>p.slice()).reverse();delete it.za;try{RXV++}catch(e){}}
+{const _rxCk=rxChecks;rxChecks=function(it){const W=_rxCk.apply(this,arguments);try{if(rxRev(it))W.unshift('La rampa está al revés: empieza pegada al edificio y acaba lejos, por eso en 3D sube hacia el parking. Pulsa «Darle la vuelta» o «Arreglarla sola».')}catch(e){}return W}}
+{const _rxE=rxEnd;rxEnd=function(){const r=_rxE.apply(this,arguments);try{const it=cur();if(isRX(it)&&rxRev(it)){rxFlip(it);const W=rxChecks(it);note='Rampa exterior dibujada (le he dado la vuelta: baja desde fuera hacia el edificio)'+(W.length?' · '+W[0]:'');save();render();panel()}}catch(e){}return r}}
+{const _rxF=rxFix;rxFix=function(it){if(rxRev(it))rxFlip(it);return _rxF.apply(this,arguments)}}
+{const _pnRV=panel;panel=function(){const r=_pnRV.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(isRX(it)&&sp&&!$('#rxRevB')){const b=$('#rxFixB');const h=`<button id="rxRevB" data-rxrev="1" style="margin:4px 0">⇅ Darle la vuelta (cambiar el principio por el final)</button>`;if(b)b.insertAdjacentHTML('afterend',h);else{const R=$('#rxMU')||$('#rxBR');if(R)R.insertAdjacentHTML('beforebegin',h);else sp.insertAdjacentHTML('beforeend',h)}}}catch(e){}return r}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-rxrev]');if(!b)return;const it=cur();if(!isRX(it))return;push();rxFlip(it);done();note='Rampa girada: ahora empieza en el otro extremo';render();panel()});
+
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
