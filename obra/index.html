@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · huecos en el forjado para las rampas</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 7 nov 2026 · las rampas en la estructura</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -13375,6 +13375,23 @@ let RPH=[];
 {const _bRPH=bldAll3;bldAll3=function(){RPH=[];const B=_bRPH.apply(this,arguments);try{if(B&&B.sc&&window.THREE&&isMod())slabCut(B.sc,RPH,THREE)}catch(e){console.warn('hueco 3D',e)}return B}}
 {const _stRPH=stBuild3;stBuild3=function(){const B=_stRPH.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const H=[];const L=pkAllLevels();items.filter(o=>o.t==='rampa').forEach(o=>{const i=L.indexOf(o.f),up=i>=0?L[i+1]:null;if(up==null)return;const y=floorZ(up);rpRects(o).forEach(q=>H.push({x0:q.x,x1:q.x+q.w,z0:q.y,z1:q.y+q.h,y}))});slabCut(B.sc,H,THREE)}catch(e){console.warn('hueco 3D estructura',e)}return B}}
 /* presupuesto y medición: el hueco no lleva forjado */
+
+/* ===================== LAS RAMPAS EN LA ESTRUCTURA ===================== */
+/* rampa interior: losa inclinada de hormigón armado entre su nivel y el de arriba; rampa exterior: losa y muros */
+const RP_E=.25;
+function rpSlab3(T,o,y0,y1,M){const g=new T.Group(),b=bboxOf(o);if(!b)return g;const L=rpL(o),lg=b.w<b.h,hi=rpHi(o),L1=lg?b.h:b.w,W=lg?b.w:b.h,tot=y1-y0,r1=L?tot*L1/(L1+o.L2):tot,ylow=y1-r1;
+  const sl=(len,wid,cx,cz,rise,yb,hz,up)=>{const ang=Math.atan2(rise,len),m=new T.Mesh(new T.BoxGeometry(hz?len/Math.cos(ang):wid,RP_E,hz?wid:len/Math.cos(ang)),M);m.position.set(cx,yb+rise/2-RP_E/2,cz);if(hz)m.rotation.z=up?ang:-ang;else m.rotation.x=up?-ang:ang;m.castShadow=true;m.userData.k='rampa';g.add(m)};
+  /* tramo 1: sube hacia el lado alto (hi) */sl(L1,W,b.x+b.w/2,b.y+b.h/2,r1,ylow,!lg,hi==='max');
+  if(L){const C=L.C,q=L.L2,c=new T.Mesh(new T.BoxGeometry(C.w,RP_E,C.h),M);c.position.set(C.x+C.w/2,ylow-RP_E/2,C.y+C.h/2);g.add(c);const hz2=q.w>q.h;sl(hz2?q.w:q.h,hz2?q.h:q.w,q.x+q.w/2,q.y+q.h/2,ylow-y0,y0,hz2,hz2?L.d2[0]<0:L.d2[1]<0)}
+  return g}
+{const _stRST=stBuild3;stBuild3=function(){const B=_stRST.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,M=new T.MeshLambertMaterial({color:'#9a968d'}),Lv=pkAllLevels();
+  items.filter(o=>o.t==='rampa').forEach(o=>{const i=Lv.indexOf(o.f),up=i>=0?Lv[i+1]:null,y0=floorZ(o.f),y1=up!=null?floorZ(up):y0+floorH(o.f)+.3;const g=rpSlab3(T,o,y0,y1,M);(B.G&&B.G[o.f]||B.sc).add(g)});
+  items.filter(isRX).forEach(it=>{const G=rxGeo(it);if(!G)return;const g=rxMesh3(T,G,st.sot?rasante():0,new T.MeshLambertMaterial({color:'#9a968d',side:T.DoubleSide}),new T.MeshLambertMaterial({color:'#b0aca3',side:T.DoubleSide}));(B.G&&B.G[0]||B.sc).add(g)})}catch(e){console.warn('rampas estructura',e)}return B}}
+/* fases de la estructura: la rampa sale en su nivel */
+{const _pw4RST=pw4;pw4=function(){let h=_pw4RST.apply(this,arguments);try{const k=faseCur().F.k;if(!/^f-?\d+$/.test(k))return h;const f=+k.slice(1),L=items.filter(o=>o.t==='rampa'&&o.f===f),X=f===0&&st.sot?items.filter(isRX):[];if(!L.length&&!X.length)return h;let r='';
+  L.forEach(o=>{const b=bboxOf(o),Lr=rpL(o),len=Math.max(b.w,b.h)+(Lr?o.L2:0);r+=pwRow(true,'Rampa de '+nmF(f).toLowerCase(),`Losa inclinada de hormigón armado de ${Math.round(RP_E*100)} cm, ${fmt(r2(len))} m de largo${Lr?' en L':''}, al ${fmt(Math.round(ugPct(o)*10)/10)} %. Deja hueco en el forjado de arriba.`,'')});
+  X.forEach(it=>{const G=rxGeo(it);r+=pwRow(true,'Rampa de entrada',`Losa de hormigón con muros laterales, de la calle al parking${G&&isFinite(G.p)?' · '+fmt(Math.round(G.p*1000)/10)+' %':''}`,'')});
+  const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
