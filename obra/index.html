@@ -12877,6 +12877,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* patio de ventilación */try{const Q=paMed();if(Q.L>0){const rv=paRv();cap('patio','Patio de ventilación del parking',[ln('pa_rev',Q.A,rv[2],'Forro de la pared de la excavación: '+rv[0].toLowerCase()),ln('pa_sol',Q.Ar),PAT().top==='baran'?ln('pa_bar',Q.L):ln('pa_rej',Q.Ar),ln('pa_ven',Q.nv)])}}catch(e){}
   /* paredes del parking de carga */try{const Q=pkMCmed();if(Q.A>0)cap('pkmc','Paredes del parking como muros de carga',[ln('pk_mc',Q.A)])}catch(e){}
   /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB||Q.Lb>0){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
+  /* tapas */try{const Q=tapPres();if(Q.length)cap('tap','Tapas de aljibes, pozo negro y arquetas',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
   const hon=pem*P.hon/100,honI=hon*P.ivah/100,tasa=pem*P.tasa/100,icio=Math.max(0,pem*P.icio/100-tasa*P.icioDed/100),oct=pem*P.oct/100,octI=oct*P.ivah/100,dobra=(pec+iva)*P.dobra/100;
@@ -12977,12 +12978,12 @@ const aljFG=()=>st.sot?1:0;
 const aljF=a=>a.pos==='jardin'?aljFG():cimF();
 const aljO=a=>({x:a.x-ALJT,y:a.y-ALJT,w:a.w+2*ALJT,h:a.h+2*ALJT});
 const aljCap=a=>a.w*a.h*a.pr;
-const aljTot=a=>ALJS+a.pr+ALJC;
+const aljTot=a=>ALJS+a.pr+aljC(a);
 function aljZ(a){const cx=a.x+a.w/2,cy=a.y+a.h/2,H=aljTot(a);let top,bot;
   if(a.pos==='parking'){bot=floorZ(cimF());top=bot+H}
   else if(a.pos==='bajo'){top=zFoundTop()-.15;bot=top-H}
   else{let t=0;try{t=tzAt(cx,cy)}catch(e){}top=(st.sot?rasante():0)+t;bot=top-H}return{top,bot}}
-function aljMed(a){const o=aljO(a),H=aljTot(a);return{V:a.pos==='parking'?0:(o.w+.6)*(o.h+.6)*(H+.1),Hc:o.w*o.h*(ALJS+ALJC)+2*(a.w+a.h+2*ALJT)*ALJT*a.pr,Im:a.w*a.h+2*(a.w+a.h)*a.pr}}
+function aljMed(a){const o=aljO(a),H=aljTot(a);return{V:a.pos==='parking'?0:(o.w+.6)*(o.h+.6)*(H+.1),Hc:o.w*o.h*(ALJS+aljC(a))+2*(a.w+a.h+2*ALJT)*ALJT*a.pr,Im:a.w*a.h+2*(a.w+a.h)*a.pr}}
 function aljProp(uso){let cub=0;try{const c=contOf(aljFG())||contOf(0);if(c)cub=c.w*c.h}catch(e){}const nv=Math.max(1,items.filter(i=>i.t==='room'&&/cocina/i.test((i.name||'')+' '+(i.dest||''))).length);
   const pl=Math.max(6,Math.round(cub*.05)),po=Math.max(4,3*nv);return uso==='pluv'?pl:uso==='pot'?po:pl+po}
 function aljDims(cap,hu){const A=cap/hu,w=Math.ceil(Math.sqrt(A*1.5)*10)/10,h=Math.ceil(A/w*10)/10;return[w,h]}
@@ -13050,7 +13051,7 @@ function aljHole(x,y){let z=1e9;try{aljList().forEach(a=>{if(a.pos==='parking')r
   L.forEach(a=>{const g=a.pos==='parking'?(B.G[cimF()]||B.sc):(B.G.cim||B.sc),o=aljO(a),Z=aljZ(a),put=(w,h,d,x,y,z,M)=>{if(w<=0||h<=0||d<=0)return;const geo=new T.BoxGeometry(w,h,d),me=new T.Mesh(geo,M||m);me.position.set(x,y,z);me.userData.k='cim';g.add(me);const ed=new T.LineSegments(new T.EdgesGeometry(geo),lm);ed.position.copy(me.position);ed.userData.k='cim';g.add(ed)};
     const cx=o.x+o.w/2,cy=o.y+o.h/2,z0=Z.bot,zw=z0+ALJS;put(o.w,ALJS,o.h,cx,z0+ALJS/2,cy);
     put(o.w,a.pr,ALJT,cx,zw+a.pr/2,o.y+ALJT/2);put(o.w,a.pr,ALJT,cx,zw+a.pr/2,o.y+o.h-ALJT/2);put(ALJT,a.pr,a.h,o.x+ALJT/2,zw+a.pr/2,cy);put(ALJT,a.pr,a.h,o.x+o.w-ALJT/2,zw+a.pr/2,cy);
-    put(a.w,a.pr*.7,a.h,cx,zw+a.pr*.35,cy,mw);put(o.w,ALJC,o.h,cx,zw+a.pr+ALJC/2,cy,mt);put(.7,.12,.7,a.x+.5,zw+a.pr+ALJC+.06,a.y+.5)})}catch(e){console.warn('aljibe 3D',e)}return B}}
+    put(a.w,a.pr*.7,a.h,cx,zw+a.pr*.35,cy,mw);put(o.w,aljC(a),o.h,cx,zw+a.pr+aljC(a)/2,cy,mt);put(.7,.12,.7,a.x+.5,zw+a.pr+aljC(a)+.06,a.y+.5)})}catch(e){console.warn('aljibe 3D',e)}return B}}
 /* ventana del aljibe con el mismo aspecto que la de la cruz */
 {const add=[];for(const sh of document.styleSheets){let R;try{R=sh.cssRules}catch(e){continue}for(const r of R){if(r.selectorText&&r.selectorText.includes('#xwP'))add.push(r.cssText.split('#xwP').join('#aljW'));else if(r.media&&r.cssRules)for(const q of r.cssRules)if(q.selectorText&&q.selectorText.includes('#xwP'))add.push('@media '+r.media.mediaText+'{'+q.cssText.split('#xwP').join('#aljW')+'}')}}
   const cs=document.createElement('style');cs.textContent=add.join('\n')+'\n#aljW{border-left-color:#2f5f8f}#aljW .xwB .pri{background:#2f5f8f;border-color:#2f5f8f}#aljW .xwD button{font-size:13px;padding:3px 8px;margin-top:4px}';document.head.appendChild(cs)}
@@ -14633,6 +14634,36 @@ function rpRail3(T,grp,q,zb){const m=new T.MeshLambertMaterial({color:'#8a9399'}
   items.filter(o=>o.t==='rampa'&&o.f===f).forEach(o=>{const R=rpRails(o);[...R.ramp,...R.top].forEach(q=>rpRail3(T,g,q,z))})}catch(e){console.warn('barandilla rampa 3D',e)}return r}}
 /* presupuesto: se suma a los metros de barandilla */
 {const _rmRB=rampMed;rampMed=function(){const Q=_rmRB.apply(this,arguments);try{let L=0;items.filter(o=>o.t==='rampa').forEach(o=>L+=rpRailLen(o));if(L>0){Q.Lb=(Q.Lb||0)+Math.round(L*10)/10;Q.A=Q.A||0}}catch(e){}return Q}}
+
+/* ===================== TAPAS DE ALJIBES, POZO NEGRO, FOSAS Y ARQUETAS: LOSA DE HORMIGÓN ARMADO, REFORZADA DONDE PASAN COCHES ===================== */
+/* ¿pasan coches por encima? acceso de coches, rampa de entrada o plazas de fuera; y bajo el suelo del parking */
+function vehAt(x,y){try{if(items.some(z=>isZ(z)&&z.k==='acceso'&&z.pts&&zPip(x,y,z.pts)))return 'el acceso de coches'}catch(e){}
+  try{for(const it of items.filter(i=>isRX(i))){const G=rxGeo(it);if(!G)continue;const B=rxBB(G,.3);if(x>=B[0]&&x<=B[2]&&y>=B[1]&&y<=B[3])return 'la rampa de entrada al parking'}}catch(e){}
+  try{if(items.some(o=>o.t==='plaza'&&o.f===aljFG()&&(()=>{const b=bboxOf(o);return b&&x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h})()))return 'una plaza de aparcamiento'}catch(e){}return ''}
+function vehBox(x,y,w,h){const n=Math.max(2,Math.ceil(w/.5)),m=Math.max(2,Math.ceil(h/.5));for(let i=0;i<=n;i++)for(let j=0;j<=m;j++){const r=vehAt(x+w*i/n,y+h*j/m);if(r)return r}return ''}
+/* tapa de cada depósito: {tr: para coches, e: canto de la losa, por: el motivo} */
+function aljTap(a){if(!a)return{tr:0,e:.2,por:''};if(a.pos==='parking')return{tr:0,e:.2,por:'es un cuarto dentro del parking: su techo no lo pisan coches',cuarto:1};
+  let por='';if(a.pos==='bajo'&&st.sot)por='queda bajo el suelo del parking';else{try{const o=aljO(a);por=vehBox(o.x,o.y,o.w,o.h)}catch(e){}if(por)por='queda bajo '+por}
+  let tr=por?1:0;if(a.tap==='p'){tr=0;por='elegida peatonal a mano'}else if(a.tap==='t'){tr=1;por=por||'elegida para coches a mano'}
+  return{tr,e:tr?.3:.2,por}}
+function aljC(a){try{return aljTap(a).e}catch(e){return .2}}
+const TAPTX=T=>T.cuarto?'Techo de losa de hormigón armado de 20 cm':T.tr?'Losa de hormigón armado de 30 cm con doble armado y tapa de registro de fundición para coches (D400), con su cerco':'Losa de hormigón armado de 20 cm y tapa de registro peatonal (B125), con su cerco';
+/* prefabricados: además de la losa de apoyo, una losa de reparto encima (hormigón armado) */
+{const _aMT=aljMed;aljMed=function(a){const m=_aMT.apply(this,arguments);try{if(a&&a.k&&a.mt==='pref'){const o=aljO(a),T=aljTap(a);m.Hc=r2((m.Hc||0)+o.w*o.h*(T.tr?.25:.15))}}catch(e){}return m}}
+/* arquetas de fuera (saneamiento y pluviales) */
+function arqTap(){let p=0,t=0;try{const E=EXT();(E.pts||[]).forEach(q=>{if(q.kd!=='arq'&&q.kd!=='arqP')return;const x=q.x??(q.p&&q.p[0]),y=q.y??(q.p&&q.p[1]);if(x!=null&&vehAt(x,y))t++;else p++})}catch(e){}return{p,t}}
+/* presupuesto */
+Object.assign(PRES_D,{tap_p:['Tapa de registro peatonal (B125) con cerco, sobre losa de hormigón armado','ud',95],tap_t:['Tapa de registro de fundición para coches (D400) con cerco','ud',280],tap_r:['Refuerzo de la losa de tapa para coches: más canto y doble armado','m²',75],tap_ap:['Tapa de arqueta peatonal (B125)','ud',45],tap_at:['Tapa de arqueta de fundición para coches (D400) y arqueta reforzada','ud',150]});
+function tapPres(){const L=[];let np=0,nt=0,Ar=0;[...aljList(),...fosList().filter(a=>!a.pos)].forEach(a=>{const T=aljTap(a);if(T.cuarto)return;if(T.tr){nt++;const o=aljO(a);Ar+=o.w*o.h}else np++});
+  const A=arqTap();if(np)L.push(['tap_p',np]);if(nt)L.push(['tap_t',nt]);if(Ar>0)L.push(['tap_r',r2(Ar)]);if(A.p)L.push(['tap_ap',A.p]);if(A.t)L.push(['tap_at',A.t]);return L}
+/* panel del aljibe o la fosa */
+{const _pnTP=panel;panel=function(){const r=_pnTP.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(it&&it.t==='aljibe'&&isMod()&&(it.pos||it.k)&&sp&&!$('#tapS')){const T=aljTap(it);
+  sp.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><label>Tapa<select id="tapS"><option value="">Automática</option><option value="p"${it.tap==='p'?' selected':''}>Peatonal</option><option value="t"${it.tap==='t'?' selected':''}>Para coches (reforzada)</option></select></label><p class="hint" style="margin:2px 0">${TAPTX(T)}${T.por?' — '+esc(T.por):''}.</p></div>`)}}catch(e){}return r}}
+document.addEventListener('change',e=>{if(!e.target||e.target.id!=='tapS')return;const it=cur();if(!it||it.t!=='aljibe')return;push();if(e.target.value)it.tap=e.target.value;else delete it.tap;done();render();try{panel()}catch(er){}});
+/* paso 3, fase de cimentación: cómo es cada tapa y por qué */
+{const _pw4TP=pw4;pw4=function(){let h=_pw4TP.apply(this,arguments);try{const k=faseCur().F.k;if(k!=='cim')return h;let r='';[...aljList(),...fosList().filter(a=>!a.pos)].forEach(a=>{const T=aljTap(a);if(T.cuarto)return;
+  r+=pwRow(true,'Tapa '+(a.k?(a.ft==='depur'?'de la depuradora':a.ft==='septica'?'de la fosa séptica':'del pozo negro'):'del aljibe'),TAPTX(T)+(T.por?' · '+esc(T.por):''),'')});const A=arqTap();if(A.t)r+=pwRow(true,'Arquetas bajo el paso de coches',`${A.t} con tapa de fundición D400 y arqueta reforzada`,'');
+  if(!r)return h;const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
