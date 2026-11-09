@@ -2806,7 +2806,8 @@ function facade0(){
   const remFac=(a,b,m)=>{let o=Rc(a-.05,b+.05,m-.02,m+.14,`fill="#a4512c" stroke="#6b2a12" stroke-width="1"`);for(let u=a;u<b-.05;u+=.4)o+=`<path d="M${X(u)} ${Y(m+.14)}a${.2*s} ${.12*s} 0 0 1 ${.4*s} 0" fill="#b5603a" stroke="#6b2a12" stroke-width="1"/>`;return o};
   const RG=PV?null:ringGeom();if(RG){const base=Z(L),[p0,p1]=horiz?rg(RG.O[0],RG.O[2]):rg(RG.O[1],RG.O[3]),[r0,r1]=horiz?rg(RG.Rr[0],RG.Rr[2]):rg(RG.Rr[1],RG.Rr[3]),top=base+RG.rise;
     h+=`<path d="M${X(p0)} ${Y(base)}L${X(r0)} ${Y(top)}L${X(r1)} ${Y(top)}L${X(p1)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;if(remOn())h+=`<path d="M${X(p0)} ${Y(base)}L${X(r0)} ${Y(top)}M${X(r1)} ${Y(top)}L${X(p1)} ${Y(base)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`+remFac(r0,r1,top);rf.filter(q=>q.type!=='teja').forEach(q=>{const[a,b]=horiz?rg(q.x,q.x+q.w):rg(q.y,q.y+q.h);h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`)})}
-  if(!RG)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
+  const _RC=!RG&&!PV&&typeof ringFacSvg==='function'&&isMod()&&TJ().modo==='centro'?ringFacSvg(side,horiz,rg,X,Y,Z(L),s):'';if(_RC)h+=_RC;
+  if(!RG&&!_RC)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
     if(along&&typeof isHip==='function'&&isHip(q,p)){const hr=typeof hipRise==='function'?hipRise(q,p):rs,dd=hr/(p.a/100);h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}L${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(base)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;if(remOn())h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}M${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`+remFac(a+dd,b-dd,base+hr);return}
@@ -13474,7 +13475,7 @@ function tejAccRect(){const T=TJ();if(T.acc==='castillete'){const e=tejStair();l
   B.sc.add(G)}catch(e){console.warn('acceso cubierta 3D',e)}return B}}
 /* plano del tejado: terraza central, acceso */
 {const _rTJ=render;render=function(){const r=_rTJ.apply(this,arguments);try{if(!isMod()||fl!==F())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='<g pointer-events="none">';
-  if(TJ().modo==='centro'){const P=tejInner(),c=tejTopC();if(P&&c){h+=`<rect x="${P.x*S}" y="${P.y*S}" width="${P.w*S}" height="${P.h*S}" fill="#efe6d2" stroke="#6d4c41" stroke-width="2"/><text x="${(P.x+P.w/2)*S}" y="${(P.y+P.h/2)*S+5}" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#6d4c41">Terraza</text>`;
+  if(TJ().modo==='centro'&&typeof ringZ!=='function'){const P=tejInner(),c=tejTopC();if(P&&c){h+=`<rect x="${P.x*S}" y="${P.y*S}" width="${P.w*S}" height="${P.h*S}" fill="#efe6d2" stroke="#6d4c41" stroke-width="2"/><text x="${(P.x+P.w/2)*S}" y="${(P.y+P.h/2)*S+5}" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#6d4c41">Terraza</text>`;
     [[c.x,c.y,P.x,P.y],[c.x+c.w,c.y,P.x+P.w,P.y],[c.x+c.w,c.y+c.h,P.x+P.w,P.y+P.h],[c.x,c.y+c.h,P.x,P.y+P.h]].forEach(([a,b,x,y])=>h+=`<line x1="${a*S}" y1="${b*S}" x2="${x*S}" y2="${y*S}" stroke="#8d4e2a" stroke-width="1.5"/>`);h+=`<text x="${(c.x+c.w/2)*S}" y="${(c.y+P.m/2)*S+4}" text-anchor="middle" style="font-size:12px;fill:#8d4e2a">Teja</text>`}}
   const A=tejAccRect(),k=TJ().acc;if(A){const nm={castillete:'Castillete (salida de la escalera)',escotilla:'Escotilla',caracol:'Escalera exterior de caracol'}[k];h+=k==='caracol'?`<circle cx="${A.cx*S}" cy="${A.cy*S}" r="${A.R*S}" fill="#cfd8dc" stroke="#455a64" stroke-width="2"/>`:`<rect x="${A.x*S}" y="${A.y*S}" width="${A.w*S}" height="${A.h*S}" fill="#d7ccc8" stroke="#4e342e" stroke-width="2"/>`;h+=`<text x="${(A.x+A.w/2)*S}" y="${(A.y+A.h)*S+14}" text-anchor="middle" style="font-size:11px;fill:#4e342e;paint-order:stroke;stroke:var(--bg);stroke-width:3px">${nm}</text>`}
   g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){console.warn('tejado plano',e)}return r}}
@@ -14701,6 +14702,56 @@ document.addEventListener('change',e=>{if(!e.target||e.target.id!=='roofF')retur
 {const _pw5H=pw5;pw5=function(){let h=_pw5H.apply(this,arguments);try{const T=TJ();if(T.modo==='teja'||T.modo==='mitad'||!T.modo){const v=st.rforma||'dos',b=`<div class="pwG" id="pwHip"><label>Tejado<select data-tjf="1"><option value="dos"${v!=='cuatro'?' selected':''}>A dos aguas (con hastiales)</option><option value="cuatro"${v==='cuatro'?' selected':''}>A cuatro aguas (con limatesas, sin hastiales)</option></select></label></div>`;
   const i=h.indexOf('<h3>Acceso a la cubierta</h3>');h=i>=0?h.slice(0,i)+b+h.slice(i):h+b}}catch(e){}return h}}
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.tjf)return;e.stopImmediatePropagation();push();st.rforma=t.value;Object.keys(rp).forEach(k=>{if(rp[k])delete rp[k].f});done();try{pasoBody()}catch(er){}render()},true);
+
+/* ===================== TERRAZA EN EL CENTRO CON TEJA ALREDEDOR: LA TEJA VIERTE SOLO HACIA FUERA, PRETIL HACIA LA TERRAZA, ANCHO POR LADO ===================== */
+const TJS=[['mN','Norte (arriba)'],['mS','Sur (abajo)'],['mO','Oeste (izquierda)'],['mE','Este (derecha)']];
+tejInner=function(){const c=tejTopC();if(!c)return null;const T=TJ(),b=+T.m||3.5,v=k=>{const n=parseFloat(String(T[k]??'').replace(',','.'));return n>0?n:b};
+  let mN=v('mN'),mS=v('mS'),mO=v('mO'),mE=v('mE');const lim=(a,b2,L)=>{a=Math.max(1,a);b2=Math.max(1,b2);const ex=a+b2-(L-1);if(ex>0){const k=(L-1)/(a+b2);a*=k;b2*=k}return[r2(a),r2(b2)]};
+  [mN,mS]=lim(mN,mS,c.h);[mO,mE]=lim(mO,mE,c.w);return{x:c.x+mO,y:c.y+mN,w:c.w-mO-mE,h:c.h-mN-mS,m:Math.min(mN,mS,mO,mE),mN,mS,mO,mE}};
+const tjCentrada=()=>{const P=tejInner();return P&&Math.abs(P.mN-P.mS)<.01&&Math.abs(P.mO-P.mE)<.01&&Math.abs(P.mN-P.mO)<.01};
+/* alturas: la teja sube desde el alero hasta el pretil; la del lado más ancho lleva la pendiente elegida y las demás algo más */
+function ringZ(){const c=tejTopC(),P=tejInner();if(!c||!P)return null;const p=getRP((roofs()[0]||{id:'all'}).id),e=p.e??.4,tn=(p.a??30)/100,wM=Math.max(P.mN,P.mS,P.mO,P.mE);return{c,P,e,tn,rise:wM*tn,pre:wM*tn+.3}}
+/* paso 5 */
+{const _pw5R=pw5;pw5=function(){let h=_pw5R.apply(this,arguments);try{const T=TJ();if(T.modo!=='centro')return h;const P=tejInner();if(!P)return h;
+  const a=h.indexOf('<div class="pwG"><label>Ancho de la teja alrededor'),b=h.indexOf('</p>',a);if(a<0||b<0)return h;
+  const box=`<div class="pwG"><label>Ancho de la teja en los cuatro lados (m)<input data-tjk="m" type="number" min="1" step="0.5" value="${T.m||3.5}"></label></div>
+  <div class="pwG" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px">${TJS.map(([k,t])=>`<label>${t}<input data-tjk="${k}" type="number" min="1" step="0.25" value="${P[k]}"></label>`).join('')}</div>
+  <div class="row"><button data-tjc="1"${tjCentrada()?' disabled':''}>Centrar la terraza</button></div>
+  <p class="hint">Terraza de ${fmt(r2(P.w))} × ${fmt(r2(P.h))} m con su sumidero en el centro. La teja vierte solo <b>hacia fuera</b>, al canalón; hacia la terraza la cierra un <b>pretil</b> de obra con su remate. ${tjCentrada()?'La terraza está centrada.':'La terraza no está centrada: «Centrar» pone la teja con el mismo ancho en los cuatro lados.'}</p>`;
+  return h.slice(0,a)+box+h.slice(b+4)}catch(e){}return h}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.tjk!=='m')return;const T=TJ();TJS.forEach(([k])=>delete T[k])},true);
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-tjc]');if(!b)return;e.stopImmediatePropagation();push();const T=TJ();TJS.forEach(([k])=>delete T[k]);done();pasoBody();render()},true);
+/* plano */
+{const _dRR=drawRoof;drawRoof=function(r){if(!(isMod()&&TJ().modo==='centro'&&r.type==='teja'))return _dRR.apply(this,arguments);const R=ringZ();if(!R)return _dRR.apply(this,arguments);
+  const S=view.s,{c,P,e}=R,ex=(SD().ext||.3)/2,O=[(c.x-ex-e)*S,(c.y-ex-e)*S,(c.x+c.w+ex+e)*S,(c.y+c.h+ex+e)*S],I=[P.x*S,P.y*S,(P.x+P.w)*S,(P.y+P.h)*S],cl=r.id===sel?' class="sel"':'',step=Math.max(5,.22*S),uid='rg'+Date.now()%1e6;
+  const F=[[[O[0],O[1]],[O[2],O[1]],[I[2],I[1]],[I[0],I[1]],'v'],[[O[0],O[3]],[O[2],O[3]],[I[2],I[3]],[I[0],I[3]],'v'],[[O[0],O[1]],[I[0],I[1]],[I[0],I[3]],[O[0],O[3]],'h'],[[O[2],O[1]],[I[2],I[1]],[I[2],I[3]],[O[2],O[3]],'h']];
+  let o='';F.forEach((f,i)=>{const Q=f.slice(0,4),pt=Q.map(v=>v.join(',')).join(' ');let ln='';if(f[4]==='v')for(let x=O[0]+step;x<O[2];x+=step)ln+=`M${x} ${O[1]}V${O[3]}`;else for(let y=O[1]+step;y<O[3];y+=step)ln+=`M${O[0]} ${y}H${O[2]}`;
+    o+=`<clipPath id="${uid}${i}"><polygon points="${pt}"/></clipPath><polygon points="${pt}" fill="var(--${i<2?'tA':'tB'})"/><path d="${ln}" stroke="#3a1d0c" stroke-opacity=".28" fill="none" clip-path="url(#${uid}${i})"/>`});
+  const lim=[[O[0],O[1],I[0],I[1]],[O[2],O[1],I[2],I[1]],[O[2],O[3],I[2],I[3]],[O[0],O[3],I[0],I[3]]].map(([a,b,x,y])=>`M${a} ${b}L${x} ${y}`).join(''),pw=Math.max(3,.15*S);
+  o+=remPlan(lim)+`<rect x="${I[0]}" y="${I[1]}" width="${I[2]-I[0]}" height="${I[3]-I[1]}" fill="#efe6d2" stroke="#8a8478" stroke-width="${pw}"/>`;
+  o+=`<rect x="${O[0]}" y="${O[1]}" width="${O[2]-O[0]}" height="${O[3]-O[1]}" fill="none" stroke="var(--wall)" stroke-width="2"/>`;
+  /* flechas de caída hacia fuera */[[ (O[0]+O[2])/2,(O[1]+I[1])/2,0,-1],[(O[0]+O[2])/2,(O[3]+I[3])/2,0,1],[(O[0]+I[0])/2,(O[1]+O[3])/2,-1,0],[(O[2]+I[2])/2,(O[1]+O[3])/2,1,0]].forEach(([x,y,dx,dy])=>{const L=Math.max(10,.5*S),hx=x+dx*L/2,hy=y+dy*L/2,k=5;o+=`<path d="M${x-dx*L/2} ${y-dy*L/2}L${hx} ${hy}" stroke="#3a1d0c" stroke-width="1.6"/><path d="M${hx+dx*k} ${hy+dy*k}L${hx-dy*k} ${hy+dx*k}L${hx+dy*k} ${hy-dx*k}Z" fill="#3a1d0c"/>`});
+  const cx=(I[0]+I[2])/2,cy=(I[1]+I[3])/2;o+=`<circle cx="${cx}" cy="${cy}" r="${Math.max(3,.1*S)}" fill="#555"/><text class="rt" x="${cx}" y="${cy-8}" text-anchor="middle">Terraza ${fmt(r2(P.w))} × ${fmt(r2(P.h))} m</text><text class="rt" x="${cx}" y="${cy+18}" text-anchor="middle">pretil y sumidero</text><text class="rt" x="${(O[0]+O[2])/2}" y="${(O[1]+I[1])/2-6}" text-anchor="middle">Teja hacia fuera · +${fmt(r2(R.rise))} m</text>`;
+  return `<g data-r="${r.id}"${cl}>${o}</g>`}}
+/* la superposición antigua del plano ya no hace falta */
+/* 3D */
+{const _rA3R=roofAll3;roofAll3=function(T,grp,z){if(!isMod()||TJ().modo!=='centro'||window._tjIn)return _rA3R.apply(this,arguments);const R=ringZ();if(!R||R.P.w<1||R.P.h<1)return _rA3R.apply(this,arguments);
+  const tm=roofMat3(),{c,P,e,tn,rise}=R,ex=(SD().ext||.6)/2,zE=z-e*tn,zR=z+rise,O=[c.x-ex-e,c.y-ex-e,c.x+c.w+ex+e,c.y+c.h+ex+e],I=[P.x,P.y,P.x+P.w,P.y+P.h];
+  const tri=A=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(A.flat(),3));g.computeVertexNormals();try{uvSlope3(g)}catch(er){}const m=new T.Mesh(g,tm);m.castShadow=true;m.receiveShadow=true;grp.add(m)},quad=(a,b,c2,d)=>{tri([a,b,c2]);tri([a,c2,d])};
+  const Co=[[O[0],zE,O[1]],[O[2],zE,O[1]],[O[2],zE,O[3]],[O[0],zE,O[3]]],Ci=[[I[0],zR,I[1]],[I[2],zR,I[1]],[I[2],zR,I[3]],[I[0],zR,I[3]]];for(let k=0;k<4;k++){const n=(k+1)%4;quad(Co[k],Co[n],Ci[n],Ci[k])}
+  const so=new T.MeshLambertMaterial({color:'#e8dcc4',side:T.DoubleSide}),sb=new T.Mesh(new T.BoxGeometry(O[2]-O[0],.04,O[3]-O[1]),so);sb.position.set((O[0]+O[2])/2,zE-.02,(O[1]+O[3])/2);grp.add(sb);
+  /* suelo de la terraza y pretil */const fl=new T.Mesh(new T.BoxGeometry(P.w,.06,P.h),new T.MeshLambertMaterial({color:'#d9cbb0'}));fl.position.set(P.x+P.w/2,z+.03,P.y+P.h/2);fl.receiveShadow=true;grp.add(fl);
+  const wm=(typeof wallMat3==='function')?wallMat3('ext'):new T.MeshLambertMaterial({color:'#e8e2d6'}),cm=new T.MeshLambertMaterial({color:'#cfc6b4'}),hp=rise+.3,t=.15;
+  const wall=(w,d,x,y)=>{const m=new T.Mesh(new T.BoxGeometry(w,hp,d),wm);m.position.set(x,z+hp/2,y);m.castShadow=true;grp.add(m);const k=new T.Mesh(new T.BoxGeometry(w+(d<w?.06:.12),.05,d+(d<w?.12:.06)),cm);k.position.set(x,z+hp+.025,y);grp.add(k)};
+  wall(P.w+2*t,t,P.x+P.w/2,P.y-t/2);wall(P.w+2*t,t,P.x+P.w/2,P.y+P.h+t/2);wall(t,P.h,P.x-t/2,P.y+P.h/2);wall(t,P.h,P.x+P.w+t/2,P.y+P.h/2);
+  if(remOn()){const cyl=(a,b)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]);const m=new T.Mesh(new T.CylinderGeometry(.12,.12,L,10,1,false,0,Math.PI),tm);m.position.set((a[0]+b[0])/2,(a[1]+b[1])/2+.02,(a[2]+b[2])/2);m.lookAt(b[0],b[1]+.02,b[2]);m.rotateX(Math.PI/2);grp.add(m)};for(let k=0;k<4;k++)cyl(Co[k],Ci[k])}
+  const sm=new T.Mesh(new T.BoxGeometry(.25,.02,.25),new T.MeshLambertMaterial({color:'#555'}));sm.position.set(P.x+P.w/2,z+.07,P.y+P.h/2);grp.add(sm);return Math.max(1,hp)}}
+/* fachadas: trapecio de teja hasta el pretil y el pretil asomando encima */
+function ringFacSvg(side,horiz,rg,X,Y,base,s){const R=ringZ();if(!R)return '';const{c,P,e,rise}=R,ex=(SD().ext||.3)/2;const[a,b]=horiz?rg(c.x-ex-e,c.x+c.w+ex+e):rg(c.y-ex-e,c.y+c.h+ex+e),[i0,i1]=horiz?rg(P.x,P.x+P.w):rg(P.y,P.y+P.h),top=base+rise,zE=base-e*R.tn;
+  let h=`<path d="M${X(a)} ${Y(zE)}L${X(i0)} ${Y(top)}L${X(i1)} ${Y(top)}L${X(b)} ${Y(zE)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;
+  for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(zE)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;
+  h+=`<rect x="${Math.min(X(i0),X(i1))}" y="${Y(top+.3)}" width="${Math.abs(X(i1)-X(i0))}" height="${Y(top)-Y(top+.3)}" fill="#e8e2d6" stroke="#4a3f33" stroke-width="1.4"/><rect x="${Math.min(X(i0),X(i1))-2}" y="${Y(top+.35)}" width="${Math.abs(X(i1)-X(i0))+4}" height="${Y(top+.3)-Y(top+.35)}" fill="#cfc6b4" stroke="#4a3f33" stroke-width="1"/>`;
+  if(remOn())h+=`<path d="M${X(a)} ${Y(zE)}L${X(i0)} ${Y(top)}M${X(i1)} ${Y(top)}L${X(b)} ${Y(zE)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`;return h}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
