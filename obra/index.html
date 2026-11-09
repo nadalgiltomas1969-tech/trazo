@@ -12879,6 +12879,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* patio de ventilación */try{const Q=paMed();if(Q.L>0){const rv=paRv();cap('patio','Patio de ventilación del parking',[ln('pa_rev',Q.A,rv[2],'Forro de la pared de la excavación: '+rv[0].toLowerCase()),ln('pa_sol',Q.Ar),PAT().top==='baran'?ln('pa_bar',Q.L):ln('pa_rej',Q.Ar),ln('pa_ven',Q.nv)])}}catch(e){}
   /* paredes del parking de carga */try{const Q=pkMCmed();if(Q.A>0)cap('pkmc','Paredes del parking como muros de carga',[ln('pk_mc',Q.A)])}catch(e){}
   /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB||Q.Lb>0){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
+  /* tejado: remates, canalones y bajantes */try{const Q=canPres();if(Q.length)cap('tjc','Tejado: remates, canalones y bajantes',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* tapas */try{const Q=tapPres();if(Q.length)cap('tap','Tapas de aljibes, pozo negro y arquetas',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
@@ -14752,6 +14753,57 @@ function ringFacSvg(side,horiz,rg,X,Y,base,s){const R=ringZ();if(!R)return '';co
   for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(zE)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;
   h+=`<rect x="${Math.min(X(i0),X(i1))}" y="${Y(top+.3)}" width="${Math.abs(X(i1)-X(i0))}" height="${Y(top)-Y(top+.3)}" fill="#e8e2d6" stroke="#4a3f33" stroke-width="1.4"/><rect x="${Math.min(X(i0),X(i1))-2}" y="${Y(top+.35)}" width="${Math.abs(X(i1)-X(i0))+4}" height="${Y(top+.3)-Y(top+.35)}" fill="#cfc6b4" stroke="#4a3f33" stroke-width="1"/>`;
   if(remOn())h+=`<path d="M${X(a)} ${Y(zE)}L${X(i0)} ${Y(top)}M${X(i1)} ${Y(top)}L${X(b)} ${Y(zE)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`;return h}
+
+/* ===================== CANALONES Y BAJANTES: ACTUALES (ALUMINIO, ZINC, COBRE, PVC) Y DE BARRO COCIDO ===================== */
+const CANM={alu:['Aluminio lacado','#7d7f7c','#4c4e4b',38,32],zinc:['Zinc','#9ba4a9','#5d666b',55,45],cobre:['Cobre','#b87333','#7a4a1e',95,80],pvc:['PVC','#d8d5ce','#8a877f',22,18],barro:['Barro cocido (cerámica actual)','#b86a3a','#6b3a1c',60,55]};
+const CAN=()=>{const o=OB();o.can=o.can||{};return o.can};
+const canMt=()=>{if(!isMod())return '';const c=CAN();return c.mt==null?'alu':c.mt};
+const canOn=()=>{try{return !!canMt()&&roofs().some(r=>r.type==='teja')}catch(e){return false}};
+/* tramos de canalón en el borde de fuera del tejado: [x0,y0,x1,y1,lado] en coordenadas de planta, en la línea del alero */
+function canRuns(ex){const out=[];if(!canOn())return out;ex=ex||0;const rs=roofs(),A=roofAll()||rs[0];
+  if(TJ().modo==='centro'){const R=ringZ();if(!R)return out;const c=R.c,e=R.e,E=(SD().ext||.3)/2+e,x0=c.x-E,y0=c.y-E,x1=c.x+c.w+E,y1=c.y+c.h+E;return[[x0,y0,x1,y0,'top'],[x0,y1,x1,y1,'bottom'],[x0,y0,x0,y1,'left'],[x1,y0,x1,y1,'right']]}
+  const onEdge=(r,k)=>!A||(k==='top'?Math.abs(r.y-A.y)<.05:k==='bottom'?Math.abs(r.y+r.h-A.y-A.h)<.05:k==='left'?Math.abs(r.x-A.x)<.05:Math.abs(r.x+r.w-A.x-A.w)<.05);
+  rs.filter(r=>r.type==='teja').forEach(r=>{const p=getRP(r.id),e=p.e+ex,x0=r.x-e,y0=r.y-e,x1=r.x+r.w+e,y1=r.y+r.h+e,hip=isHip(r,p),H=isH(r,p);
+    const S={top:[x0,y0,x1,y0],bottom:[x0,y1,x1,y1],left:[x0,y0,x0,y1],right:[x1,y0,x1,y1]};
+    Object.keys(S).forEach(k=>{const eave=hip||(H?(k==='top'||k==='bottom'):(k==='left'||k==='right'));if(eave&&(st.mode==='ind'||onEdge(r,k)))out.push([...S[k],k])})});return out}
+const canLen=()=>canRuns().reduce((s,q)=>s+Math.hypot(q[2]-q[0],q[3]-q[1]),0);
+/* dónde van las bajantes: en los extremos de cada tramo (las esquinas se comparten) y una más cada 20 m como mucho */
+function canBajPts(){const c=tejTopC()||contOf(pbF?pbF():0);if(!c)return[];const P=[],o=.2,add=(x,y,side)=>{if(!P.some(q=>Math.hypot(q[0]-x,q[1]-y)<1.2))P.push([r2(x),r2(y),side])};
+  canRuns().forEach(([x0,y0,x1,y1,k])=>{const hz=k==='top'||k==='bottom',L=hz?Math.abs(x1-x0):Math.abs(y1-y0),n=Math.max(1,Math.ceil(L/20));
+    for(let i=0;i<=n;i++){const t=i/n;if(hz){const x=Math.max(c.x+.25,Math.min(c.x+c.w-.25,x0+(x1-x0)*t)),y=k==='top'?c.y-o:c.y+c.h+o;add(x,y,k)}else{const y=Math.max(c.y+.25,Math.min(c.y+c.h-.25,y0+(y1-y0)*t)),x=k==='left'?c.x-o:c.x+c.w+o;add(x,y,k)}}});return P}
+function canSync(){if(!isMod())return 0;const old=items.filter(i=>i.t==='baj'&&i.canAuto);items=items.filter(i=>!(i.t==='baj'&&i.canAuto));if(!canOn())return -old.length;const t=Math.max(0,topF());
+  const P=canBajPts();P.forEach(([x,y,side])=>{const prev=old.find(q=>Math.hypot(q.x-x,q.y-y)<.5);items.push({...(prev||{}),id:prev?prev.id:nid++,t:'baj',f:t,x,y,side,bext:'fuera',canAuto:1})});try{bajAuto()}catch(e){}return P.length}
+/* paso 5 */
+{const _pw5C=pw5;pw5=function(){let h=_pw5C.apply(this,arguments);try{if(!isMod()||!roofs().some(r=>r.type==='teja'))return h;const v=canMt(),L=canLen(),nb=items.filter(i=>i.t==='baj'&&i.canAuto).length,need=canBajPts().length;
+  const b=`<h3>Canalones y bajantes</h3><div class="pwG"><label>Material<select data-canm="1"><option value=""${!v?' selected':''}>Sin canalones</option>${Object.entries(CANM).map(([k,q])=>`<option value="${k}"${v===k?' selected':''}>${q[0]}</option>`).join('')}</select></label></div>`+
+   (v?`<p class="hint">${fmt(Math.round(L*10)/10)} m de canalón por todo el borde de fuera del tejado${TJ().modo==='centro'||(st.rforma==='cuatro')?'':' (en los aleros; los hastiales no llevan)'} y ${need} bajante${need>1?'s':''} en las esquinas${need>4?' y en los tramos largos':''}: bajan por la fachada hasta el suelo y se conectan solas a los pluviales o al aljibe.</p>`+
+   (nb!==need?`<div class="row"><button data-cans="1" class="pri">Poner las ${need} bajantes</button></div>`:`<div class="row"><button data-cans="1">Volver a colocar las bajantes</button></div>`):'');
+  const i=h.indexOf('<h3>Acceso a la cubierta</h3>');return i>=0?h.slice(0,i)+b+h.slice(i):h+b}catch(e){}return h}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.canm)return;e.stopImmediatePropagation();push();CAN().mt=t.value;const n=canSync();note=t.value?`Canalones de ${CANM[t.value][0].toLowerCase()} y ${n} bajantes`:'Sin canalones: bajantes automáticas quitadas';done();try{pasoBody()}catch(er){}render()},true);
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-cans]');if(!b)return;e.stopImmediatePropagation();push();const n=canSync();note=n+' bajantes colocadas en las esquinas';done();try{pasoBody()}catch(er){}render()},true);
+{const _tjAC=tejApply;tejApply=function(){const r=_tjAC.apply(this,arguments);try{if(items.some(i=>i.t==='baj'&&i.canAuto)){canSync();done()}}catch(e){}return r}}
+/* plano del tejado: el canalón y las bajantes */
+{const _rCN=render;render=function(){const r=_rCN.apply(this,arguments);try{if(!isMod()||fl!==-1||!canOn())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s,M=CANM[canMt()];let h='<g pointer-events="none">';
+  canRuns().forEach(([x0,y0,x1,y1,k])=>{const d=.08,ox=k==='left'?-d:k==='right'?d:0,oy=k==='top'?-d:k==='bottom'?d:0;h+=`<line x1="${(x0+ox)*S}" y1="${(y0+oy)*S}" x2="${(x1+ox)*S}" y2="${(y1+oy)*S}" stroke="${M[2]}" stroke-width="${Math.max(3,.12*S)}" stroke-linecap="round"/><line x1="${(x0+ox)*S}" y1="${(y0+oy)*S}" x2="${(x1+ox)*S}" y2="${(y1+oy)*S}" stroke="${M[1]}" stroke-width="${Math.max(1.5,.07*S)}" stroke-linecap="round"/>`});
+  items.filter(i=>i.t==='baj'&&i.canAuto).forEach(q=>{h+=`<circle cx="${q.x*S}" cy="${q.y*S}" r="${Math.max(4,.1*S)}" fill="${M[1]}" stroke="${M[2]}" stroke-width="2"/>`});
+  g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){console.warn('canalón plano',e)}return r}}
+/* 3D: canalón de media caña en el alero y bajantes del material elegido */
+{const _rA3C=roofAll3;roofAll3=function(T,grp,z){const out=_rA3C.apply(this,arguments);try{if(!canOn())return out;const M=CANM[canMt()],m=new T.MeshLambertMaterial({color:M[1],side:T.DoubleSide}),ex=(SD().ext||.6)/2,p=getRP((roofs()[0]||{id:'all'}).id),zE=z-(p.e??.4)*((p.a??30)/100)-.08;
+  canRuns(ex).forEach(([x0,y0,x1,y1,k])=>{const hz=k==='top'||k==='bottom',L=hz?Math.abs(x1-x0):Math.abs(y1-y0),d=.07,ox=k==='left'?-d:k==='right'?d:0,oy=k==='top'?-d:k==='bottom'?d:0;
+    const g=new T.Mesh(new T.CylinderGeometry(.075,.075,L+.1,12,1,true,Math.PI/2,Math.PI),m);if(hz){g.rotation.z=Math.PI/2}else{g.rotation.x=Math.PI/2}g.position.set((x0+x1)/2+ox,zE,(y0+y1)/2+oy);grp.add(g)})}catch(e){console.warn('canalón 3D',e)}return out}}
+/* bajantes en el 3D con el color del material */
+{const _bCN=bldAll3;bldAll3=function(){const B=_bCN.apply(this,arguments);try{if(!B||!B.sc||!canOn())return B;const col=new THREE.Color(CANM[canMt()][1]);B.sc.traverse(o=>{if(o.isMesh&&o.geometry&&o.geometry.type==='CylinderGeometry'&&o.material&&o.material.color&&o.material.color.getHexString()==='8a8a86'){o.material=o.material.clone();o.material.color=col}})}catch(e){}return B}}
+/* fachadas: el canalón de la fachada que se mira y las bajantes del material elegido */
+{const _bfCN=bajFac;bajFac=function(o){let h=_bfCN.apply(this,arguments);try{if(!canOn())return h;const M=CANM[canMt()];h=h.split('#b86a3a').join(M[1]).split('#6b3a1c').join(M[2]);
+  const{X,Y,rg,s,side,horiz,Z,L}=o,base=Z(L),ring=TJ().modo==='centro',R=ring?ringZ():null,zg=ring&&R?base-R.e*R.tn:base;
+  canRuns().filter(q=>q[4]===side).forEach(([x0,y0,x1,y1])=>{const[a,b]=horiz?rg(Math.min(x0,x1),Math.max(x0,x1)):rg(Math.min(y0,y1),Math.max(y0,y1));
+    h+=`<rect x="${Math.min(X(a),X(b))-2}" y="${Y(zg)}" width="${Math.abs(X(b)-X(a))+4}" height="${Math.max(3,.15*s)}" rx="${Math.max(1.5,.07*s)}" fill="${M[1]}" stroke="${M[2]}" stroke-width="1.2"/>`});
+  return h}catch(e){return h}}}
+/* presupuesto: canalones, bajantes y remates del tejado */
+Object.assign(PRES_D,{tj_cumb:['Cumbrera y limatesas de teja, recibidas con mortero','m',35],tj_pre:['Pretil de la terraza con su remate e impermeabilización','m²',95],tj_ter:['Terraza transitable: formación de pendientes, impermeabilización y pavimento','m²',85],tj_sum:['Sumidero sifónico de la terraza','ud',120]});
+Object.entries(CANM).forEach(([k,q])=>{PRES_D['can_'+k]=['Canalón de '+q[0].toLowerCase()+', con soportes y piezas','m',q[3]];PRES_D['bjn_'+k]=['Bajante de '+q[0].toLowerCase()+', con abrazaderas y codo','m',q[4]]});
+function canPres(){const L=[];try{const mt=canMt();if(canOn()&&mt){const n=items.filter(i=>i.t==='baj'&&i.canAuto).length||canBajPts().length,t=topF(),hb=floorZ(t)+floorH(t)-floorZ(typeof pbF==='function'?pbF():0);L.push(['can_'+mt,r2(canLen())],['bjn_'+mt,r2(n*hb)])}
+  const rs=roofs().filter(r=>r.type==='teja');let Lc=0;rs.forEach(r=>{const p=getRP(r.id);if(isHip(r,p)){const q=hipLens(r,p);Lc+=q.ridge+q.hip}});if(TJ().modo==='centro'){const R=ringZ();if(R){const P=R.P,d=Math.hypot(R.P.m,R.P.m);Lc+=4*d;L.push(['tj_pre',r2(2*(P.w+P.h)*(R.rise+.3))],['tj_ter',r2(P.w*P.h)],['tj_sum',1])}}if(Lc>0)L.unshift(['tj_cumb',r2(Lc)])}catch(e){}return L}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
