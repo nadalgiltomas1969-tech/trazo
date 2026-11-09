@@ -3916,7 +3916,7 @@ function secStairs(A,B,L,X,Y,s){let h='';items.filter(o=>o.t==='esc'&&o.f>=0).fo
     h+=`<rect x="${X(r[0])}" y="${Y(z)}" width="${(r[1]-r[0])*s}" height="${(z-z0)*s}" fill="#e6dcc4" stroke="#6b5d43" stroke-width="1"/>`;if(col)h+=`<rect x="${X(r[0])}" y="${Y(z)-Math.max(2,.03*s)}" width="${(r[1]-r[0])*s}" height="${Math.max(2,.03*s)}" fill="${col}"/>`};
   D.Ld.forEach(l=>draw(l.P,l.k));D.T.forEach(t=>draw(trPoly(t),t.k))});return h}
 /* barandillas: lados de los peldaños; en caracol y elíptica solo el lado exterior */
-const escBar=it=>(it.ty||'recta')==='senorial'?(it.bar??'balaustrada'):(it.bar||'');
+const escBar=it=>(it.ty||'recta')==='senorial'?(it.bar??'balaustrada'):(it.bar==null&&typeof escBarDef==='function'?escBarDef(it):(it.bar||''));
 function escRails(it,D){const ty=it.ty||'recta',sides=(ty==='caracol'||ty==='eliptica')?[1]:[0,1];return sides.map(sd=>D.T.map(t=>({p:t.L0[sd],q:t.L1[sd],k:t.k})))}
 const _escFields3=escFields;escFields=function(it){if((it.ty||'recta')==='senorial')return _escFields3(it);return _escFields3(it)+`<label>Barandilla<select data-sk="bar"><option value="">Sin barandilla</option><option value="hierro"${it.bar==='hierro'?' selected':''}>Hierro forjado</option><option value="balaustrada"${it.bar==='balaustrada'?' selected':''}>Balaustrada de piedra</option><option value="madera"${it.bar==='madera'?' selected':''}>Madera torneada</option></select></label>`};
 const _drawEsc3=drawEsc;drawEsc=function(it,S,d,sc,mode){const out=_drawEsc3(it,S,d,sc,mode);if(mode==='hueco'||(it.ty||'recta')==='senorial'||!escBar(it))return out;let D;try{D=escTreads(it)}catch(e){return out}
@@ -12876,7 +12876,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* piscina nivelada */try{const L=items.filter(o=>isPisc(o)&&psLev(o));if(L.length){const ls=[];L.forEach(it=>{const M=psWM(it),p=PSMUR[it.bm||'pseca']||PSMUR.pseca;if(M.cut+M.fil>.05)ls.push(ln('ps_mur',r2(M.cut+M.fil),p[1],'Muros de la piscina en la pendiente: '+p[0].toLowerCase()));if(M.vaso>.05)ls.push(ln('ps_vaso',r2(M.vaso),null,'Forro del vaso visto: '+p[0].toLowerCase()));if(it.inf)ls.push(ln('ps_inf',1));if(it.niv!=='volada'){const R=psPlat(it),a=(R.x1-R.x0)*(R.y1-R.y0)-it.w*it.h;if(a>.1)ls.push(ln('ps_pl',r2(a)))}});if(ls.length)cap('psniv','Piscina en la pendiente',ls)}}catch(e){}
   /* patio de ventilación */try{const Q=paMed();if(Q.L>0){const rv=paRv();cap('patio','Patio de ventilación del parking',[ln('pa_rev',Q.A,rv[2],'Forro de la pared de la excavación: '+rv[0].toLowerCase()),ln('pa_sol',Q.Ar),PAT().top==='baran'?ln('pa_bar',Q.L):ln('pa_rej',Q.Ar),ln('pa_ven',Q.nv)])}}catch(e){}
   /* paredes del parking de carga */try{const Q=pkMCmed();if(Q.A>0)cap('pkmc','Paredes del parking como muros de carga',[ln('pk_mc',Q.A)])}catch(e){}
-  /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
+  /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB||Q.Lb>0){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
   const hon=pem*P.hon/100,honI=hon*P.ivah/100,tasa=pem*P.tasa/100,icio=Math.max(0,pem*P.icio/100-tasa*P.icioDed/100),oct=pem*P.oct/100,octI=oct*P.ivah/100,dobra=(pec+iva)*P.dobra/100;
@@ -14583,6 +14583,56 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 /* paso 2: la rampa justo después de los sótanos, antes de «La parte que queda al aire» */
 {const _pw2RO=pw2;pw2=function(){let h=_pw2RO.apply(this,arguments);try{const a=h.indexOf('<h3>Rampa de entrada al parking</h3>');if(a<0)return h;const tail=h.slice(a);let b=h.indexOf('La parte que queda al aire');if(b<0||b>a)return h;b=h.lastIndexOf('<div class="pwR',b);if(b<0)return h;
   return h.slice(0,b)+tail+h.slice(b,a)}catch(e){return h}}}
+
+/* ===================== BARANDILLAS DEL SÓTANO: ESCALERAS (POR DEFECTO, DE ACERO) Y RAMPAS INTERIORES ===================== */
+/* escaleras de los sótanos: barandilla de acero salvo que se elija otra cosa (incluida «Sin barandilla») */
+function escBarDef(it){try{if(isMod()&&((it.f>=0&&it.f<pbF())||it.f<=-10))return 'acero'}catch(e){}return ''}
+{const _efAC=escFields;escFields=function(it){let h=_efAC.apply(this,arguments);try{if((it.ty||'recta')==='senorial')return h;const b=escBar(it);
+  h=h.replace('<option value="">Sin barandilla</option>',`<option value=""${b===''?' selected':''}>Sin barandilla</option><option value="acero"${b==='acero'?' selected':''}>Acero (actual)</option>`);
+  if(b==='acero')h=h.replace(/(<select data-sk="bar">[\s\S]*?)<option value="hierro" selected>/,'$1<option value="hierro">')}catch(e){}return h}}
+/* color del acero en plano y 3D */
+{const _rl3AC=rails3;rails3=function(o,D,T3,sc,M){if(escBar(o)!=='acero')return _rl3AC.apply(this,arguments);const M2=c=>M(c==='#1c1c1c'?'#8a9399':c);return _rl3AC.call(this,o,D,T3,sc,M2)}}
+
+/* rampas interiores (entre plantas del parking) */
+const RPB=[['auto','Donde hay caída (no junto a un muro)'],['dos','En los dos lados'],['a','Solo en un lado'],['b','Solo en el otro lado'],['no','Sin barandilla']];
+const rpUp=f=>f===-10?0:f+1;
+function rpSideNames(o){const b=bboxOf(o);if(!b)return['',''];return b.w<b.h?['oeste','este']:['norte','sur']}
+function rpWallNear(f,x0,y0,x1,y1){const c=contOf(f),tol=.45,hz=Math.abs(y1-y0)<Math.abs(x1-x0);
+  if(c){if(hz&&(Math.abs(y0-c.y)<tol||Math.abs(y0-(c.y+c.h))<tol))return true;if(!hz&&(Math.abs(x0-c.x)<tol||Math.abs(x0-(c.x+c.w))<tol))return true}
+  const L=hz?Math.abs(x1-x0):Math.abs(y1-y0);return items.some(w=>{if(w.t!=='wall'||w.f!==f)return false;const whz=Math.abs(w.y2-w.y1)<Math.abs(w.x2-w.x1);if(whz!==hz)return false;
+    if(hz){if(Math.abs((w.y1+w.y2)/2-y0)>tol+(w.th||.3)/2)return false;const a=Math.max(Math.min(x0,x1),Math.min(w.x1,w.x2)),b=Math.min(Math.max(x0,x1),Math.max(w.x1,w.x2));return b-a>L*.5}
+    if(Math.abs((w.x1+w.x2)/2-x0)>tol+(w.th||.3)/2)return false;const a=Math.max(Math.min(y0,y1),Math.min(w.y1,w.y2)),b=Math.min(Math.max(y0,y1),Math.max(w.y1,w.y2));return b-a>L*.5})}
+/* tramos de barandilla: [x0,y0,z0,x1,y1,z1] con z sobre el suelo de la planta de la rampa */
+function rpRails(o){const b=bboxOf(o);if(!b)return{ramp:[],top:[]};const md=o.rb||'auto';if(md==='no')return{ramp:[],top:[]};const lg=b.w<b.h,riseT=floorH(o.f)+.3,LL=rpL(o),rise=LL?riseT*LL.L1/(LL.L1+o.L2):riseT,z0=riseT-rise,hi=rpHi(o),e=.06;
+  const zAt=t=>z0+(hi==='max'?t:1-t)*rise;const S=lg?[[b.x+e,b.y,b.x+e,b.y+b.h],[b.x+b.w-e,b.y,b.x+b.w-e,b.y+b.h]]:[[b.x,b.y+e,b.x+b.w,b.y+e],[b.x,b.y+b.h-e,b.x+b.w,b.y+b.h-e]];
+  const use=k=>md==='dos'||(md==='a'&&k===0)||(md==='b'&&k===1)||(md==='auto'&&!rpWallNear(o.f,...S[k]));
+  const ramp=[],top=[];S.forEach((s,k)=>{if(!use(k))return;ramp.push([s[0],s[1],zAt(0),s[2],s[3],zAt(1)])});
+  /* segundo tramo (en L): desde el suelo hasta el codo */
+  if(LL){const R=LL.L2,lg2=R.w<R.h,zl=0,zh=z0,far=lg2?(LL.d2[1]>0?'max':'min'):(LL.d2[0]>0?'max':'min'),zA=t=>far==='max'?zh+(zl-zh)*t:zl+(zh-zl)*t;
+    const S2=lg2?[[R.x+e,R.y,R.x+e,R.y+R.h],[R.x+R.w-e,R.y,R.x+R.w-e,R.y+R.h]]:[[R.x,R.y+e,R.x+R.w,R.y+e],[R.x,R.y+R.h-e,R.x+R.w,R.y+R.h-e]];
+    S2.forEach((s,k)=>{if(md==='auto'&&rpWallNear(o.f,...s))return;if(md==='a'&&k)return;if(md==='b'&&!k)return;ramp.push([s[0],s[1],zA(0),s[2],s[3],zA(1)])})}
+  /* borde del hueco en la planta de arriba: los dos lados largos y el extremo bajo (la entrada queda libre) */
+  const fu=rpUp(o.f);if(contOf(fu)){const lowX=lg?(hi==='max'?b.y:b.y+b.h):(hi==='max'?b.x:b.x+b.w);S.forEach((s,k)=>{if(md!=='dos'&&md!=='auto'&&!((md==='a'&&!k)||(md==='b'&&k)))return;if(md==='auto'&&rpWallNear(fu,...s))return;top.push([s[0],s[1],riseT,s[2],s[3],riseT])});
+    if(!LL){const end=lg?[b.x,lowX,riseT,b.x+b.w,lowX,riseT]:[lowX,b.y,riseT,lowX,b.y+b.h,riseT];if(!rpWallNear(fu,end[0],end[1],end[3],end[4]))top.push(end)}}
+  return{ramp,top}}
+const rpRailLen=o=>{const R=rpRails(o);return[...R.ramp,...R.top].reduce((s,q)=>s+Math.hypot(q[3]-q[0],q[4]-q[1],q[5]-q[2]),0)};
+/* panel de la rampa */
+{const _pnRB=panel;panel=function(){const r=_pnRB.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(it&&it.t==='rampa'&&isMod()&&sp&&!$('#rpBarS')){const nm=rpSideNames(it),L=rpRailLen(it);
+  sp.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><label>Barandilla de acero<select id="rpBarS">${RPB.map(([k,t])=>`<option value="${k}"${(it.rb||'auto')===k?' selected':''}>${k==='a'?'Solo en el lado '+nm[0]:k==='b'?'Solo en el lado '+nm[1]:t}</option>`).join('')}</select></label><p class="hint" style="margin:2px 0">${L>0?`${fmt(Math.round(L*10)/10)} m de barandilla, a lo largo de la rampa y en el borde del hueco de la planta de arriba.`:'Sin barandilla.'}</p></div>`)}}catch(e){}return r}}
+document.addEventListener('change',e=>{if(!e.target||e.target.id!=='rpBarS')return;const it=cur();if(!it||it.t!=='rampa')return;push();it.rb=e.target.value;done();render();try{panel()}catch(er){}});
+/* plano */
+{const _rRB=render;render=function(){const r=_rRB.apply(this,arguments);try{if(!isMod())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='';
+  items.filter(o=>o.t==='rampa'&&(o.f===fl||rpUp(o.f)===fl)).forEach(o=>{const R=rpRails(o),L=o.f===fl?R.ramp:R.top;L.forEach(q=>{h+=`<line x1="${q[0]*S}" y1="${q[1]*S}" x2="${q[3]*S}" y2="${q[4]*S}" stroke="#546e7a" stroke-width="${Math.max(2,.05*S)}" stroke-linecap="round"/>`;
+    const n=Math.max(1,Math.floor(Math.hypot(q[3]-q[0],q[4]-q[1])/1.5));for(let i=0;i<=n;i++){const t=i/n;h+=`<circle cx="${(q[0]+(q[3]-q[0])*t)*S}" cy="${(q[1]+(q[4]-q[1])*t)*S}" r="${Math.max(1.6,.04*S)}" fill="#546e7a"/>`}})});
+  if(h)g.insertAdjacentHTML('beforeend','<g pointer-events="none">'+h+'</g>')}catch(e){console.warn('barandilla rampa plano',e)}return r}}
+/* 3D */
+function rpRail3(T,grp,q,zb){const m=new T.MeshLambertMaterial({color:'#8a9399'}),L=Math.hypot(q[3]-q[0],q[4]-q[1]);if(L<.1)return;const ang=Math.atan2(q[4]-q[1],q[3]-q[0]),dz=q[5]-q[2],sl=Math.atan2(dz,L);
+  [.9,.45,.1].forEach(hh=>{const r=new T.Mesh(new T.BoxGeometry(Math.hypot(L,dz),hh===.9?.045:.025,hh===.9?.045:.025),m);r.position.set((q[0]+q[3])/2,zb+(q[2]+q[5])/2+hh,(q[1]+q[4])/2);r.rotation.order='YZX';r.rotation.y=-ang;r.rotation.z=sl;grp.add(r)});
+  const n=Math.max(1,Math.ceil(L/1.5));for(let i=0;i<=n;i++){const t=i/n,p=new T.Mesh(new T.BoxGeometry(.05,.92,.05),m);p.position.set(q[0]+(q[3]-q[0])*t,zb+q[2]+dz*t+.46,q[1]+(q[4]-q[1])*t);grp.add(p)}}
+{const _x3RB=extras3;extras3=function(T,f,g,z,opt){const r=_x3RB.apply(this,arguments);try{if(!isMod()||(opt&&opt.zt!=null))return r;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return r;
+  items.filter(o=>o.t==='rampa'&&o.f===f).forEach(o=>{const R=rpRails(o);[...R.ramp,...R.top].forEach(q=>rpRail3(T,g,q,z))})}catch(e){console.warn('barandilla rampa 3D',e)}return r}}
+/* presupuesto: se suma a los metros de barandilla */
+{const _rmRB=rampMed;rampMed=function(){const Q=_rmRB.apply(this,arguments);try{let L=0;items.filter(o=>o.t==='rampa').forEach(o=>L+=rpRailLen(o));if(L>0){Q.Lb=(Q.Lb||0)+Math.round(L*10)/10;Q.A=Q.A||0}}catch(e){}return Q}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
