@@ -12883,6 +12883,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* paredes del parking de carga */try{const Q=pkMCmed();if(Q.A>0)cap('pkmc','Paredes del parking como muros de carga',[ln('pk_mc',Q.A)])}catch(e){}
   /* rampa y barreras */try{const Q=rampMed();if(Q.A>0||Q.nB||Q.Lb>0){cap('ram','Rampa y barreras',[ln('ram_s',Q.A),ln('ram_m',Q.Wm),ln('baran_m',Q.Lb),ln('barr',Q.nB)])}}catch(e){}
   /* tejado: remates, canalones y bajantes */try{const Q=canPres();if(Q.length)cap('tjc','Tejado: remates, canalones y bajantes',Q.map(([k,n])=>ln(k,n)))}catch(e){}
+  /* cimentación junto a los depósitos */try{const Q=aljChoqPres();if(Q.length)cap('aljst','Cimentación junto a los aljibes y pozos',Q.map(([k,n,t])=>ln(k,n,null,t)))}catch(e){}
   /* tapas */try{const Q=tapPres();if(Q.length)cap('tap','Tapas de aljibes, pozo negro y arquetas',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
@@ -14955,6 +14956,55 @@ function tapPos(a){const m=.45,C={NO:[a.x+m,a.y+m],NE:[a.x+a.w-m,a.y+m],SO:[a.x+
 {const _bTP=bldAll3;bldAll3=function(){const B=_bTP.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return B;const T=THREE;
   [...aljList(),...fosList().filter(a=>!a.pos)].forEach(a=>{const Tp=aljTap(a);if(Tp.cuarto)return;const[x,y]=tapPos(a);let z=0;try{z=a.pos==='bajo'?floorZ(cimF()):aljZ(a).top}catch(e){}
     const m=new T.Mesh(new T.BoxGeometry(.7,.05,.7),new T.MeshLambertMaterial({color:Tp.tr?'#37474f':'#90a4ae'}));m.position.set(x,z+.03,y);B.sc.add(m);const c=new T.Mesh(new T.BoxGeometry(.6,.052,.6),new T.MeshLambertMaterial({color:Tp.tr?'#263238':'#78909c'}));c.position.set(x,z+.035,y);B.sc.add(c)})}catch(e){console.warn('tapa 3D',e)}return B}}
+
+/* ===================== ALJIBES Y ESTRUCTURA: EL ALJIBE MANDA; LOS PILARES ARRANCAN DE SU FONDO Y LAS ZAPATAS CERCANAS BAJAN A SU COTA ===================== */
+const ALJ_SEP=1;/* m entre la zapata y la pared del aljibe por debajo de los cuales la zapata baja */
+const aljRIn=(A,B,m)=>A.x<B.x+B.w+m&&A.x+A.w>B.x-m&&A.y<B.y+B.h+m&&A.y+A.h>B.y-m;
+function aljBajo(){const c=contOf(cimF());return[...aljList(),...fosList().filter(a=>!a.pos)].filter(a=>{if(a.pos==='parking')return false;if(a.pos==='bajo')return true;if(!c)return false;return aljRIn(aljO(a),{x:c.x,y:c.y,w:c.w,h:c.h},.5)})}
+/* choques entre la cimentación y los depósitos */
+function aljChoques(){const out=[];if(!isMod())return out;let E=[];try{E=cimEls()}catch(e){}const L=aljBajo();if(!L.length)return out;const f0=cimF(),P=items.filter(p=>p.t==='pilar'&&p.f===f0),zt=zFoundTop();
+  L.forEach(a=>{const o=aljO(a),bot=aljZ(a).bot;E.forEach(z=>{if(z.k==='zap'){const cx=z.x+z.w/2,cy=z.y+z.h/2,p=P.find(q=>Math.hypot(q.x+(q.w||.3)/2-cx,q.y+(q.h||.3)/2-cy)<.3);const zb=zt-(z.c||.5);if(zb<=bot+.01)return;
+      if(cx>o.x-.05&&cx<o.x+o.w+.05&&cy>o.y-.05&&cy<o.y+o.h+.05)out.push({a,z,p,k:'dentro',L:r2(zt-bot),bot,zt});else if(aljRIn(z,o,ALJ_SEP))out.push({a,z,p,k:'cerca',d:r2(zb-bot),bot,zt})}
+    else if(z.k==='corr'){const hz=Math.abs(z.y2-z.y1)<Math.abs(z.x2-z.x1),w=z.w||.6,R=hz?{x:Math.min(z.x1,z.x2),y:z.y1-w/2,w:Math.abs(z.x2-z.x1),h:w}:{x:z.x1-w/2,y:Math.min(z.y1,z.y2),w,h:Math.abs(z.y2-z.y1)};if(!aljRIn(R,o,ALJ_SEP))return;const zb=zt-(z.c||.5);if(zb<=bot+.01)return;
+      const a0=Math.max(hz?R.x:R.y,(hz?o.x:o.y)-ALJ_SEP),a1=Math.min(hz?R.x+R.w:R.y+R.h,(hz?o.x+o.w:o.y+o.h)+ALJ_SEP);if(a1-a0<.1)return;out.push({a,z,k:'corrida',hz,R:hz?{x:a0,y:R.y,w:a1-a0,h:R.h}:{x:R.x,y:a0,w:R.w,h:a1-a0},d:r2(zb-bot),bot,zt})}})});return out}
+function aljChoqMed(){let Lp=0,Vp=0,Ve=0;aljChoques().forEach(q=>{if(q.k==='dentro'){const B=q.z.w;Lp+=q.L;Ve+=B*B*(q.zt-q.bot)}else if(q.k==='cerca'){Vp+=q.z.w*q.z.h*q.d;Ve+=q.z.w*q.z.h*q.d}else{Vp+=q.R.w*q.R.h*q.d;Ve+=q.R.w*q.R.h*q.d}});return{Lp:r2(Lp),Vp:r2(Vp),Ve:r2(Ve)}}
+const aljChoqTxt=q=>q.k==='dentro'?`Un pilar cae dentro: arranca del fondo del depósito (${fmt(q.L)} m más de pilar, con su zapata abajo e impermeabilizado alrededor)`:q.k==='cerca'?`Una zapata está a menos de ${fmt(ALJ_SEP)} m de su pared: baja ${fmt(q.d)} m hasta la cota del fondo con un pozo de hormigón`:`La zapata corrida del muro pasa junto a él: baja ${fmt(q.d)} m en ${fmt(r2(q.hz?q.R.w:q.R.h))} m de largo`;
+/* panel del depósito */
+{const _pnAP=panel;panel=function(){const r=_pnAP.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(!it||it.t!=='aljibe'||!isMod()||!sp||$('#aljCQ'))return r;const Q=aljChoques().filter(q=>q.a.id===it.id);if(!Q.length)return r;
+  sp.insertAdjacentHTML('beforeend',`<div id="aljCQ" style="border:2px solid #e65100;border-radius:8px;padding:8px;margin-top:8px"><b style="color:#e65100">Estructura junto a este depósito</b><ul style="margin:4px 0;padding-left:18px">${Q.map(q=>`<li>${aljChoqTxt(q)}</li>`).join('')}</ul><p class="hint" style="margin:2px 0">El depósito se coloca antes que la estructura: la estructura se adapta a él.</p></div>`)}catch(e){}return r}}
+/* paso 3, cimentación */
+{const _pw4AP=pw4;pw4=function(){let h=_pw4AP.apply(this,arguments);try{if(faseCur().F.k!=='cim')return h;const Q=aljChoques();if(!Q.length)return h;const by={};Q.forEach(q=>(by[q.a.id]=by[q.a.id]||[]).push(q));let r='';
+  Object.values(by).forEach(L=>{const a=L[0].a;r+=pwRow(true,'Estructura junto '+(a.k?(a.ft==='depur'?'a la depuradora':a.ft==='septica'?'a la fosa séptica':'al pozo negro'):'al aljibe'),L.map(aljChoqTxt).join(' · '),'')});
+  const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
+/* plano de la planta más baja: los pilares y zapatas afectados */
+{const _rAP=render;render=function(){const r=_rAP.apply(this,arguments);try{if(!isMod()||fl!==cimF())return r;const Q=aljChoques();if(!Q.length)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='<g pointer-events="none">';
+  Q.forEach(q=>{const R=q.k==='corrida'?q.R:q.z,col=q.k==='dentro'?'#c62828':'#e65100';h+=`<rect x="${R.x*S}" y="${R.y*S}" width="${R.w*S}" height="${R.h*S}" fill="${col}" fill-opacity=".12" stroke="${col}" stroke-width="2" stroke-dasharray="6 3"/>`;
+    if(q.k!=='corrida')h+=`<text x="${(R.x+R.w/2)*S}" y="${(R.y+R.h)*S+12}" text-anchor="middle" style="font-size:10px;font-weight:700;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${q.k==='dentro'?'pilar desde el fondo del aljibe':'zapata bajada '+fmt(q.d)+' m'}</text>`});
+  g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){console.warn('aljibe y pilares plano',e)}return r}}
+/* 3D de la estructura: zapata abajo, tramo de pilar y pozos de hormigón */
+{const _stAP=stBuild3;stBuild3=function(){const B=_stAP.apply(this,arguments);try{if(!B||!B.sc||!window.THREE)return B;const Q=aljChoques();if(!Q.length)return B;const T=THREE,g=(B.G&&B.G.cim)||B.sc,Mc=new T.MeshLambertMaterial({color:'#8f8a80'}),Mp=new T.MeshLambertMaterial({color:'#a6a9ad'}),Mm=new T.MeshLambertMaterial({color:'#c9c3b5'}),lm=new T.LineBasicMaterial({color:'#5f646a'});
+  const box=(w,h,d,x,y,z,M)=>{if(w<=0||h<=0||d<=0)return;const geo=new T.BoxGeometry(w,h,d),m=new T.Mesh(geo,M);m.position.set(x,y,z);m.userData.k='cim';g.add(m);const ed=new T.LineSegments(new T.EdgesGeometry(geo),lm);ed.position.copy(m.position);ed.userData.k='cim';g.add(ed)};
+  Q.forEach(q=>{if(q.k==='dentro'){const z=q.z,c=z.c||.5,cx=z.x+z.w/2,cy=z.y+z.h/2;/* la zapata de arriba no se hace */g.children.forEach(m=>{if(m.geometry&&m.geometry.type==='BoxGeometry'&&Math.abs(m.position.x-cx)<.05&&Math.abs(m.position.z-cy)<.05&&Math.abs(m.position.y-(q.zt-c/2))<.1)m.visible=false});
+      g.children.forEach(m=>{if(m.isLineSegments&&Math.abs(m.position.x-cx)<.05&&Math.abs(m.position.z-cy)<.05&&Math.abs(m.position.y-(q.zt-c/2))<.1)m.visible=false});
+      box(z.w,c,z.h,cx,q.bot-c/2,cy,Mc);const pw=q.p?(q.p.w||.3):.3,ph=q.p?(q.p.h||.3):.3;box(pw,q.zt-q.bot,ph,cx,(q.zt+q.bot)/2,cy,Mp)}
+    else if(q.k==='cerca'){const z=q.z,c=z.c||.5;box(z.w,q.d,z.h,z.x+z.w/2,q.bot+q.d/2,z.y+z.h/2,Mm)}
+    else{const R=q.R;box(R.w,q.d,R.h,R.x+R.w/2,q.bot+q.d/2,R.y+R.h/2,Mm)}})}catch(e){console.warn('aljibe y pilares 3D',e)}return B}}
+/* presupuesto */
+Object.assign(PRES_D,{alj_pil:['Tramo de pilar de hormigón armado desde el fondo del aljibe, con impermeabilización alrededor','m',190],alj_pozo:['Pozo de cimentación de hormigón en masa hasta la cota del fondo del aljibe','m³',130]});
+function aljChoqPres(){const M=aljChoqMed(),L=[];if(M.Lp>0)L.push(['alj_pil',M.Lp]);if(M.Vp>0)L.push(['alj_pozo',M.Vp]);if(M.Ve>0)L.push(['exc',M.Ve,'Excavación de más para bajar la cimentación junto a los depósitos']);return L}
+
+/* la estructura se calcula con los depósitos ya puestos: el pilar que cae dentro se aparta al borde si basta con poco; si no, arranca del fondo */
+const ALJ_MOV=1.2;
+function aljPilAjuste(){if(!isMod())return 0;const L=aljBajo();if(!L.length)return 0;let n=0;const f0=cimF(),P0=items.filter(p=>p.t==='pilar'&&p.f===f0&&p.ea);
+  P0.forEach(p=>{const w=p.w||.3,h=p.h||.3,cx=p.x+w/2,cy=p.y+h/2;const a=L.find(q=>{const o=aljO(q);return cx>o.x-.05&&cx<o.x+o.w+.05&&cy>o.y-.05&&cy<o.y+o.h+.05});if(!a)return;const o=aljO(a),m=w/2+.05;
+    const C=[[o.x-m,cy],[o.x+o.w+m,cy],[cx,o.y-m],[cx,o.y+o.h+m]].map(([x,y])=>({x,y,d:Math.hypot(x-cx,y-cy)})).filter(q=>{const c=contOf(f0);return !c||(q.x>=c.x+w/2-.01&&q.x<=c.x+c.w-w/2+.01&&q.y>=c.y+h/2-.01&&q.y<=c.y+c.h-h/2+.01)}).sort((u,v)=>u.d-v.d)[0];
+    if(!C||C.d>ALJ_MOV)return;const dx=C.x-cx,dy=C.y-cy;items.filter(q=>q.t==='pilar'&&q.ea&&Math.hypot(q.x+(q.w||.3)/2-cx,q.y+(q.h||.3)/2-cy)<.1).forEach(q=>{q.x=r2(q.x+dx);q.y=r2(q.y+dy)});n++});return n}
+{const _eaAP=eaApply;eaApply=function(){const r=_eaAP.apply(this,arguments);try{const n=aljPilAjuste();const Q=aljChoques();if(n||Q.length){st._aljSig=aljSig();const t=[];if(n)t.push(n+(n>1?' pilares apartados':' pilar apartado')+' al borde del aljibe');const d=Q.filter(q=>q.k==='dentro').length;if(d)t.push(d+(d>1?' pilares arrancan':' pilar arranca')+' del fondo del aljibe');const c=Q.length-d;if(c)t.push(c+(c>1?' zapatas bajan':' zapata baja')+' a la cota del fondo');note=(note?note+' · ':'')+t.join(' · ');try{done()}catch(er){}}else st._aljSig=aljSig()}catch(e){console.warn('aljibe y estructura',e)}return r}}
+/* si se pone o se cambia un depósito bajo el edificio con la estructura ya hecha, la estructura se rehace */
+const aljSig=()=>{try{return JSON.stringify(aljBajo().map(a=>[a.id,a.x,a.y,a.w,a.h,a.pr,a.pos]))}catch(e){return ''}};
+let _aljRe=0;
+{const _dnAP=done;done=function(){const r=_dnAP.apply(this,arguments);try{if(_aljRe||!isMod())return r;const s=aljSig();if(st._aljSig==null){st._aljSig=s;return r}if(s===st._aljSig)return r;st._aljSig=s;
+  if(!items.some(p=>p.t==='pilar'&&p.ea)||!aljBajo().length)return r;_aljRe=1;try{eaApply();note='Has cambiado un depósito bajo el edificio: la estructura se ha recalculado para respetarlo'+(note&&!/^Has cambiado/.test(note)?' · '+note:'')}finally{_aljRe=0}}catch(e){console.warn(e)}return r}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
