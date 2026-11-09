@@ -2809,6 +2809,7 @@ function facade0(){
   if(!RG)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
+    if(along&&typeof isHip==='function'&&isHip(q,p)){const hr=typeof hipRise==='function'?hipRise(q,p):rs,dd=hr/(p.a/100);h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}L${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(base)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;if(remOn())h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}M${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`+remFac(a+dd,b-dd,base+hr);return}
     if(along){h+=Rc(a,b,base,base+rs,`fill="url(#p-teja)" stroke="#3b1d0c" stroke-width="2.4"`);for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(base)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;if(remOn())h+=remFac(a,b,base+rs)}
     else{h+=`<path d="M${X(a)} ${Y(base)}L${X((a+b)/2)} ${Y(base+rs)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;if(remOn())h+=`<path d="M${X(a)} ${Y(base)}L${X((a+b)/2)} ${Y(base+rs)}L${X(b)} ${Y(base)}" fill="none" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}" stroke-linejoin="round"/>`+`<ellipse cx="${X((a+b)/2)}" cy="${Y(base+rs+.08)}" rx="${Math.max(3,.22*s)}" ry="${Math.max(2,.12*s)}" fill="#b5603a" stroke="#6b2a12"/>`}
   });
@@ -14664,6 +14665,42 @@ document.addEventListener('change',e=>{if(!e.target||e.target.id!=='tapS')return
 {const _pw4TP=pw4;pw4=function(){let h=_pw4TP.apply(this,arguments);try{const k=faseCur().F.k;if(k!=='cim')return h;let r='';[...aljList(),...fosList().filter(a=>!a.pos)].forEach(a=>{const T=aljTap(a);if(T.cuarto)return;
   r+=pwRow(true,'Tapa '+(a.k?(a.ft==='depur'?'de la depuradora':a.ft==='septica'?'de la fosa séptica':'del pozo negro'):'del aljibe'),TAPTX(T)+(T.por?' · '+esc(T.por):''),'')});const A=arqTap();if(A.t)r+=pwRow(true,'Arquetas bajo el paso de coches',`${A.t} con tapa de fundición D400 y arqueta reforzada`,'');
   if(!r)return h;const b='<div class="bt3">';return h.includes(b)?h.replace(b,r+b):h+r}catch(e){}return h}}
+
+/* ===================== TEJADO A CUATRO AGUAS: CUATRO FALDONES CON LA MISMA PENDIENTE, CUMBRERA A LO LARGO Y LIMATESAS ===================== */
+{const _gRPH=getRP;getRP=function(id){const p=_gRPH.apply(this,arguments);if(p.f==null)p.f=st.rforma||'dos';return p}}
+const isHip=(r,p)=>!!r&&r.type==='teja'&&(p||getRP(r.id)).f==='cuatro';
+/* geometría en planta del rectángulo exterior (con alero): faldones, cumbrera y limatesas */
+function hipPlan(X0,Y0,W,H){const hz=W>=H,d=(hz?H:W)/2;if(hz){const r0=[X0+d,Y0+d],r1=[X0+W-d,Y0+d];return{hz,d,R:[r0,r1],F:[{k:'L',P:[[X0,Y0],[X0+W,Y0],r1,r0]},{k:'L',P:[[X0,Y0+H],[X0+W,Y0+H],r1,r0]},{k:'C',P:[[X0,Y0],r0,[X0,Y0+H]]},{k:'C',P:[[X0+W,Y0],r1,[X0+W,Y0+H]]}],
+    Hp:[[[X0,Y0],r0],[[X0,Y0+H],r0],[[X0+W,Y0],r1],[[X0+W,Y0+H],r1]]}}
+  const r0=[X0+d,Y0+d],r1=[X0+d,Y0+H-d];return{hz,d,R:[r0,r1],F:[{k:'L',P:[[X0,Y0],[X0,Y0+H],r1,r0]},{k:'L',P:[[X0+W,Y0],[X0+W,Y0+H],r1,r0]},{k:'C',P:[[X0,Y0],r0,[X0+W,Y0]]},{k:'C',P:[[X0,Y0+H],r1,[X0+W,Y0+H]]}],
+    Hp:[[[X0,Y0],r0],[[X0+W,Y0],r0],[[X0,Y0+H],r1],[[X0+W,Y0+H],r1]]}}
+const hipRise=(r,p)=>(Math.min(r.w,r.h)+2*p.e)/2*p.a/100;
+function hipLens(r,p){const W=r.w+2*p.e,H=r.h+2*p.e,G=hipPlan(0,0,W,H),k=p.a/100,ridge=Math.hypot(G.R[1][0]-G.R[0][0],G.R[1][1]-G.R[0][1]),hip=4*Math.hypot(G.d*Math.SQRT2,G.d*k);return{ridge,hip}}
+/* plano */
+{const _dRH=drawRoof;drawRoof=function(r){const p=getRP(r.id);if(!isHip(r,p))return _dRH.apply(this,arguments);const S=view.s,e=p.e,x=(r.x-e)*S,y=(r.y-e)*S,w=(r.w+2*e)*S,h=(r.h+2*e)*S,cl=r.id===sel?' class="sel"':'',G=hipPlan(x,y,w,h),step=Math.max(5,.22*S),uid='hp'+String(r.id).replace(/\W/g,'');
+  const P=q=>q.map(v=>v[0]+','+v[1]).join(' ');let o='';G.F.forEach((f,i)=>{const vert=(G.hz?f.k==='L':f.k==='C');let ln='';for(let t=step;t<(vert?w:h);t+=step)ln+=vert?`M${x+t} ${y}v${h}`:`M${x} ${y+t}h${w}`;
+    o+=`<clipPath id="${uid}${i}"><polygon points="${P(f.P)}"/></clipPath><polygon points="${P(f.P)}" fill="var(--${f.k==='L'?(i%2?'tB':'tA'):'tB'})"/><path d="${ln}" stroke="#3a1d0c" stroke-opacity=".28" fill="none" clip-path="url(#${uid}${i})"/>`});
+  const rg=`M${G.R[0][0]} ${G.R[0][1]}L${G.R[1][0]} ${G.R[1][1]}`+G.Hp.map(([a,b])=>`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`).join('');
+  return `<g data-r="${r.id}"${cl}>${o}<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="var(--wall)" stroke-width="2"/>${remPlan(rg)}<text class="rt" x="${x+w/2}" y="${y+h/2-6}" text-anchor="middle">Tejado a cuatro aguas</text><text class="rt" x="${x+w/2}" y="${y+h/2+10}" text-anchor="middle">Cumbrera +${fmt(r2(hipRise(r,p)))} m</text></g>`}}
+/* 3D: los tejados a cuatro aguas se hacen aquí; el resto, como siempre */
+function hipRoof3(T,grp,z,r){const p=getRP(r.id),tm=roofMat3(),ext=(SD().ext||.6)/2,e=p.e??.4,pen=(p.a??30)/100,x0=r.x-ext-e,y0=r.y-ext-e,W=r.w+2*ext+2*e,H=r.h+2*ext+2*e,G=hipPlan(x0,y0,W,H),ze=z-e*pen,zt=ze+G.d*pen;
+  const tri=(A,m)=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(A.flat(),3));g.computeVertexNormals();try{uvSlope3(g)}catch(er){}const ms=new T.Mesh(g,m);ms.castShadow=true;ms.receiveShadow=true;grp.add(ms)};
+  const v=(q,top)=>[q[0],top?zt:ze,q[1]];G.F.forEach(f=>{if(f.P.length===4){tri([v(f.P[0]),v(f.P[1]),v(f.P[2],1)],tm);tri([v(f.P[0]),v(f.P[2],1),v(f.P[3],1)],tm)}else tri([v(f.P[0]),v(f.P[1],1),v(f.P[2])],tm)});
+  /* bajo el alero, el techo del vuelo */const so=new T.MeshLambertMaterial({color:'#e8dcc4',side:T.DoubleSide}),sb=new T.Mesh(new T.BoxGeometry(W,.04,H),so);sb.position.set(x0+W/2,ze-.02,y0+H/2);grp.add(sb);
+  if(remOn()){const cyl=(a,b,za,zb)=>{const L=Math.hypot(b[0]-a[0],zb-za,b[1]-a[1]);if(L<.05)return;const m=new T.Mesh(new T.CylinderGeometry(.12,.12,L,10,1,false,0,Math.PI),tm);m.position.set((a[0]+b[0])/2,(za+zb)/2+.02,(a[1]+b[1])/2);m.lookAt(b[0],zb+.02,b[1]);m.rotateX(Math.PI/2);grp.add(m)};
+    cyl(G.R[0],G.R[1],zt,zt);G.Hp.forEach(([a,b])=>cyl(a,b,ze,zt))}
+  return zt-z}
+{const _rA3H=roofAll3;roofAll3=function(T,grp,z){let rs=[];try{rs=roofs()}catch(e){}const H=rs.filter(r=>isHip(r));if(!H.length||(isMod()&&TJ().modo==='centro'))return _rA3H.apply(this,arguments);
+  const _rf=roofs;let out;roofs=function(){return _rf.apply(this,arguments).filter(r=>!isHip(r))};try{out=_rA3H.apply(this,arguments)}finally{roofs=_rf}let mx=0;H.forEach(r=>{try{mx=Math.max(mx,hipRoof3(T,grp,z,r))}catch(e){console.warn('cuatro aguas 3D',e)}});return typeof out==='number'?Math.max(out,mx):out}}
+/* panel del tejado */
+{const _pnHP=panel;panel=function(){const r0=_pnHP.apply(this,arguments);try{if(typeof sel!=='string')return r0;const r=roofs().find(x=>x.id===sel),sp=$('#sp');if(!r||r.type!=='teja'||!sp||$('#roofF'))return r0;const p=getRP(r.id);
+  const t=[...sp.querySelectorAll('label')].find(l=>/Cumbrera/.test(l.textContent));const h=`<label>Forma<select id="roofF"><option value="dos"${p.f!=='cuatro'?' selected':''}>A dos aguas</option><option value="cuatro"${p.f==='cuatro'?' selected':''}>A cuatro aguas (con limatesas)</option></select></label>`;
+  if(t)t.insertAdjacentHTML('beforebegin',h);else sp.insertAdjacentHTML('beforeend',h);if(p.f==='cuatro'&&t){t.style.display='none';const n=t.nextElementSibling;if(n&&/Cumbrera a/.test(n.textContent))n.textContent=`Cumbrera a +${fmt(r2(hipRise(r,p)))} m sobre la cornisa, a lo largo del lado largo`}}catch(e){}return r0}}
+document.addEventListener('change',e=>{if(!e.target||e.target.id!=='roofF')return;const id=sel;if(typeof id!=='string')return;push();const v=e.target.value;st.rforma=v;roofs().forEach(q=>{if(rp[q.id]&&rp[q.id].f)delete rp[q.id].f});done();render();try{panel()}catch(er){}});
+/* paso 5: dos o cuatro aguas */
+{const _pw5H=pw5;pw5=function(){let h=_pw5H.apply(this,arguments);try{const T=TJ();if(T.modo==='teja'||T.modo==='mitad'||!T.modo){const v=st.rforma||'dos',b=`<div class="pwG" id="pwHip"><label>Tejado<select data-tjf="1"><option value="dos"${v!=='cuatro'?' selected':''}>A dos aguas (con hastiales)</option><option value="cuatro"${v==='cuatro'?' selected':''}>A cuatro aguas (con limatesas, sin hastiales)</option></select></label></div>`;
+  const i=h.indexOf('<h3>Acceso a la cubierta</h3>');h=i>=0?h.slice(0,i)+b+h.slice(i):h+b}}catch(e){}return h}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.tjf)return;e.stopImmediatePropagation();push();st.rforma=t.value;Object.keys(rp).forEach(k=>{if(rp[k])delete rp[k].f});done();try{pasoBody()}catch(er){}render()},true);
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
