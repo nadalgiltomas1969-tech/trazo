@@ -2810,6 +2810,7 @@ function facade0(){
   if(!RG&&!_RC)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
+    if(typeof tejOpen==='function'&&isHip(q,p)&&tejOpen(q)){h+=tri3FacPath(q,horiz,rg,X,Y,base,s);return}
     if(along&&typeof isHip==='function'&&isHip(q,p)){const hr=typeof hipRise==='function'?hipRise(q,p):rs,dd=hr/(p.a/100);h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}L${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(base)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;if(remOn())h+=`<path d="M${X(a)} ${Y(base)}L${X(a+dd)} ${Y(base+hr)}M${X(b-dd)} ${Y(base+hr)}L${X(b)} ${Y(base)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`+remFac(a+dd,b-dd,base+hr);return}
     if(along){h+=Rc(a,b,base,base+rs,`fill="url(#p-teja)" stroke="#3b1d0c" stroke-width="2.4"`);for(let u=a;u<b-.1;u+=.3)h+=`<path d="M${X(u)} ${Y(base)}a${.15*s} ${.07*s} 0 0 0 ${.3*s} 0" fill="#b65a2f" stroke="#5e2a12" stroke-width="1.2"/>`;if(remOn())h+=remFac(a,b,base+rs)}
     else{h+=`<path d="M${X(a)} ${Y(base)}L${X((a+b)/2)} ${Y(base+rs)}L${X(b)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;if(remOn())h+=`<path d="M${X(a)} ${Y(base)}L${X((a+b)/2)} ${Y(base+rs)}L${X(b)} ${Y(base)}" fill="none" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}" stroke-linejoin="round"/>`+`<ellipse cx="${X((a+b)/2)}" cy="${Y(base+rs+.08)}" rx="${Math.max(3,.22*s)}" ry="${Math.max(2,.12*s)}" fill="#b5603a" stroke="#6b2a12"/>`}
@@ -14804,6 +14805,73 @@ Object.assign(PRES_D,{tj_cumb:['Cumbrera y limatesas de teja, recibidas con mort
 Object.entries(CANM).forEach(([k,q])=>{PRES_D['can_'+k]=['Canalón de '+q[0].toLowerCase()+', con soportes y piezas','m',q[3]];PRES_D['bjn_'+k]=['Bajante de '+q[0].toLowerCase()+', con abrazaderas y codo','m',q[4]]});
 function canPres(){const L=[];try{const mt=canMt();if(canOn()&&mt){const n=items.filter(i=>i.t==='baj'&&i.canAuto).length||canBajPts().length,t=topF(),hb=floorZ(t)+floorH(t)-floorZ(typeof pbF==='function'?pbF():0);L.push(['can_'+mt,r2(canLen())],['bjn_'+mt,r2(n*hb)])}
   const rs=roofs().filter(r=>r.type==='teja');let Lc=0;rs.forEach(r=>{const p=getRP(r.id);if(isHip(r,p)){const q=hipLens(r,p);Lc+=q.ridge+q.hip}});if(TJ().modo==='centro'){const R=ringZ();if(R){const P=R.P,d=Math.hypot(R.P.m,R.P.m);Lc+=4*d;L.push(['tj_pre',r2(2*(P.w+P.h)*(R.rise+.3))],['tj_ter',r2(P.w*P.h)],['tj_sum',1])}}if(Lc>0)L.unshift(['tj_cumb',r2(Lc)])}catch(e){}return L}
+
+/* ===================== CUBIERTA: FORJADO INCLINADO FINO BAJO LA TEJA, HASTIAL HACIA LA AZOTEA, TRES AGUAS ===================== */
+/* recorte de polígonos por una desigualdad lineal A·x + B·y + C ≤ 0 */
+function cbClip(P,A,B,C){const out=[],f=p=>A*p[0]+B*p[1]+C;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],fa=f(a),fb=f(b);if(fa<=1e-9)out.push(a);if((fa<-1e-9&&fb>1e-9)||(fa>1e-9&&fb<-1e-9)){const t=fa/(fa-fb);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t])}}return out}
+/* plano de un lado: altura = a + s·d, con d la distancia hacia dentro desde ese lado del rectángulo R=[x0,y0,x1,y1] → coeficientes lineales */
+function sidePlane(R,k,a,s){const[x0,y0,x1,y1]=R;return k==='top'?[0,s,a-s*y0]:k==='bottom'?[0,-s,a+s*y1]:k==='left'?[s,0,a-s*x0]:[-s,0,a+s*x1]}
+const plZ=(q,p)=>q[0]*p[0]+q[1]*p[1]+q[2];
+/* caras de una cubierta que es el mínimo de varios planos sobre un rectángulo; lim: {k: distancia máxima} para recortar (terraza del centro) */
+function minFaces(R,PL,lim){const rect=[[R[0],R[1]],[R[2],R[1]],[R[2],R[3]],[R[0],R[3]]],out=[];Object.keys(PL).forEach(k=>{let P=rect;Object.keys(PL).forEach(j=>{if(j===k||P.length<3)return;const a=PL[k],b=PL[j];P=cbClip(P,a[0]-b[0],a[1]-b[1],a[2]-b[2])});
+  if(lim&&lim[k]!=null&&P.length>=3){const[x0,y0,x1,y1]=R,L=lim[k];P=k==='top'?cbClip(P,0,1,-(y0+L)):k==='bottom'?cbClip(P,0,-1,y1-L):k==='left'?cbClip(P,1,0,-(x0+L)):cbClip(P,-1,0,x1-L)}
+  if(P.length>=3)out.push({k,P,pl:PL[k]})});return out}
+/* ¿qué lado de este tramo de teja da a la azotea? (mitad teja, mitad terraza) */
+function tejOpen(r){try{if(!isMod()||TJ().modo!=='mitad'||!r||r.type!=='teja')return null;const az=roofs().filter(q=>q.type==='azotea');for(const q of az){if(Math.abs(q.x-(r.x+r.w))<.05)return 'right';if(Math.abs(q.x+q.w-r.x)<.05)return 'left';if(Math.abs(q.y-(r.y+r.h))<.05)return 'bottom';if(Math.abs(q.y+q.h-r.y)<.05)return 'top'}}catch(e){}return null}
+/* en «mitad», el dos aguas lleva la cumbrera hacia la azotea para acabar en hastial */
+{const _gRPM=getRP;getRP=function(id){const p=_gRPM.apply(this,arguments);try{if(isMod()&&TJ().modo==='mitad'&&/^s\d/.test(String(id))){const A=roofAll();if(A)p.o=roofDX(A)?'h':'v'}}catch(e){}return p}}
+/* planos de la teja de un tejado sobre el rectángulo de los muros W (ext incluido): altura sobre la coronación */
+function roofPlanes(r,ext){const p=getRP(r.id),pen=(p.a??30)/100,W=[r.x-ext,r.y-ext,r.x+r.w+ext,r.y+r.h+ext],op=tejOpen(r),PL={};
+  if(isHip(r,p)){['top','bottom','left','right'].forEach(k=>{if(k!==op)PL[k]=sidePlane(W,k,0,pen)})}
+  else{const H=isH(r,p);(H?['top','bottom']:['left','right']).forEach(k=>PL[k]=sidePlane(W,k,0,pen))}return{W,PL,pen,op}}
+/* forjado inclinado de hormigón (losa fina) bajo la teja: caras planas siguiendo la cubierta */
+const FJI=.15;
+function roofSlabFaces(ext){const out=[];try{const rs=roofs().filter(r=>r.type==='teja');if(isMod()&&TJ().modo==='centro'){const R=ringZ();if(!R)return out;const c=R.c,W=[c.x-ext,c.y-ext,c.x+c.w+ext,c.y+c.h+ext],P=R.P,PL={},lim={};
+    const m={top:P.y-W[1],bottom:W[3]-(P.y+P.h),left:P.x-W[0],right:W[2]-(P.x+P.w)};Object.keys(m).forEach(k=>{const run=m[k]+R.e,s=(R.rise+R.e*R.tn)/run;PL[k]=sidePlane(W,k,-R.e*R.tn+s*R.e,s);lim[k]=m[k]});out.push(...minFaces(W,PL,lim));return out}
+  rs.forEach(r=>{const{W,PL}=roofPlanes(r,ext);out.push(...minFaces(W,PL))})}catch(e){console.warn('forjado inclinado',e)}return out}
+function slab3(T,grp,F,z,th,mat,top){const tri=(A)=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(A.flat(),3));g.computeVertexNormals();const m=new T.Mesh(g,mat);m.userData.k='forjI';grp.add(m)};
+  F.forEach(f=>{const P=f.P,zt=q=>z+plZ(f.pl,q)-top,V=P.map(q=>[q[0],zt(q),q[1]]),Vb=P.map(q=>[q[0],zt(q)-th,q[1]]);for(let i=1;i<P.length-1;i++){tri([V[0],V[i],V[i+1]]);tri([Vb[0],Vb[i+1],Vb[i]])}
+    for(let i=0;i<P.length;i++){const j=(i+1)%P.length;tri([V[i],Vb[i],Vb[j]]);tri([V[i],Vb[j],V[j]])}})}
+/* vista del edificio: la losa inclinada se ve por dentro, bajo la teja */
+{const _rA3S=roofAll3;roofAll3=function(T,grp,z){const out=_rA3S.apply(this,arguments);try{if(!isMod())return out;const ex=(SD().ext||.6)/2,F=roofSlabFaces(ex);if(F.length)slab3(T,grp,F,z,FJI,new T.MeshLambertMaterial({color:'#bdbab3',side:T.DoubleSide}),.06)}catch(e){console.warn('losa inclinada 3D',e)}return out}}
+/* vista de estructura: el forjado de la última planta pasa a ser inclinado donde hay teja; plano donde hay azotea o terraza */
+{const _stFI=stBuild3;stBuild3=function(){const B=_stFI.apply(this,arguments);try{if(!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,t=topF();if(t<0||!roofs().some(r=>r.type==='teja'))return B;const g=B.G&&B.G[t];if(!g)return B;
+  const z=floorZ(t)+floorH(t),rm=[];g.children.forEach(m=>{if(m.userData.k==='forj'&&Math.abs(m.position.y-(z-(m.geometry.parameters?m.geometry.parameters.height/2:0)))<.02)rm.push(m)});
+  /* sus aristas también */g.children.forEach(m=>{if(m.isLineSegments&&m.userData.k==='forj'&&rm.some(q=>q.position.distanceTo(m.position)<.01))rm.push(m)});rm.forEach(m=>g.remove(m));
+  const mat=new T.MeshLambertMaterial({color:'#cfd2d5',transparent:true,opacity:.85,side:T.DoubleSide}),E=SD().ext||.3;slab3(T,g,roofSlabFaces(E/2),z,FJI,mat,0);
+  const flat=(x,y,w,h)=>{const m=new T.Mesh(new T.BoxGeometry(w,.25,h),mat);m.position.set(x+w/2,z-.125,y+h/2);m.userData.k='forj';g.add(m)};
+  if(TJ().modo==='centro'){const P=tejInner();if(P)flat(P.x,P.y,P.w,P.h)}roofs().filter(r=>r.type==='azotea').forEach(r=>flat(r.x-E/2,r.y-E/2,r.w+E,r.h+E))}catch(e){console.warn('forjado inclinado estructura',e)}return B}}
+/* ---------- tres aguas: cuatro aguas con el lado de la azotea cerrado por un hastial ---------- */
+function tri3Faces(r,ex,withEaves){const p=getRP(r.id),e=withEaves?p.e:0,pen=(p.a??30)/100,op=tejOpen(r),R=[r.x-ex-(op==='left'?e*.3:e),r.y-ex-(op==='top'?e*.3:e),r.x+r.w+ex+(op==='right'?e*.3:e),r.y+r.h+ex+(op==='bottom'?e*.3:e)],PL={};
+  ['top','bottom','left','right'].forEach(k=>{if(k!==op)PL[k]=sidePlane(R,k,-e*pen,pen)});return{R,F:minFaces(R,PL),op,pen}}
+function innerEdges(F,R){const E=[],on=q=>Math.abs(q[0]-R[0])<1e-6||Math.abs(q[0]-R[2])<1e-6||Math.abs(q[1]-R[1])<1e-6||Math.abs(q[1]-R[3])<1e-6;
+  F.forEach(f=>f.P.forEach((a,i)=>{const b=f.P[(i+1)%f.P.length];if(on(a)&&on(b)&&(Math.abs(a[0]-b[0])<1e-6||Math.abs(a[1]-b[1])<1e-6))return;if(Math.hypot(b[0]-a[0],b[1]-a[1])<.02)return;if(!E.some(q=>(Math.hypot(q[0][0]-a[0],q[0][1]-a[1])<.02&&Math.hypot(q[1][0]-b[0],q[1][1]-b[1])<.02)||(Math.hypot(q[0][0]-b[0],q[0][1]-b[1])<.02&&Math.hypot(q[1][0]-a[0],q[1][1]-a[1])<.02)))E.push([a,b])}));return E}
+/* plano */
+{const _dR3=drawRoof;drawRoof=function(r){const p=getRP(r.id);if(!(isHip(r,p)&&tejOpen(r)))return _dR3.apply(this,arguments);const S=view.s,G=tri3Faces(r,0,1),cl=r.id===sel?' class="sel"':'',step=Math.max(5,.22*S),uid='t3'+String(r.id).replace(/\W/g,'');
+  let o='';G.F.forEach((f,i)=>{const pt=f.P.map(q=>q[0]*S+','+q[1]*S).join(' '),vert=f.k==='top'||f.k==='bottom';let ln='';const[x0,y0,x1,y1]=G.R.map(v=>v*S);if(vert)for(let x=x0+step;x<x1;x+=step)ln+=`M${x} ${y0}V${y1}`;else for(let y=y0+step;y<y1;y+=step)ln+=`M${x0} ${y}H${x1}`;
+    o+=`<clipPath id="${uid}${i}"><polygon points="${pt}"/></clipPath><polygon points="${pt}" fill="var(--${i%2?'tB':'tA'})"/><path d="${ln}" stroke="#3a1d0c" stroke-opacity=".28" fill="none" clip-path="url(#${uid}${i})"/>`});
+  const IE=innerEdges(G.F,G.R).map(([a,b])=>`M${a[0]*S} ${a[1]*S}L${b[0]*S} ${b[1]*S}`).join(''),[x0,y0,x1,y1]=G.R.map(v=>v*S),op=G.op,wl=op==='right'?`M${x1} ${y0}V${y1}`:op==='left'?`M${x0} ${y0}V${y1}`:op==='top'?`M${x0} ${y0}H${x1}`:`M${x0} ${y1}H${x1}`;
+  return `<g data-r="${r.id}"${cl}>${o}<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="none" stroke="var(--wall)" stroke-width="2"/>${remPlan(IE)}<path d="${wl}" stroke="var(--wall)" stroke-width="${Math.max(4,.3*S)}"/><text class="rt" x="${(x0+x1)/2}" y="${(y0+y1)/2-6}" text-anchor="middle">Tejado a tres aguas</text><text class="rt" x="${(x0+x1)/2}" y="${(y0+y1)/2+10}" text-anchor="middle">hastial hacia la azotea</text></g>`}}
+/* 3D */
+{const _hR3=hipRoof3;hipRoof3=function(T,grp,z,r){if(!tejOpen(r))return _hR3.apply(this,arguments);const ext=(SD().ext||.6)/2,G=tri3Faces(r,ext,1),tm=roofMat3(),wm=((typeof wallMat3==='function')?wallMat3('ext'):new T.MeshLambertMaterial({color:'#e8dcc4'})).clone();wm.side=T.DoubleSide;let mx=0;
+  const tri=(A,m)=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(A.flat(),3));g.computeVertexNormals();try{if(m===tm)uvSlope3(g)}catch(er){}const ms=new T.Mesh(g,m);ms.castShadow=true;grp.add(ms)};
+  G.F.forEach(f=>{const V=f.P.map(q=>{const h=plZ(f.pl,q);mx=Math.max(mx,h);return[q[0],z+h,q[1]]});for(let i=1;i<V.length-1;i++)tri([V[0],V[i],V[i+1]],tm)});
+  /* hastial: pared desde la coronación hasta la teja, en el lado de la azotea */const W=[r.x-ext,r.y-ext,r.x+r.w+ext,r.y+r.h+ext],op=G.op,hz=op==='top'||op==='bottom',fix=op==='left'?W[0]:op==='right'?W[2]:op==='top'?W[1]:W[3],a0=hz?W[0]:W[1],a1=hz?W[2]:W[3],n=24,pts=[];
+  for(let i=0;i<=n;i++){const u=a0+(a1-a0)*i/n,q=hz?[u,fix]:[fix,u];let h=1e9;G.F.forEach(f=>{h=Math.min(h,plZ(f.pl,q))});Object.values(G.F).length;pts.push([q[0],z+Math.max(0,h),q[1]])}
+  for(let i=0;i<n;i++){const A=pts[i],B=pts[i+1],A0=[A[0],z,A[2]],B0=[B[0],z,B[2]];tri([A0,B0,B],wm);tri([A0,B,A],wm)}
+  if(remOn()){innerEdges(G.F,G.R).forEach(([a,b])=>{const za=z+Math.min(...G.F.map(f=>plZ(f.pl,a))),zb=z+Math.min(...G.F.map(f=>plZ(f.pl,b))),L=Math.hypot(b[0]-a[0],zb-za,b[1]-a[1]);if(L<.05)return;const m=new T.Mesh(new T.CylinderGeometry(.12,.12,L,10,1,false,0,Math.PI),tm);m.position.set((a[0]+b[0])/2,(za+zb)/2+.02,(a[1]+b[1])/2);m.lookAt(b[0],zb+.02,b[1]);m.rotateX(Math.PI/2);grp.add(m)})}
+  return mx}}
+/* fachada: silueta del tres aguas (la más alta de la cubierta vista de frente) */
+function tri3FacPath(r,horiz,rg,X,Y,base,s){const G=tri3Faces(r,0,1),[x0,y0,x1,y1]=G.R,n=60,pts=[];const zAt=q=>Math.min(...G.F.map(f=>plZ(f.pl,q)));
+  for(let i=0;i<=n;i++){const u=(horiz?x0:y0)+((horiz?x1:y1)-(horiz?x0:y0))*i/n;let h=-1e9;for(let j=0;j<=40;j++){const v=(horiz?y0:x0)+((horiz?y1:x1)-(horiz?y0:x0))*j/40;h=Math.max(h,zAt(horiz?[u,v]:[v,u]))}const[a]=rg(u,u);pts.push([a,base+h])}
+  const p0=pts[0],pn=pts[pts.length-1];return `<path d="M${X(p0[0])} ${Y(base-0)}${pts.map(q=>`L${X(q[0])} ${Y(q[1])}`).join('')}L${X(pn[0])} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`}
+
+/* ===================== ESTRUCTURA AL DÍA: PILARES EN TODAS LAS PLANTAS ===================== */
+function eaStale(){try{if(!isMod())return null;const P=items.filter(i=>i.t==='pilar'&&i.f>=0&&i.ea);if(!P.length)return null;const L=[];for(let f=0;f<Math.max(F(),topF()+1);f++){if(!contOf(f)||(typeof isGolf==='function'&&isGolf(f)))continue;if(!P.some(p=>p.f===f))L.push(f)}return L.length?L:null}catch(e){return null}}
+const eaStaleTxt=L=>L.map(f=>fname(f)).join(', ');
+{const _pw4EA=pw4;pw4=function(){let h=_pw4EA.apply(this,arguments);try{const L=eaStale();if(!L)return h;const i=h.indexOf('</div>')+6;return h.slice(0,i)+`<div style="border:2px solid #c62828;border-radius:8px;padding:8px;margin:8px 0"><b style="color:#c62828">La estructura no está al día</b><p class="hint" style="margin:4px 0">${esc(eaStaleTxt(L))} no ${L.length>1?'tienen':'tiene'} pilares (seguramente ${L.length>1?'se añadieron':'se añadió'} después de calcular la estructura).</p><button data-eaup="1" class="pri">Recalcular la estructura con todas las plantas</button></div>`+h.slice(i)}catch(e){}return h}}
+{const _rEA=render;render=function(){const r=_rEA.apply(this,arguments);try{let b=$('#eaMB');const L=eaStale();if(!L){if(b)b.remove();return r}if(!b){$('#cvw').insertAdjacentHTML('beforeend','<button id="eaMB" data-eaup="1" style="position:absolute;left:50%;transform:translateX(-50%);top:54px;z-index:5;background:#c62828;border-color:#c62828;color:#fff;font-size:13px;max-width:90%;white-space:normal"></button>');b=$('#eaMB')}b.textContent='⚠ '+eaStaleTxt(L)+' sin pilares: recalcular la estructura'}catch(e){}return r}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-eaup]');if(!b)return;e.stopImmediatePropagation();try{eaApply()}catch(er){console.warn(er)}const L=eaStale();note=L?'Sigue sin pilares: '+eaStaleTxt(L):'Estructura recalculada: pilares en todas las plantas';try{if($('#pwP'))pasoBody()}catch(er){}render()},true);
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
