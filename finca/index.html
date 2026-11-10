@@ -3117,12 +3117,12 @@ function zov1(){const F=FN(),zs=F.it.filter(i=>(i.t==='zona'&&(i.alt!=null||i.pe
 function zH(o,x,y){const t=Math.max(0,Math.min(1,(x*o.d[0]+y*o.d[1]-o.dmin)/o.D));if(o.nb>0){const k=Math.min(o.nb-1,Math.floor(t*o.nb));return o.A-o.drop*k/o.nb}return o.A-o.drop*t}
 function Hf(x,y){const O=zov();for(let i=O.Z.length-1;i>=0;i--){const o=O.Z[i],b=o.bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;if(pip(x,y,o.P)&&!o.H.some(hh=>pip(x,y,hh)))return zH(o,x,y)}
   let h=Hf0(x,y);for(const q of O.M){const dd=Math.hypot(x-q.m.x,y-q.m.y);if(dd<q.R)return q.m.palt;if(dd<q.R+30){const t=(dd-q.R)/30,sm=t*t*(3-2*t);h=q.m.palt*(1-sm)+h*sm}}return h}
-function Hf0(x,y){const F=FN();let h=F.b0+(F.h-y)*F.tilt;
+function Hf0(x,y){const F=FN();let h=F.b0+(typeof fTiltProj==='function'?fTiltProj(F,x,y):(F.h-y))*F.tilt;
   if(F.sierra&&F.sierra.h>0){const d=Math.max(0,(F.sierra.w-y)/F.sierra.w);if(d>0)h+=F.sierra.h*Math.pow(d,1.7)*Math.max(.35,1+.3*Math.sin(x/260)*Math.sin(y/190+1)+.2*Math.sin(x/97+y/130))}
   F.it.forEach(i=>{if(i.t==='hill')h+=i.h*Math.exp(-((x-i.x)*(x-i.x)+(y-i.y)*(y-i.y))/(i.r*i.r))});return h}
 function hcol(h){const S=[[0,[207,224,176]],[120,[226,219,170]],[300,[196,178,138]],[500,[150,140,124]],[800,[228,228,228]]];let k=1;while(k<S.length-1&&h>S[k][0])k++;const a=S[k-1],b=S[k],t=Math.max(0,Math.min(1,(h-a[0])/(b[0]-a[0])));return a[1].map((v,i)=>v+(b[1][i]-v)*t)}
 let _t=null;
-function terr(){const F=FN(),key=JSON.stringify([F.w,F.h,F.b0,F.tilt,F.sierra,F.it.filter(i=>i.t==='hill'),zov().k]);if(_t&&_t.k===key)return _t;
+function terr(){const F=FN(),key=JSON.stringify([F.w,F.h,F.b0,F.tilt,F.tu,F.sierra,F.it.filter(i=>i.t==='hill'),zov().k]);if(_t&&_t.k===key)return _t;
   const nx=Math.ceil(F.w/GS)+1,ny=Math.ceil(F.h/GS)+1,H=new Float32Array(nx*ny);let mn=1e9,mx=-1e9;
   for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const v=Hf(i*GS,j*GS);H[j*nx+i]=v;mn=Math.min(mn,v);mx=Math.max(mx,v)}
   let sh='';for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const gx=(H[j*nx+Math.min(i+1,nx-1)]-H[j*nx+Math.max(i-1,0)])/(2*GS),gy=(H[Math.min(j+1,ny-1)*nx+i]-H[Math.max(j-1,0)*nx+i])/(2*GS),f=Math.max(.72,Math.min(1.25,1+(gx+gy)*1.1)),c=hcol(H[j*nx+i]).map(v=>Math.max(0,Math.min(255,Math.round(v*f))));
@@ -12430,6 +12430,47 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
   Object.values(d.p).forEach(q=>{if(!q||!q.name)return;const id=pid()+'i'+(n+m);const o={name:nm.has(q.name)?q.name+' (copia importada)':q.name,upd:Date.now(),data:q.data||null};['mod','mdest','dest','app'].forEach(k=>{if(q[k]!=null)o[k]=q[k]});if(pjMine(o)){PJ.p[id]=o;n++;if(!first)first=id}else{PJX[id]=o;m++}});
   if(d.fn&&(!PJ.fn||!Object.keys(PJ.fn).length))PJ.fn=d.fn;try{pjSave();pjFlush()}catch(e){}if(first)loadProj(first);try{plist()}catch(e){}
   note=n+' proyecto'+(n===1?'':'s')+' a esta app'+(m?' y '+m+' a la otra app (ábrela para verlos)':'');render();return true}}
+
+/* ===================== MALLORCA: POSICIÓN APROXIMADA DE CADA PUEBLO (lat, lon) Y CÁLCULO ENTRE PUEBLOS VECINOS ===================== */
+const MLLC={'Alaró':[39.704,2.791],'Alcúdia':[39.853,3.121],'Algaida':[39.559,2.893],'Andratx':[39.576,2.420],'Ariany':[39.649,3.111],'Artà':[39.693,3.350],'Banyalbufar':[39.687,2.513],'Binissalem':[39.687,2.844],'Búger':[39.758,2.983],'Bunyola':[39.696,2.699],
+ 'Calvià':[39.566,2.505],'Campanet':[39.775,2.966],'Campos':[39.431,3.019],'Capdepera':[39.702,3.435],'Consell':[39.668,2.813],'Costitx':[39.657,2.948],'Deià':[39.748,2.648],'Escorca':[39.822,2.885],'Esporles':[39.668,2.578],'Estellencs':[39.653,2.481],
+ 'Felanitx':[39.469,3.148],'Fornalutx':[39.782,2.740],'Inca':[39.721,2.911],'Lloret de Vistalegre':[39.618,2.974],'Lloseta':[39.718,2.867],'Llubí':[39.700,3.006],'Llucmajor':[39.490,2.891],'Manacor':[39.570,3.209],'Mancor de la Vall':[39.750,2.873],'Maria de la Salut':[39.663,3.074],
+ 'Marratxí':[39.627,2.721],'Montuïri':[39.567,2.984],'Muro':[39.735,3.056],'Palma':[39.570,2.650],'Petra':[39.613,3.112],'Pollença':[39.877,3.016],'Porreres':[39.515,3.023],'Puigpunyent':[39.625,2.528],'sa Pobla':[39.769,3.023],'Sant Joan':[39.596,3.039],
+ 'Sant Llorenç des Cardassar':[39.611,3.284],'Santa Eugènia':[39.624,2.840],'Santa Margalida':[39.703,3.103],'Santa Maria del Camí':[39.650,2.774],'Santanyí':[39.355,3.128],'Selva':[39.754,2.900],'Sencelles':[39.646,2.897],'ses Salines':[39.338,3.051],'Sineu':[39.643,3.010],'Sóller':[39.766,2.715],
+ 'Son Servera':[39.621,3.360],'Valldemossa':[39.711,2.622],'Vilafranca de Bonany':[39.570,3.088]};
+const MLLA={'Alaró':245,'Alcúdia':20,'Algaida':200,'Andratx':130,'Ariany':140,'Artà':165,'Banyalbufar':100,'Binissalem':135,'Búger':85,'Bunyola':220,'Calvià':140,'Campanet':165,'Campos':20,'Capdepera':130,'Consell':125,'Costitx':160,'Deià':180,'Escorca':480,'Esporles':210,'Estellencs':150,'Felanitx':110,'Fornalutx':145,'Inca':120,'Lloret de Vistalegre':245,'Lloseta':185,'Llubí':105,'Llucmajor':140,'Manacor':110,'Mancor de la Vall':280,'Maria de la Salut':125,'Marratxí':100,'Montuïri':175,'Muro':85,'Palma':13,'Petra':120,'Pollença':50,'Porreres':125,'Puigpunyent':240,'sa Pobla':10,'Sant Joan':140,'Sant Llorenç des Cardassar':100,'Santa Eugènia':160,'Santa Margalida':80,'Santa Maria del Camí':145,'Santanyí':50,'Selva':205,'Sencelles':145,'ses Salines':30,'Sineu':150,'Sóller':50,'Son Servera':90,'Valldemossa':425,'Vilafranca de Bonany':125};
+/* km: x hacia el este, y hacia el norte */
+const mllKm=n=>{const c=MLLC[n];return c?[(c[1]-2.85)*85.8,(c[0]-39.6)*111.2]:null};
+const mllNear=(n,k)=>{const a=mllKm(n);if(!a)return[];return Object.keys(MLLC).filter(q=>q!==n).map(q=>{const b=mllKm(q);return[q,Math.hypot(b[0]-a[0],b[1]-a[1])]}).sort((u,v)=>u[1]-v[1]).slice(0,k||6)};
+/* punto entre el municipio y el primer vecino (t: 0 en el municipio, 1 en el vecino); plano por mínimos cuadrados con todos los pueblos elegidos */
+function mllGeo(L){const N=[L.mun,...(L.vec||[])].filter(n=>MLLC[n]);if(!N.length)return null;const A=mllKm(N[0]),B=N[1]?mllKm(N[1]):A,t=L.t!=null?+L.t:.5,P=[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t],Z=N.map(n=>MLLA[n]);
+  let g=[0,0],z0;if(N.length>=3){/* z = a + b·x + c·y */let S=[[0,0,0],[0,0,0],[0,0,0]],R=[0,0,0];N.forEach((n,i)=>{const q=mllKm(n),v=[1,q[0],q[1]];for(let r=0;r<3;r++){R[r]+=v[r]*Z[i];for(let c=0;c<3;c++)S[r][c]+=v[r]*v[c]}});
+    const det=m=>m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]),D=det(S);
+    if(Math.abs(D)>1e-9){const sol=[0,1,2].map(k=>{const M=S.map((r,i)=>r.map((v,j)=>j===k?R[i]:v));return det(M)/D});g=[sol[1],sol[2]];z0=sol[0]+sol[1]*P[0]+sol[2]*P[1]}}
+  if(z0==null){if(N.length>=2){const d=Math.hypot(B[0]-A[0],B[1]-A[1])||1;const s=(Z[1]-Z[0])/d;g=[s*(B[0]-A[0])/d,s*(B[1]-A[1])/d];z0=Z[0]+(Z[1]-Z[0])*t}else z0=Z[0]}
+  const gm=Math.hypot(g[0],g[1]),pen=gm/1000,dn=gm>1e-9?[-g[0]/gm,-g[1]/gm]:[0,-1];return{z:Math.round(z0),pen,dn,P,N}}
+/* rumbo en palabras de un vector (x este, y norte) */
+const mllRumbo=v=>{const a=(Math.atan2(v[0],v[1])*180/Math.PI+360)%360;return['el norte','el noreste','el este','el sureste','el sur','el suroeste','el oeste','el noroeste'][Math.round(a/45)%8]};
+
+/* ===================== FINCA: UBICACIÓN EN MALLORCA ENTRE PUEBLOS VECINOS → ALTITUD BASE, PENDIENTE Y HACIA DÓNDE BAJA ===================== */
+/* el terreno de la finca puede bajar hacia cualquier lado: F.tu = [x, y] en el mapa (x este, y sur) */
+function fTiltProj(F,x,y){const u=F.tu;if(!u)return F.h-y;const pr=(a,b)=>a*u[0]+b*u[1],ref=Math.max(pr(0,0),pr(F.w,0),pr(0,F.h),pr(F.w,F.h));return ref-pr(x,y)}
+const FLOC=()=>{const F=FN();F.loc=F.loc||{};return F.loc};
+function flocHTML(){const L=FLOC(),G=L.mun?mllGeo(L):null,near=L.mun?mllNear(L.mun,7):[];const F=FN();
+  let h=`<section id="flocS"><h2>Ubicación en Mallorca</h2><p class="hint">Elige el municipio y los pueblos vecinos entre los que está la finca: la app calcula la altitud y hacia dónde baja el terreno con las alturas de esos pueblos (aproximadas, ±20 m). La sierra y las colinas no se tocan.</p>
+  <label>Municipio<select data-floc="mun"><option value="">— Elige —</option>${Object.keys(MLLC).map(n=>`<option${L.mun===n?' selected':''}>${esc(n)}</option>`).join('')}</select></label>`;
+  if(L.mun){h+=`<p style="margin:6px 0 2px"><b>Pueblos vecinos</b> (el primero marcado es el de «entre»)</p><div style="display:flex;flex-wrap:wrap;gap:4px 12px">${near.map(([n,d])=>`<label style="display:flex;gap:4px;align-items:center;font-weight:400"><input type="checkbox" data-flocv="${esc(n)}"${(L.vec||[]).includes(n)?' checked':''}>${esc(n)} <span class="hint">${fmt(Math.round(d*10)/10)} km · ${MLLA[n]} m</span></label>`).join('')}</div>`;
+    if((L.vec||[]).length){const B=L.vec[0];h+=`<label>Entre ${esc(L.mun)} y ${esc(B)}: más cerca de…<input type="range" min="0" max="100" step="5" data-floc="t" value="${Math.round((L.t!=null?+L.t:.5)*100)}"></label><div class="hint" style="display:flex;justify-content:space-between"><span>${esc(L.mun)}</span><span>${esc(B)}</span></div>`}
+    h+=`<label>Altitud conocida en el centro de la finca (m, si la sabes)<input data-floc="alt" type="number" step="1" inputmode="decimal" value="${L.alt??''}" placeholder="${G?G.z:''}"></label>`;
+    if(G){const z=L.alt!=null&&L.alt!==''?+L.alt:G.z;h+=`<p class="hint">En la finca: unos <b>${z} m</b> sobre el mar${G.pen>.0005?`, bajando un <b>${fmt(Math.round(G.pen*1000)/10)} %</b> hacia <b>${mllRumbo(G.dn)}</b>`:', casi llano'} (según ${G.N.join(', ')}).</p><div class="row"><button id="flocGo" class="pri">Aplicar al terreno de la finca</button></div>`}}
+  return h+`<p class="hint">Ahora: altitud base ${Math.round(F.b0)} m, pendiente ${fmt(Math.round(F.tilt*1000)/10)} %${F.tu?' hacia '+mllRumbo([F.tu[0],-F.tu[1]]):' hacia el sur'}.</p></section>`}
+function flocApply(){const F=FN(),L=FLOC(),G=mllGeo(L);if(!G)return null;const z=L.alt!=null&&L.alt!==''?+L.alt:G.z,u=[G.dn[0],-G.dn[1]],tilt=Math.min(.3,G.pen);F.tu=u;F.tilt=tilt;
+  /* la altitud calculada es la del centro de la finca */F.b0=Math.round((z-tilt*fTiltProj(F,F.w/2,F.h/2))*10)/10;return{z,tilt,u}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset)return;const L=FLOC();if(t.dataset.floc){fpush();const k=t.dataset.floc;if(k==='mun'){L.mun=t.value;L.vec=[];delete L.t}else if(k==='t')L.t=(+t.value)/100;else if(k==='alt'){const n=parseFloat(String(t.value).replace(',','.'));if(isNaN(n))delete L.alt;else L.alt=n}fdone();try{fpanel()}catch(er){}return}
+  if(t.dataset.flocv){fpush();const n=t.dataset.flocv;L.vec=(L.vec||[]).filter(q=>q!==n);if(t.checked)L.vec.push(n);fdone();try{fpanel()}catch(er){}}});
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.floc==='t'){FLOC().t=(+t.value)/100}});
+document.addEventListener('click',e=>{if(!e.target||!e.target.closest||!e.target.closest('#flocGo'))return;fpush();const R=flocApply();fdone();try{fm.msg=R?`Terreno de la finca: unos ${R.z} m en el centro, bajando un ${fmt(Math.round(R.tilt*1000)/10)} % hacia ${mllRumbo([R.u[0],-R.u[1]])}`:'Elige el municipio'}catch(er){}try{frender()}catch(er){}try{fpanel()}catch(er){}});
+{const _fpL=fpanel;fpanel=function(){const r=_fpL.apply(this,arguments);try{const b=$('#fpanel');if(!b||$('#flocS'))return r;const secs=[...b.querySelectorAll('section')],ter=secs.find(s=>{const h2=s.querySelector('h2');return h2&&h2.textContent.trim()==='Terreno'});if(ter)ter.insertAdjacentHTML('afterend',flocHTML())}catch(e){console.warn('ubicación finca',e)}return r}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
