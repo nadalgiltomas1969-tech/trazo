@@ -1615,7 +1615,7 @@ ${it.rail==='none'?'':railSvg(it.side,x,y,w,h,S,it.rail)}<text class="dm" x="${x
     return `<g${d}${sc}><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--room)" fill-opacity=".35" pointer-events="none"/>
 <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="transparent" stroke-width="22" pointer-events="stroke"/>
 ${it.muro?`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="var(--wall)" stroke-width="${Math.max(3,(SD().ext||.6)*S)}" pointer-events="none"/>`:`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="var(--wall)" stroke-width="${sw}" stroke-dasharray="${sw*2.2} ${sw*.8}" pointer-events="none"/>`}
-<text class="dm" x="${x+8}" y="${y+18}">Contorno · ${fmt(it.w)} × ${fmt(it.h)} m · ${fmt(it.w*it.h)} m²</text></g>`}
+<text class="dm" x="${x+8}" y="${y+18}">Contorno · ${fmt(r2(it.w+(SD().ext||.3)))} × ${fmt(r2(it.h+(SD().ext||.3)))} m · ${fmt(r2((it.w+(SD().ext||.3))*(it.h+(SD().ext||.3))))} m² construidos</text></g>`}
   if(it.t==='cota'){const x1=it.x1*S,y1=it.y1*S,x2=it.x2*S,y2=it.y2*S,L=Math.hypot(it.x2-it.x1,it.y2-it.y1),px=Math.hypot(x2-x1,y2-y1)||1,nx=-(y2-y1)/px*7,ny=(x2-x1)/px*7,col='#c0562b';
     return `<g${d}${sc}><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="22"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2"/><path d="M${x1-nx} ${y1-ny}L${x1+nx} ${y1+ny}M${x2-nx} ${y2-ny}L${x2+nx} ${y2+ny}M${x1-nx*.6+ny*.0} ${y1-ny*.6}L${x1+nx*.6} ${y1+ny*.6}" stroke="${col}" stroke-width="2"/><text class="nm keep" x="${(x1+x2)/2+nx*1.6}" y="${(y1+y2)/2+ny*1.6+4}" text-anchor="middle" style="fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${fmt(L)} m</text></g>`}
   if(it.t==='medir'){const x1=it.x1*S,y1=it.y1*S,x2=it.x2*S,y2=it.y2*S,L=Math.hypot(it.x2-it.x1,it.y2-it.y1);
@@ -2806,7 +2806,7 @@ function facade0(){
   const remFac=(a,b,m)=>{let o=Rc(a-.05,b+.05,m-.02,m+.14,`fill="#a4512c" stroke="#6b2a12" stroke-width="1"`);for(let u=a;u<b-.05;u+=.4)o+=`<path d="M${X(u)} ${Y(m+.14)}a${.2*s} ${.12*s} 0 0 1 ${.4*s} 0" fill="#b5603a" stroke="#6b2a12" stroke-width="1"/>`;return o};
   const RG=PV?null:ringGeom();if(RG){const base=Z(L),[p0,p1]=horiz?rg(RG.O[0],RG.O[2]):rg(RG.O[1],RG.O[3]),[r0,r1]=horiz?rg(RG.Rr[0],RG.Rr[2]):rg(RG.Rr[1],RG.Rr[3]),top=base+RG.rise;
     h+=`<path d="M${X(p0)} ${Y(base)}L${X(r0)} ${Y(top)}L${X(r1)} ${Y(top)}L${X(p1)} ${Y(base)}Z" fill="url(#p-teja)" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`;if(remOn())h+=`<path d="M${X(p0)} ${Y(base)}L${X(r0)} ${Y(top)}M${X(r1)} ${Y(top)}L${X(p1)} ${Y(base)}" stroke="#9c4a26" stroke-width="${Math.max(3,.18*s)}"/>`+remFac(r0,r1,top);rf.filter(q=>q.type!=='teja').forEach(q=>{const[a,b]=horiz?rg(q.x,q.x+q.w):rg(q.y,q.y+q.h);h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`)})}
-  const _RC=!RG&&!PV&&typeof ringFacSvg==='function'&&isMod()&&TJ().modo==='centro'?ringFacSvg(side,horiz,rg,X,Y,Z(L),s):'';if(_RC)h+=_RC;
+  const _PCt=(!PV&&typeof isPolyC==='function'&&isMod())?contOf(topF()):null,_RC=_PCt&&isPolyC(_PCt)?polyFacSvg(_PCt,side,horiz,rg,X,Y,Z(L),s):(!RG&&!PV&&typeof ringFacSvg==='function'&&isMod()&&TJ().modo==='centro'?ringFacSvg(side,horiz,rg,X,Y,Z(L),s):'');if(_RC)h+=_RC;
   if(!RG&&!_RC)[...rf].sort((q1,q2)=>{const d=q=>side==='bottom'?q.y+q.h/2:side==='top'?-(q.y+q.h/2):side==='right'?q.x+q.w/2:-(q.x+q.w/2);return d(q1)-d(q2)}).forEach(q=>{const p=getRP(q.id),e=p.e,[a,b]=horiz?rg(q.x-e,q.x+q.w+e):rg(q.y-e,q.y+q.h+e),base=Z(L);
     if(q.type==='azotea'){h+=Rc(a,b,base,base+.5,`fill="#e4ddcc" stroke="#4a3f33" stroke-width="1.5"`);return}
     const rs=rise(q,p),along=horiz?isH(q,p):!isH(q,p);
@@ -10748,10 +10748,10 @@ function psat(T){return 610.5*Math.exp(17.269*T/(237.3+T))}
 function glaser(cl,Ti,Te,HRi,HRe,rsi,rse){const L=cl.map(([k,t])=>{const m=WMATS[k]||[];return{R:m[1]==null?(m[6]||0):(t||0)/m[1],sd:(m[2]||1)*(t||0),n:m[0]}}),RT=rsi+rse+L.reduce((s,l)=>s+l.R,0),SD=L.reduce((s,l)=>s+l.sd,0)||1e-6,pi=HRi*psat(Ti),pe=HRe*psat(Te);let R=rse,sd=0,risk=[];
   /* de fuera hacia dentro */for(let i=0;i<L.length;i++){R+=L[i].R;sd+=L[i].sd;const T=Te+(Ti-Te)*R/RT,pv=pe+(pi-pe)*sd/SD;if(i<L.length-1&&pv>psat(T)*1.0)risk.push(L[i].n+' / '+L[i+1].n)}return risk}
 function envolvente(){const o=OB(),Z=WCLIM[zoneL()]||WCLIM.B,rows=[];let Afach=0,Avent=0,Acub=0,Asue=0,Asot=0;const S0=st.sot?1:0;
-  for(let f=S0;f<F();f++){const c=contOf(f);if(!c)continue;const H=floorH(f);Afach+=2*(c.w+c.h)*H}
+  for(let f=S0;f<F();f++){const c=contOf(f);if(!c)continue;const H=floorH(f);Afach+=(typeof cPerim==='function'?cPerim(c):2*(c.w+c.h))*H}
   items.forEach(w=>{if(w.t!=='window'||w.f<S0)return;const b=distBase(w);if(!b)return;const cx=b.x+b.w/2,cy=b.y+b.h/2;if(!(onContL(w.f,b.ax==='x'?'x':'y',b.ax==='x'?cy:cx,.4)))return;const S=SD(),a=w.ant??S.ant??.9,d=w.din??S.din??2.1;Avent+=(w.w||1)*Math.max(.3,d-a)});
   items.forEach(d=>{if(d.t!=='door'||d.f!==S0)return;const b=distBase(d);if(!b)return;const cx=b.x+b.w/2,cy=b.y+b.h/2;if(onContL(d.f,b.ax==='x'?'x':'y',b.ax==='x'?cy:cx,.4))Avent+=0});
-  Afach=Math.max(0,Afach-Avent);const ct=contOf(topF())||contOf(F()-1);if(ct)Acub=ct.w*ct.h;const cb=contOf(0);if(cb)Asue=cb.w*cb.h;if(st.sot&&cb)Asot=2*(cb.w+cb.h)*floorH(0);
+  Afach=Math.max(0,Afach-Avent);const ct=contOf(topF())||contOf(F()-1);if(ct)Acub=typeof cAreaC==='function'?cAreaC(ct):ct.w*ct.h;const cb=contOf(0);if(cb)Asue=typeof cAreaC==='function'?cAreaC(cb):cb.w*cb.h;if(st.sot&&cb)Asot=(typeof cPerim==='function'?cPerim(cb):2*(cb.w+cb.h))*floorH(0);
   const el=(n,cl,rsi,rse,lim,A,extra,note,rev)=>{if(!cl||!cl.length){rows.push({n,A,miss:1,lim});return}const U=clU(cl,rsi,rse,extra);rows.push({n,cl,U,lim,A,ok:U<=lim+1e-9,note,need:U>lim?Math.ceil((1/lim-1/U)*.037*100):0,needX:U>lim?Math.ceil((1/lim-1/U)*.034*100):0,cond:glaser(rev?cl.slice().reverse():cl,20,10,.55,.75,rsi,rse)})};
   el('Fachadas',o.fach,.13,.04,Z.M,Afach);el('Cubierta',o.cub,.10,.04,Z.C,Acub);
   if(st.sot){el('Muros del sótano contra el terreno',o.sotm,.13,0,Z.T,Asot,.5,'cálculo simplificado: el terreno se cuenta como 0,5 m²K/W');el('Suelo del sótano sobre el terreno',o.suelo,.17,0,Z.T,Asue,.5,'cálculo simplificado',1)}
@@ -11118,7 +11118,7 @@ function calleSVG(){const o=OB(),k=o.calle,S=view.s,R0=solarR();let R=R0;try{if(
 /* ---------- 3D: calle, desmonte y fases de obra ---------- */
 let FASE3=null;const FASES=[['desmonte','1 · Desmonte'],['cimentacion','2 · Cimentación'],['bruto','3 · Estructura y plantas sin acabar'],['acabado','4 · Edificio acabado']];
 const _bldAll3FS=bldAll3;bldAll3=function(){const B=_bldAll3FS.apply(this,arguments);try{if(!isMod()||!window.THREE)return B;const T=THREE,o=OB(),F3=FASE3||'acabado';
-  /* calle */const R=solarR(),k=o.calle;if(k&&k.lado&&R){const a=k.acera??1.5,w=k.ancho??8,hz=k.lado==='n'||k.lado==='s',sg=k.lado==='n'||k.lado==='o'?-1:1,zg=(st.sot?rasante():0)+(k.cota||0),as=new T.MeshLambertMaterial({color:'#55595d'}),ac=new T.MeshLambertMaterial({color:'#d8d4ca'}),L=(hz?R.x1-R.x0:R.y1-R.y0)+20,cx=(R.x0+R.x1)/2,cz=(R.y0+R.y1)/2;
+  /* calle */const R=solarR(),k=o.calle;if(k&&k.lado&&R&&!(typeof calleEdge==='function'&&calleEdge())){const a=k.acera??1.5,w=k.ancho??8,hz=k.lado==='n'||k.lado==='s',sg=k.lado==='n'||k.lado==='o'?-1:1,zg=(st.sot?rasante():0)+(k.cota||0),as=new T.MeshLambertMaterial({color:'#55595d'}),ac=new T.MeshLambertMaterial({color:'#d8d4ca'}),L=(hz?R.x1-R.x0:R.y1-R.y0)+20,cx=(R.x0+R.x1)/2,cz=(R.y0+R.y1)/2;
     const bx=(d0,d1,hh,m)=>{const me=new T.Mesh(new T.BoxGeometry(hz?L:d1-d0,hh,hz?d1-d0:L),m);me.position.set(hz?cx:(sg<0?R.x0-(d0+d1)/2:R.x1+(d0+d1)/2),zg+hh/2-.01,hz?(sg<0?R.y0-(d0+d1)/2:R.y1+(d0+d1)/2):cz);me.receiveShadow=true;B.sc.add(me)};bx(0,a,.15,ac);bx(a,a+w,.02,as);
     const ln=new T.Mesh(new T.BoxGeometry(hz?L:.12,.005,hz?.12:L),new T.MeshBasicMaterial({color:'#ffffff'}));ln.position.set(hz?cx:(sg<0?R.x0-a-w/2:R.x1+a+w/2),zg+.025,hz?(sg<0?R.y0-a-w/2:R.y1+a+w/2):cz);B.sc.add(ln)}
   if(F3==='acabado'){/* en obra moderna no van vigas de madera bajo los techos planos */B.sc.traverse(ob=>{if(ob.isMesh&&ob.geometry&&ob.geometry.type==='BoxGeometry'&&ob.material&&ob.material.map===TX3.wood){const p=ob.geometry.parameters;if(p.height<.32&&Math.min(p.width,p.depth)<.32&&Math.max(p.width,p.depth)>1.2)ob.visible=false}});return B}
@@ -12861,15 +12861,15 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* 2 cimentación */let C=null;try{C=cimCalc()}catch(e){}
   if(C){if(o.cim==='losa'&&C.losa)cap('cim','Cimentación',[ln('losa',C.losa.V),ln('lim',C.losa.A)]);else{const A=C.zap.reduce((s,z)=>s+z.B*z.B,0)+C.corr.reduce((s,z)=>s+z.B*z.L,0);cap('cim','Cimentación',[ln('zap',C.tot),ln('lim',A),...(()=>{const Q=bajoCalc();return Q?[...(Q.Vp>.05?[ln('poz',Q.Vp)]:[]),...(Q.Am>.05?[ln('mcon',Q.Am)]:[])]:[]})()])}}
   /* 3 estructura */const lv=(typeof f3List==='function'?f3List(F()):Array.from({length:F()},(_,i)=>i)).filter(f=>contOf(f)&&!(typeof isGolf==='function'&&isGolf(f)));const fjA={};let pV=0,vV=0,mA=0,sA=0;
-  lv.forEach((f,i)=>{const c=contOf(f),fj=(o.forj||{})[f]||(f<=-10?(o.forj||{})[0]:null)||{t:'viguetas'},t=FJT[fj.t]?fj.t:'viguetas',cf=fj.c||FJT[t][1],H=floorH(f);fjA[t]=(fjA[t]||0)+(c.w+E)*(c.h+E);
+  lv.forEach((f,i)=>{const c=contOf(f),fj=(o.forj||{})[f]||(f<=-10?(o.forj||{})[0]:null)||{t:'viguetas'},t=FJT[fj.t]?fj.t:'viguetas',cf=fj.c||FJT[t][1],H=floorH(f);fjA[t]=(fjA[t]||0)+(typeof cAreaOut==='function'?cAreaOut(c):(c.w+E)*(c.h+E));
     items.filter(p=>p.t==='pilar'&&p.f===f).forEach(p=>{pV+=(p.w||.3)*(p.h||.3)*Math.max(.5,H-cf)});(o.vig||[]).filter(v=>v.f===f).forEach(v=>{vV+=(v.b||.3)*(v.c||.3)*Math.hypot(v.x2-v.x1,v.y2-v.y1)});
     if(f<=-10||(st.sot&&f===0))mA+=2*(c.w+c.h+2*E)*H;if(i===0)sA+=c.w*c.h});
   cap('est','Estructura',[ln('pil',pV),ln('vig',vV),ln('muro',mA),ln('sol',sA),...Object.entries(fjA).map(([t,a])=>ln('fj_'+t,a))]);
   /* 4 cierre del solar */const cl={},pc={};(o.cerr||[]).forEach(c=>{try{cerrSegs(c).forEach(([a,b])=>{cl[c.t]=(cl[c.t]||0)+Math.hypot(b[0]-a[0],b[1]-a[1])})}catch(e){}});(o.ppar||[]).forEach(p=>{pc[p.k]=(pc[p.k]||0)+1;if(p.pea&&p.pea.on)pc.peatonal=(pc.peatonal||0)+1});const kc={};try{ctrList().forEach(x=>{kc[x.k]=(kc[x.k]||0)+1})}catch(e){}
   cap('cer','Cierre del solar y contadores',[...Object.entries(cl).map(([t,l])=>PRES_D['c_'+t]?ln('c_'+t,l):null),...Object.entries(pc).map(([t,n])=>PRES_D['p_'+t]?ln('p_'+t,n):null),...Object.entries(kc).map(([t,n])=>ln('k_'+t,n))]);
-  /* 5 fachadas y cubierta */const up=lv.filter(f=>!(f<=-10||(st.sot&&f===0)));let fa=0,top=null;up.forEach(f=>{const c=contOf(f);fa+=2*(c.w+c.h+2*E)*floorH(f);top=c});const nv=items.filter(i=>i.t==='window').length+items.filter(i=>i.t==='door'&&up.includes(i.f)&&(()=>{try{return !!facadeSide(i)}catch(e){return false}})()).length;
-  cap('env','Fachadas, cubierta y ventanas',[ln('fach',fa),top?ln('cub',(top.w+E)*(top.h+E)):null,ln('vent',nv,presP_('vent')*q)]);
-  /* 6 obra por dentro */const R=items.filter(i=>i.t==='room'),aU=R.reduce((s,r)=>s+r.w*r.h,0),nb=R.filter(r=>/ba[ñn]o|aseo/i.test((r.name||'')+' '+(r.dest||''))).length,nc=R.filter(r=>/cocina/i.test((r.name||'')+' '+(r.dest||''))).length;let pk=0;lv.forEach(f=>{if((f<=-10||(st.sot&&f===0))&&typeof ugUso==='function'&&ugUso(f)==='parking'){const c=contOf(f);pk+=c.w*c.h-R.filter(r=>r.f===f).reduce((s,r)=>s+r.w*r.h,0)}});
+  /* 5 fachadas y cubierta */const up=lv.filter(f=>!(f<=-10||(st.sot&&f===0)));let fa=0,top=null;up.forEach(f=>{const c=contOf(f);fa+=(typeof cOut==='function'?pgPerim(cOut(c)):2*(c.w+c.h+2*E))*floorH(f);top=c});const nv=items.filter(i=>i.t==='window').length+items.filter(i=>i.t==='door'&&up.includes(i.f)&&(()=>{try{return !!facadeSide(i)}catch(e){return false}})()).length;
+  cap('env','Fachadas, cubierta y ventanas',[ln('fach',fa),top?ln('cub',typeof cAreaOut==='function'?cAreaOut(top):(top.w+E)*(top.h+E)):null,ln('vent',nv,presP_('vent')*q)]);
+  /* 6 obra por dentro */const R=items.filter(i=>i.t==='room'),aU=R.reduce((s,r)=>s+r.w*r.h,0),nb=R.filter(r=>/ba[ñn]o|aseo/i.test((r.name||'')+' '+(r.dest||''))).length,nc=R.filter(r=>/cocina/i.test((r.name||'')+' '+(r.dest||''))).length;let pk=0;lv.forEach(f=>{if((f<=-10||(st.sot&&f===0))&&typeof ugUso==='function'&&ugUso(f)==='parking'){const c=contOf(f);pk+=(typeof cAreaC==='function'?cAreaC(c):c.w*c.h)-R.filter(r=>r.f===f).reduce((s,r)=>s+r.w*r.h,0)}});
   cap('int','Obra por dentro',[ln('int',aU,presP_('int')*q),ln('ban',nb,presP_('ban')*q),ln('coc',nc,presP_('coc')*q),ln('park',pk)]);
   /* aljibe */try{const A=aljList().filter(a=>!a.k);if(A.length){let V=0,Hc=0,Im=0,np=0,nt=0;A.forEach(a=>{const m=aljMed(a);V+=m.V;Hc+=m.Hc;Im+=m.Im;if(a.uso!=='pot')np++;if(a.uso!=='pluv')nt++});cap('alj','Aljibe',[ln('exc',V,null,'Excavación del hueco del aljibe'),ln('tra',V*1.25,null,'Transporte de esa tierra al vertedero'),ln('alj_h',Hc),ln('alj_imp',Im),ln('alj_bom',A.length),ln('alj_rec',np),ln('alj_pot',nt)])}}catch(e){}
   /* exterior */try{const A=zAreas(),L=Object.entries(A).filter(([k,v])=>v>0&&ZEX[k][2]).map(([k,v])=>ln('zx_'+k,v));if(L.length)cap('zx','Exterior: jardín, accesos y terrazas',L)}catch(e){}
@@ -15075,6 +15075,146 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 /* en «Medidas del terreno»: la altura sobre el mar */
 {const _emL=exMedHTML;exMedHTML=function(){let h=_emL.apply(this,arguments);try{const A=locAlt(),p=pbAlt();if(A&&p!=null)h=`<p class="hint">Ubicación: <b>${esc(A.nuc)}</b> (${esc(A.mun)}). Planta baja a unos <b>${fmt(Math.round(p))} m sobre el mar</b>${st.ex.gen?' · cotas aproximadas por ubicación':''}.</p>`+h}catch(e){}return h}}
 /* una cota que se toca a mano deja de ser «aproximada» */
+
+/* ===================== CONTORNO DE CADA PLANTA CON CUALQUIER FORMA: POR LADOS Y ÁNGULOS, COMO EL SOLAR ===================== */
+/* c.po = puntos de la cara de fuera de la fachada (sentido de las agujas del reloj en el plano); c.pts = eje del muro; x,y,w,h = caja del eje (para lo que aún mide en rectángulo) */
+const isPolyC=c=>!!(c&&c.t==='cont'&&c.po&&c.po.length>=3);
+const pgArea=P=>{let a=0;P.forEach((p,i)=>{const q=P[(i+1)%P.length];a+=p[0]*q[1]-q[0]*p[1]});return a/2};
+const pgPerim=P=>P.reduce((s,p,i)=>{const q=P[(i+1)%P.length];return s+Math.hypot(q[0]-p[0],q[1]-p[1])},0);
+const pgCW=P=>pgArea(P)<0?P.slice().reverse():P;
+function pgOffset(P,t){/* t>0 hacia dentro */const n=P.length,L=P.map((p,i)=>{const q=P[(i+1)%n],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;return{p:[p[0]+nx*t,p[1]+ny*t],d:[dx/l,dy/l]}});
+  return P.map((_,i)=>{const a=L[(i-1+n)%n],b=L[i],den=a.d[0]*b.d[1]-a.d[1]*b.d[0];if(Math.abs(den)<1e-9)return b.p.slice();const s=((b.p[0]-a.p[0])*b.d[1]-(b.p[1]-a.p[1])*b.d[0])/den;return[a.p[0]+a.d[0]*s,a.p[1]+a.d[1]*s]})}
+const pgPip=(x,y,P)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const a=P[i],b=P[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+const pgDseg=(x,y,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L));return Math.hypot(x-a[0]-dx*t,y-a[1]-dy*t)};
+const pgIn=(x,y,P,tol)=>pgPip(x,y,P)||P.some((p,i)=>pgDseg(x,y,p,P[(i+1)%P.length])<(tol||.02));
+const pgOrtho=P=>P.every((p,i)=>{const q=P[(i+1)%P.length];return Math.abs(q[0]-p[0])<1e-3||Math.abs(q[1]-p[1])<1e-3});
+const pgConvex=P=>P.every((p,i)=>{const a=P[(i-1+P.length)%P.length],b=P[(i+1)%P.length];return (p[0]-a[0])*(b[1]-p[1])-(p[1]-a[1])*(b[0]-p[0])>=-1e-6});
+const cExt=()=>SD().ext||.3;
+/* puntos de fuera, del eje y de dentro de cualquier contorno (el rectangular también) */
+function cOut(c){if(isPolyC(c))return c.po;const e=cExt()/2;return[[c.x-e,c.y-e],[c.x+c.w+e,c.y-e],[c.x+c.w+e,c.y+c.h+e],[c.x-e,c.y+c.h+e]]}
+function cAx(c){return isPolyC(c)?c.pts:[[c.x,c.y],[c.x+c.w,c.y],[c.x+c.w,c.y+c.h],[c.x,c.y+c.h]]}
+function cIn(c){return isPolyC(c)?pgOffset(c.po,cExt()):(e=>[[c.x+e,c.y+e],[c.x+c.w-e,c.y+e],[c.x+c.w-e,c.y+c.h-e],[c.x+e,c.y+c.h-e]])(cExt()/2)}
+const cAreaOut=c=>Math.abs(pgArea(cOut(c))),cPerim=c=>pgPerim(cAx(c)),cAreaC=c=>Math.abs(pgArea(cAx(c)));
+/* al cambiar los puntos de fuera: eje y caja */
+function cSync(c){c.po=pgCW(c.po.map(p=>[r2(p[0]),r2(p[1])]));c.pts=pgOffset(c.po,cExt()/2).map(p=>[r2(p[0]),r2(p[1])]);const xs=c.pts.map(p=>p[0]),ys=c.pts.map(p=>p[1]);c.x=Math.min(...xs);c.y=Math.min(...ys);c.w=r2(Math.max(...xs)-c.x);c.h=r2(Math.max(...ys)-c.y);c._bb=[c.x,c.y,c.w,c.h]}
+/* lados y ángulos (ángulo en la primera esquina de cada lado, entre el lado anterior y este) */
+const pgDir=(a,b)=>Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+function pgSides(P){const n=P.length;return P.map((p,i)=>{const q=P[(i+1)%n],pr=P[(i-1+n)%n];let turn=pgDir(p,q)-pgDir(pr,p);while(turn>180)turn-=360;while(turn<=-180)turn+=360;return{L:Math.hypot(q[0]-p[0],q[1]-p[1]),A:180-turn,dir:pgDir(p,q)}})}
+function pgBuild(P0,dir0,S){/* S: [{L,A}], el último lado cierra */const out=[P0.slice()];let th=dir0;for(let i=0;i<S.length-1;i++){const p=out[i];out.push([p[0]+S[i].L*Math.cos(th*Math.PI/180),p[1]+S[i].L*Math.sin(th*Math.PI/180)]);th+=180-(S[i+1].A)}return out}
+/* plantillas, sobre la caja de fuera actual */
+function cTpl(c,k){const e=cExt()/2,x=c.x-e,y=c.y-e,W=c.w+2*e,H=c.h+2*e,R=(a,b)=>[x+a,y+b];
+  if(k==='L')return[R(0,0),R(W,0),R(W,H/2),R(W/2,H/2),R(W/2,H),R(0,H)];if(k==='U')return[R(0,0),R(W,0),R(W,H),R(2*W/3,H),R(2*W/3,H/2),R(W/3,H/2),R(W/3,H),R(0,H)];
+  if(k==='T')return[R(0,0),R(W,0),R(W,H/2),R(2*W/3,H/2),R(2*W/3,H),R(W/3,H),R(W/3,H/2),R(0,H/2)];if(k==='lados')return[R(0,0),R(W,0),R(W,H),R(0,H)];return null}
+/* ---------- panel del contorno ---------- */
+function cPolyHTML(c){const P=isPolyC(c)?c.po:null,f1=v=>Math.round(v*100)/100,below=items.find(i=>i.t==='cont'&&i.f===c.f-1&&c.f>0);let h=`<div id="cPolyB" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><h3 style="margin:0 0 4px">Forma del contorno</h3>
+  <div class="row" style="flex-wrap:wrap;gap:6px"><button data-cpt="rect"${!P?' class="pri"':''}>Rectángulo</button><button data-cpt="lados"${P?' class="pri"':''}>Por lados</button><button data-cpt="L">En L</button><button data-cpt="U">En U</button><button data-cpt="T">En T</button>${below?'<button data-cpt="copia">Copiar la planta de abajo</button>':''}</div>`;
+  if(P){const S=pgSides(P),n=P.length;h+=`<p class="hint" style="margin:4px 0">Medidas de fuera, de cara a cara de la fachada. Escribe el largo de cada lado y el ángulo de su primera esquina respecto al lado anterior (90° si es recta, 270° si es un entrante). El último lado se ajusta solo para cerrar.</p>
+    <label>Dirección del primer lado (° desde el este, hacia el sur positivo)<input data-cpd="1" type="number" step=".5" value="${f1(S[0].dir)}"></label>
+    <div style="overflow:auto"><table style="border-collapse:collapse;font-size:13px"><tr><th style="text-align:left">Lado</th><th>Largo (m)</th><th>Ángulo (°)</th><th></th></tr>${S.map((q,i)=>`<tr><td style="padding:2px 6px">${i+1}–${(i+1)%n+1}</td><td><input data-cpl="${i}" type="number" step=".01" min=".2" value="${f1(q.L)}" style="width:80px"${i===n-1?' disabled title="Se ajusta solo para cerrar"':''}></td><td>${i===0?'<span class="hint">—</span>':`<input data-cpa="${i}" type="number" step=".5" min="1" max="359" value="${f1(q.A)}" style="width:72px">`}</td><td><button data-cpadd="${i}" title="Partir este lado en dos (añade una esquina)">+</button>${n>3?`<button data-cpdel="${i}" title="Quitar la esquina del principio de este lado">×</button>`:''}</td></tr>`).join('')}</table></div>
+    <p class="hint">Superficie construida: <b>${fmt(Math.round(cAreaOut(c)*100)/100)} m²</b> · perímetro de fachada ${fmt(Math.round(pgPerim(P)*100)/100)} m. Los lados inclinados llevan muro, pero las puertas y ventanas van en los lados rectos (norte, sur, este u oeste).</p>`}
+  return h+'</div>'}
+{const _pnCP=panel;panel=function(){const r=_pnCP.apply(this,arguments);try{const it=cur(),sp=$('#sp');if(!it||it.t!=='cont'||!isMod()||!sp||$('#cPolyB'))return r;if(isPolyC(it)){sp.querySelectorAll('input').forEach(i=>{const l=i.closest('label');if(l&&/Ancho exterior|Largo exterior/.test(l.textContent)){i.disabled=true;i.title='Con forma por lados, las medidas van en la tabla de lados'}});
+    sp.querySelectorAll('p,div').forEach(p=>{if(/^Medidas exteriores, de cara a cara/.test(p.textContent.trim()))p.textContent='Caja que ocupa: '+fmt(r2(it.w+cExt()))+' × '+fmt(r2(it.h+cExt()))+' m (de fuera). La forma va en «Forma del contorno».'})}
+  sp.insertAdjacentHTML('beforeend',cPolyHTML(it))}catch(e){console.warn('forma del contorno',e)}return r}}
+function cPolySet(c,P){if(!P){delete c.po;delete c.pts;delete c._bb;return}c.po=P;cSync(c)}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=t.closest('[data-cpt],[data-cpadd],[data-cpdel]');if(!b||!b.closest('#cPolyB'))return;e.stopImmediatePropagation();const c=cur();if(!c||c.t!=='cont')return;push();
+  if(b.dataset.cpt){const k=b.dataset.cpt;if(k==='rect'){if(isPolyC(c)){/* vuelve al rectángulo que la envuelve */cPolySet(c,null)}}else if(k==='copia'){const B=items.find(i=>i.t==='cont'&&i.f===c.f-1);if(B){if(isPolyC(B))cPolySet(c,B.po.map(p=>p.slice()));else{cPolySet(c,null);c.x=B.x;c.y=B.y;c.w=B.w;c.h=B.h}}}else cPolySet(c,cTpl(c,k))}
+  else if(b.dataset.cpadd!=null&&isPolyC(c)){const i=+b.dataset.cpadd,P=c.po,q=P[(i+1)%P.length];P.splice(i+1,0,[(P[i][0]+q[0])/2,(P[i][1]+q[1])/2]);cSync(c)}
+  else if(b.dataset.cpdel!=null&&isPolyC(c)&&c.po.length>3){c.po.splice(+b.dataset.cpdel,1);cSync(c)}
+  done();render();try{panel()}catch(er){}},true);
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#cPolyB'))return;const c=cur();if(!isPolyC(c))return;const v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v))return;push();
+  const S=pgSides(c.po);let d0=S[0].dir;if(t.dataset.cpl!=null)S[+t.dataset.cpl].L=Math.max(.2,v);else if(t.dataset.cpa!=null)S[+t.dataset.cpa].A=Math.max(1,Math.min(359,v));else if(t.dataset.cpd)d0=v;
+  const P=pgBuild(c.po[0],d0,S);const last=P[P.length-1],cl=Math.hypot(last[0]-P[0][0],last[1]-P[0][1]);if(cl<.2){note='Con esas medidas la forma no cierra: cambia un lado o un ángulo';render();return}
+  c.po=P;cSync(c);if(Math.abs(pgArea(c.po))<1){note='La forma se cruza consigo misma: revisa los ángulos';}done();render();try{panel()}catch(er){}},true);
+/* ---------- plano ---------- */
+{const _dwCP=draw;draw=function(it,g){if(!(it&&it.t==='cont'&&isPolyC(it)))return _dwCP.apply(this,arguments);const S=view.s,P=it.po,A=it.pts,pt=Q=>Q.map(p=>p[0]*S+','+p[1]*S).join(' '),ex=cExt(),sw=Math.max(3,ex*S),scl=it.id===sel?' class="sel"':'';
+  let h=`<g data-id="${it.id}"${scl}><polygon points="${pt(A)}" fill="var(--room)" fill-opacity=".35" pointer-events="none"/><polygon points="${pt(A)}" fill="none" stroke="transparent" stroke-width="22" pointer-events="stroke"/>`;
+  h+=it.muro?`<polygon points="${pt(A)}" fill="none" stroke="var(--wall)" stroke-width="${sw}" stroke-linejoin="miter" pointer-events="none"/>`:`<polygon points="${pt(A)}" fill="none" stroke="var(--wall)" stroke-width="${Math.max(3,.14*S)}" stroke-dasharray="8 3" pointer-events="none"/>`;
+  /* largo de cada lado, por fuera */P.forEach((p,i)=>{const q=P[(i+1)%P.length],mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2,L=Math.hypot(q[0]-p[0],q[1]-p[1]),nx=(q[1]-p[1])/L,ny=-(q[0]-p[0])/L,ang=Math.atan2(q[1]-p[1],q[0]-p[0])*180/Math.PI,a2=ang>90||ang<-90?ang+180:ang;
+    h+=`<text class="dm" transform="translate(${(mx+nx*.55)*S} ${(my+ny*.55)*S}) rotate(${a2})" text-anchor="middle" style="font-size:11px">${fmt(Math.round(L*100)/100)} m</text>`});
+  const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);h+=`<text class="dm" x="${(Math.min(...xs)+.6)*S}" y="${(Math.min(...ys)+.9)*S}">Contorno · ${fmt(Math.round(cAreaOut(it)*100)/100)} m² construidos · ${P.length} lados</text></g>`;return h}}
+/* moverlo o estirarlo con las asas mueve o escala la forma */
+function cFollow(){items.forEach(c=>{if(!isPolyC(c)||!c._bb)return;const[x,y,w,h]=c._bb;if(Math.abs(c.x-x)<1e-6&&Math.abs(c.y-y)<1e-6&&Math.abs(c.w-w)<1e-6&&Math.abs(c.h-h)<1e-6)return;
+  const sx=w>0?c.w/w:1,sy=h>0?c.h/h:1;c.po=c.po.map(p=>[c.x+(p[0]-x)*sx,c.y+(p[1]-y)*sy]);cSync(c)})}
+{const _rCP=render;render=function(){try{cFollow()}catch(e){}return _rCP.apply(this,arguments)}}
+/* rótulo del rectángulo: medidas de fuera, como en el panel */
+/* ---------- las habitaciones, escaleras y pasillos dentro de la forma ---------- */
+{const _vmCP=vmsg;vmsg=function(it){const r=_vmCP.apply(this,arguments);try{if(r||!it||!isMod())return r;const c=contOf(it.f);if(!isPolyC(c))return r;const I=pgOffset(c.po,cExt()*.5-.02),chk=(b)=>[[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h],[b.x+b.w/2,b.y+b.h/2]].every(([x,y])=>pgIn(x,y,I,.05));
+  if(it.t==='room'&&!chk(it))return NOO;if(it.t==='esc'&&!chk(escBox(it)))return 'La escalera no puede salirse del contorno de la planta';if(it.t==='pas'&&!pasRects(it).every(chk))return 'El pasillo no puede salirse del contorno de la planta'}catch(e){}return r}}
+/* ---------- zona edificable ---------- */
+{const _sfCP=solFuera;solFuera=function(){const r=_sfCP.apply(this,arguments);try{const s=SOL();if(!s)return r;const Z=solZona(s);if(!Z)return r;const inZ=(x,y)=>exPip(x,y,Z)||Z.some((p,i)=>exDseg(x,y,p,Z[(i+1)%Z.length])<.02);
+  return r.filter(f=>{const c=contOf(f);if(!isPolyC(c))return true;return c.po.some(([x,y])=>!inZ(x,y))}).concat(items.filter(c=>isPolyC(c)&&c.f>=0&&!r.includes(c.f)&&c.po.some(([x,y])=>!inZ(x,y))).map(c=>c.f)).filter((v,i,a)=>a.indexOf(v)===i)}catch(e){return r}}}
+{const _sdCP=solDatos;solDatos=function(){const D=_sdCP.apply(this,arguments);try{if(!D)return D;const pb=contOf(pbF());if(isPolyC(pb))D.occ=cAreaOut(pb);let cons=0,any=0;for(let f=st.sot?1:0;f<F();f++){const c=contOf(f);if(!c)continue;if(isPolyC(c))any=1;cons+=cAreaOut(c)}if(any||isPolyC(pb)){if(any)D.cons=cons;D.oc=D.A?D.occ/D.A*100:0;D.ed=D.A?D.cons/D.A:0}}catch(e){}return D}}
+/* ---------- estructura: pilares dentro de la forma, en sus esquinas y en sus lados ---------- */
+function cPolyPil(){let n=0;items.filter(c=>isPolyC(c)&&c.f>=0).forEach(c=>{const f=c.f,A=c.pts,I=pgOffset(c.po,cExt()*.5-.05),P=items.filter(p=>p.t==='pilar'&&p.f===f&&p.ea),w0=(P[0]&&P[0].w)||.3;
+  /* fuera de la forma: se quitan */items=items.filter(p=>!(p.t==='pilar'&&p.f===f&&p.ea&&!pgIn(p.x+(p.w||.3)/2,p.y+(p.h||.3)/2,pgOffset(c.po,cExt()*.5-.25),.3)));
+  const have=(x,y)=>items.some(p=>p.t==='pilar'&&p.f===f&&Math.hypot(p.x+(p.w||.3)/2-x,p.y+(p.h||.3)/2-y)<1.2);
+  const add=(x,y)=>{if(have(x,y))return;items.push({id:nid++,t:'pilar',f,x:r2(x-w0/2),y:r2(y-w0/2),w:w0,h:w0,ea:1});n++};
+  /* en cada esquina, sobre el eje */A.forEach(([x,y])=>add(x,y));/* a lo largo de los lados, cada 5,5 m como mucho */A.forEach((p,i)=>{const q=A[(i+1)%A.length],L=Math.hypot(q[0]-p[0],q[1]-p[1]),k=Math.ceil(L/5.5);for(let j=1;j<k;j++)add(p[0]+(q[0]-p[0])*j/k,p[1]+(q[1]-p[1])*j/k)});
+  /* vigas que salen de la forma: fuera */items=items.filter(v=>!(v.ea&&(v.t==='viga'||v.t==='vig')&&v.f===f&&v.x1!=null&&!pgIn((v.x1+v.x2)/2,(v.y1+v.y2)/2,pgOffset(c.po,-.1),.3)))});return n}
+{const _eaCP=eaApply;eaApply=function(){const r=_eaCP.apply(this,arguments);try{if(items.some(isPolyC)){cPolyPil();try{done()}catch(er){}}}catch(e){console.warn('pilares forma',e)}return r}}
+/* cimentación: zapata corrida bajo cada lado de la forma */
+{const _ceCP=cimEls;cimEls=function(){const E=_ceCP.apply(this,arguments);try{const c=contOf(0);if(!isPolyC(c))return E;const sw=Math.max(.6,cExt()+.3),zc=(OB().zc),R=[[c.x,c.y,c.x+c.w,c.y],[c.x,c.y+c.h,c.x+c.w,c.y+c.h],[c.x,c.y,c.x,c.y+c.h],[c.x+c.w,c.y,c.x+c.w,c.y+c.h]];
+  const isBox=z=>z.k==='corr'&&R.some(q=>Math.abs(q[0]-z.x1)<1e-6&&Math.abs(q[1]-z.y1)<1e-6&&Math.abs(q[2]-z.x2)<1e-6&&Math.abs(q[3]-z.y2)<1e-6);const out=E.filter(z=>!isBox(z)&&!(z.k==='zap'&&!pgIn(z.x+z.w/2,z.y+z.h/2,c.po,.3)));
+  c.pts.forEach((p,i)=>{const q=c.pts[(i+1)%c.pts.length];out.unshift({k:'corr',x1:p[0],y1:p[1],x2:q[0],y2:q[1],w:sw,c:zc})});if(OB().cim==='losa'){const L=out.find(z=>z.k==='losa');if(L)L.poly=pgOffset(c.po,-.3)}return out}catch(e){return E}}}
+/* excavación: la forma real, no la caja */
+{const _exCP=exc;exc=function(){const X=_exCP.apply(this,arguments);try{if(!X||X.kind!=='vaciado')return X;const c=contOf(cimF());if(!isPolyC(c))return X;const rx=X.rx&&X.rx.cut||0,Vp=X.V-rx,k=cAreaOut(c)/((c.w+cExt())*(c.h+cExt()));if(k>0&&k<1){X.V=r2(Vp*(.15+.85*k)+rx);const esp=X.esp||(typeof espF==='function'?espF():1.25);X.reuse=Math.min(X.rel||0,X.V);X.sale=Math.max(0,X.V-X.reuse);X.cam=Math.ceil(X.sale*esp/11);X.poly=1}}catch(e){}return X}}
+/* superficies de la envolvente y presupuesto */
+/* ---------- 3D: la forma real ---------- */
+function shape3(T,P){const s=new T.Shape();P.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1]));s.closePath();return s}
+function slabPoly3(T,P,th,y,mat){const g=new T.ExtrudeGeometry(shape3(T,P),{depth:th,bevelEnabled:false});g.rotateX(Math.PI/2);const m=new T.Mesh(g,mat);m.position.y=y+th;m.castShadow=true;m.receiveShadow=true;return m}
+function wallsPoly3(T,c,z,H,mat){const g=new T.Group(),A=c.pts,e=cExt();A.forEach((p,i)=>{const q=A[(i+1)%A.length],L=Math.hypot(q[0]-p[0],q[1]-p[1]);if(L<.05)return;const m=new T.Mesh(new T.BoxGeometry(L+e*.98,H,e),mat);m.position.set((p[0]+q[0])/2,z+H/2,(p[1]+q[1])/2);m.rotation.y=-Math.atan2(q[1]-p[1],q[0]-p[0]);m.castShadow=true;m.receiveShadow=true;g.add(m)});return g}
+/* tejado sobre una forma cualquiera */
+function pgCoverRects(P){/* rectángulos máximos que cubren una forma de esquinas rectas */const xs=[...new Set(P.map(p=>r2(p[0])))].sort((a,b)=>a-b),ys=[...new Set(P.map(p=>r2(p[1])))].sort((a,b)=>a-b),nx=xs.length-1,ny=ys.length-1,inC=(i,j)=>pgPip((xs[i]+xs[i+1])/2,(ys[j]+ys[j+1])/2,P);
+  const R=[],seen=new Set();for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){if(!inC(i,j))continue;/* a lo ancho */let i0=i,i1=i;while(i0>0&&inC(i0-1,j))i0--;while(i1<nx-1&&inC(i1+1,j))i1++;let j0=j,j1=j;const row=(jj)=>{for(let k=i0;k<=i1;k++)if(!inC(k,jj))return false;return true};while(j0>0&&row(j0-1))j0--;while(j1<ny-1&&row(j1+1))j1++;
+    const k1=[i0,i1,j0,j1].join();if(!seen.has(k1)){seen.add(k1);R.push({x:xs[i0],y:ys[j0],w:xs[i1+1]-xs[i0],h:ys[j1+1]-ys[j0]})}
+    /* a lo alto */let a0=j,a1=j;while(a0>0&&inC(i,a0-1))a0--;while(a1<ny-1&&inC(i,a1+1))a1++;let b0=i,b1=i;const col=(ii)=>{for(let k=a0;k<=a1;k++)if(!inC(ii,k))return false;return true};while(b0>0&&col(b0-1))b0--;while(b1<nx-1&&col(b1+1))b1++;
+    const k2=[b0,b1,a0,a1].join();if(!seen.has(k2)){seen.add(k2);R.push({x:xs[b0],y:ys[a0],w:xs[b1+1]-xs[b0],h:ys[a1+1]-ys[a0]})}}
+  return R.filter((r,i)=>!R.some((q,j)=>j!==i&&q.x<=r.x+1e-6&&q.y<=r.y+1e-6&&q.x+q.w>=r.x+r.w-1e-6&&q.y+q.h>=r.y+r.h-1e-6&&(q.w*q.h>r.w*r.h+1e-6||j<i)))}
+function polyRoof3(T,grp,c,z){const P=c.po,tm=roofMat3(),wm=((typeof wallMat3==='function')?wallMat3('ext'):new T.MeshLambertMaterial({color:'#e8dcc4'})).clone();wm.side=T.DoubleSide;const mo=TJ().modo||'teja',p=getRP('all'),pen=(p.a??30)/100,e=p.e??.4;
+  if(mo==='azotea'){grp.add(slabPoly3(T,P,.25,z,new T.MeshLambertMaterial({color:'#d9cbb0'})));const g=wallsPoly3(T,{pts:P},z+.25,1,wm);grp.add(g);return 1.25}
+  const tri=A=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(A.flat(),3));g.computeVertexNormals();try{uvSlope3(g)}catch(er){}const m=new T.Mesh(g,tm);m.castShadow=true;grp.add(m)};
+  if(pgOrtho(P)){let mx=0;pgCoverRects(P).forEach((R,i)=>{const r={id:'pz'+i,x:R.x+cExt()/2,y:R.y+cExt()/2,w:R.w-cExt(),h:R.h-cExt(),type:'teja'};try{mx=Math.max(mx,hipRoof3(T,grp,z,r))}catch(er){console.warn(er)}});return mx}
+  /* forma con lados inclinados: si es convexa, a tantas aguas como lados; si no, a una vertiente */
+  const O=pgOffset(P,-e),ze=z-e*pen;if(pgConvex(P)){const n=O.length,PL=O.map((p,i)=>{const q=O[(i+1)%n],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy),nx=-dy/l,ny=dx/l;return[nx*pen,ny*pen,-(nx*p[0]+ny*p[1])*pen]});let mx=0;
+    PL.forEach((pl,k)=>{let F=O;PL.forEach((q,j)=>{if(j===k||F.length<3)return;F=cbClip(F,pl[0]-q[0],pl[1]-q[1],pl[2]-q[2])});if(F.length<3)return;const V=F.map(q=>{const hz=plZ(pl,q);mx=Math.max(mx,hz);return[q[0],ze+hz,q[1]]});for(let i=1;i<V.length-1;i++)tri([V[0],V[i],V[i+1]])});return mx}
+  /* una vertiente: baja hacia el lado más largo */let li=0,lb=0;O.forEach((p,i)=>{const q=O[(i+1)%O.length],L=Math.hypot(q[0]-p[0],q[1]-p[1]);if(L>lb){lb=L;li=i}});const a=O[li],b=O[(li+1)%O.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]),nx=-(b[1]-a[1])/l,ny=(b[0]-a[0])/l,hz=q=>((q[0]-a[0])*nx+(q[1]-a[1])*ny)*pen*.5;
+  const V=O.map(q=>[q[0],ze+hz(q),q[1]]);for(let i=1;i<V.length-1;i++)tri([V[0],V[i],V[i+1]]);c.pts.forEach((p,i)=>{const q=c.pts[(i+1)%c.pts.length],za=ze+hz(p)+e*pen*.5,zb=ze+hz(q)+e*pen*.5;tri([[p[0],z,p[1]],[q[0],z,q[1]],[q[0],zb,q[1]]].map(v=>v));const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([[p[0],z,p[1]],[q[0],zb,q[1]],[p[0],za,p[1]]].flat(),3));g.computeVertexNormals();grp.add(new T.Mesh(g,wm))});return Math.max(...O.map(hz))}
+{const _b3CP=bldAll3;bldAll3=function(){const PC=items.filter(c=>isPolyC(c));if(!PC.length||!window.THREE)return _b3CP.apply(this,arguments);const T=THREE,old=items;let B;items=items.filter(c=>!isPolyC(c));try{B=_b3CP.apply(this,arguments)}finally{items=old}
+  try{if(!B||!B.sc)return B;const wm=(typeof wallMat3==='function')?wallMat3('ext'):new T.MeshLambertMaterial({color:'#e8dcc4'}),sm=new T.MeshLambertMaterial({color:'#cdbfa3'}),top=topF();
+    PC.forEach(c=>{const f=c.f,z=floorZ(f),H=floorH(f),g=new T.Group();g.userData.f=f;g.userData.poly=1;const low=f===(typeof f3Low==='function'?f3Low():0);
+      g.add(slabPoly3(T,c.po,low?.06:Math.max(.2,H-freeH(f)),z-(low?.06:Math.max(.2,H-freeH(f))),low?sm:wm));if(c.muro)g.add(wallsPoly3(T,c,z,H-.01,wm));B.sc.add(g);
+      if(f===top){const zt=z+H,rg=new T.Group();rg.userData.rf=1;g.add(slabPoly3(T,c.po,.2,zt-.2,wm));try{polyRoof3(T,rg,c,zt)}catch(e){console.warn('tejado de la forma',e)}B.sc.add(rg);if(B.roof)B.roof.add(rg)}})}catch(e){console.warn('3D forma',e)}return B}}
+/* ---------- plano del tejado con la forma ---------- */
+{const _rTP2=render;render=function(){const r=_rTP2.apply(this,arguments);try{if(!isMod()||fl!==-1)return r;const c=contOf(topF());if(!isPolyC(c))return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;g.querySelectorAll('g[data-r]').forEach(n=>n.style.display='none');const S=view.s,P=c.po,pt=P.map(p=>p[0]*S+','+p[1]*S).join(' '),mo=TJ().modo||'teja',uid='pgr'+c.id;
+  let h=`<clipPath id="${uid}"><polygon points="${pt}"/></clipPath><g pointer-events="none"><polygon points="${pt}" fill="${mo==='azotea'?'#efe6d2':'var(--tA)'}" stroke="var(--wall)" stroke-width="2"/>`;
+  if(mo!=='azotea'){let ln='';if(pgOrtho(P))pgCoverRects(P).forEach(R=>{const G=hipPlan(R.x*S,R.y*S,R.w*S,R.h*S);ln+=`M${G.R[0][0]} ${G.R[0][1]}L${G.R[1][0]} ${G.R[1][1]}`+G.Hp.map(([a,b])=>`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`).join('')});
+    else if(pgConvex(P)){const{F}=pgConvexFaces(P,.3);ln=F.map(f=>'M'+f.P.map(q=>q[0]*S+' '+q[1]*S).join('L')+'Z').join('')}
+    h+=`<path d="${ln}" fill="none" stroke="#7a3518" stroke-width="2.5" clip-path="url(#${uid})"/>`}
+  const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);h+=`<text class="rt" x="${(Math.min(...xs)+Math.max(...xs))/2*S}" y="${(Math.min(...ys)+Math.max(...ys))/2*S}" text-anchor="middle">${mo==='azotea'?'Azotea con pretil':pgOrtho(P)?'Tejado a cuatro aguas por brazos':pgConvex(P)?'Tejado a tantas aguas como lados':'Tejado a una vertiente'}</text></g>`;g.insertAdjacentHTML('beforeend',h)}catch(e){console.warn('tejado forma plano',e)}return r}}
+/* sin asas de estirar en una forma por lados (se mueve entera arrastrándola) */
+{const _rHC=render;render=function(){const r=_rHC.apply(this,arguments);try{const c=cur();if(isPolyC(c))svg.querySelectorAll('[data-h]').forEach(n=>n.remove())}catch(e){}return r}}
+/* superficie del tejado de una forma cualquiera: altura sobre la coronación en (x,y), o null fuera */
+function pgConvexFaces(O,pen){const n=O.length,PL=O.map((p,i)=>{const q=O[(i+1)%n],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy),nx=-dy/l,ny=dx/l;return[nx*pen,ny*pen,-(nx*p[0]+ny*p[1])*pen]}),F=[];
+  PL.forEach((pl,k)=>{let P=O;PL.forEach((q,j)=>{if(j===k||P.length<3)return;P=cbClip(P,pl[0]-q[0],pl[1]-q[1],pl[2]-q[2])});if(P.length>=3)F.push({P,pl})});return{F,PL}}
+function polyRoofZ(c){const P=c.po,p=getRP('all'),pen=(p.a??30)/100,e=p.e??.4,mo=TJ().modo||'teja';if(mo==='azotea')return{O:P,z:(x,y)=>pgIn(x,y,P,.01)?1.25:null};
+  if(pgOrtho(P)){const R=pgCoverRects(P).map(r=>[r.x-e,r.y-e,r.x+r.w+e,r.y+r.h+e]);return{O:pgOffset(P,-e),z:(x,y)=>{let h=null;R.forEach(([a,b,c2,d])=>{if(x<a||x>c2||y<b||y>d)return;const v=-e*pen+pen*Math.min(x-a,c2-x,y-b,d-y);if(h==null||v>h)h=v});return h}}}
+  const O=pgOffset(P,-e);if(pgConvex(P)){const{PL}=pgConvexFaces(O,pen);return{O,z:(x,y)=>pgIn(x,y,O,.01)?-e*pen+Math.min(...PL.map(q=>plZ(q,[x,y]))):null}}
+  let li=0,lb=0;O.forEach((q,i)=>{const r=O[(i+1)%O.length],L=Math.hypot(r[0]-q[0],r[1]-q[1]);if(L>lb){lb=L;li=i}});const a=O[li],b=O[(li+1)%O.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]),nx=-(b[1]-a[1])/l,ny=(b[0]-a[0])/l;return{O,z:(x,y)=>pgIn(x,y,O,.01)?-e*pen+((x-a[0])*nx+(y-a[1])*ny)*pen*.5:null}}
+function polyFacSvg(c,side,horiz,rg,X,Y,base,s){const R=polyRoofZ(c),O=R.O,xs=O.map(q=>q[0]),ys=O.map(q=>q[1]),u0=horiz?Math.min(...xs):Math.min(...ys),u1=horiz?Math.max(...xs):Math.max(...ys),v0=horiz?Math.min(...ys):Math.min(...xs),v1=horiz?Math.max(...ys):Math.max(...xs),n=90,m=60,pts=[];
+  for(let i=0;i<=n;i++){const u=u0+(u1-u0)*i/n;let h=null;for(let j=0;j<=m;j++){const v=v0+(v1-v0)*j/m,z=R.z(horiz?u:v,horiz?v:u);if(z!=null&&(h==null||z>h))h=z}if(h!=null){const[a]=rg(u,u);pts.push([a,base+h])}}
+  if(pts.length<2)return '';const az=(TJ().modo||'teja')==='azotea',lo=Math.min(...pts.map(q=>q[1]));pts.sort((a,b)=>a[0]-b[0]);
+  return `<path d="M${X(pts[0][0])} ${Y(Math.min(base,lo))}${pts.map(q=>`L${X(q[0])} ${Y(q[1])}`).join('')}L${X(pts[pts.length-1][0])} ${Y(Math.min(base,lo))}Z" fill="${az?'#e8e2d6':'url(#p-teja)'}" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`}
+/* ===================== LA CALLE PEGADA AL LINDERO DE CALLE DEL SOLAR (CON SU INCLINACIÓN) ===================== */
+function calleEdge(){try{const s=SOL();if(!s)return null;const P=solPts(s),ed=solEd(s),ci=ed.findIndex(q=>q&&q.t==='calle');if(ci<0)return null;const a=P[ci],b=P[(ci+1)%P.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<.5)return null;
+  let n=[-(b[1]-a[1])/L,(b[0]-a[0])/L];const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(exPip(m[0]+n[0]*.5,m[1]+n[1]*.5,P))n=[-n[0],-n[1]];return{a,b,L,n,u:[(b[0]-a[0])/L,(b[1]-a[1])/L]}}catch(e){return null}}
+{const _cSV=calleSVG;calleSVG=function(){const E=calleEdge(),k=OB().calle;if(!E||!k||!k.lado)return _cSV.apply(this,arguments);if(fl!==0&&!(st.sot&&fl===1)&&fl!==-2&&!(fl<=-10&&typeof s2On==='function'&&s2On()))return '';
+  const S=view.s,ac=k.acera??1.5,w=k.ancho??8,ext=3,{a,u,n,L}=E,P=(t,d)=>[(a[0]+u[0]*t+n[0]*d)*S,(a[1]+u[1]*t+n[1]*d)*S],band=(d0,d1,fill,extra)=>`<polygon points="${[P(-ext,d0),P(L+ext,d0),P(L+ext,d1),P(-ext,d1)].map(q=>q.join(',')).join(' ')}" fill="${fill}" ${extra||''}/>`;
+  let h=band(0,ac,'#d6d2c8','stroke="#9e9a90" stroke-width="1"')+band(ac,ac+w,'#5f6368');const p1=P(-ext,ac+w/2),p2=P(L+ext,ac+w/2);h+=`<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="#fff" stroke-width="2" stroke-dasharray="12 10"/>`;
+  let ang=Math.atan2(u[1],u[0])*180/Math.PI;if(ang>90)ang-=180;if(ang<-90)ang+=180;const t=P(L/2,ac+w/2);h+=`<text transform="translate(${t[0]} ${t[1]}) rotate(${ang})" y="-6" text-anchor="middle" style="font-size:13px;font-weight:700;fill:#fff">${esc(k.nombre||'Calle')} · ${fmt(w)} m</text>`;return `<g class="cp-exterior">${h}</g>`}}
+{const _bCL=bldAll3;bldAll3=function(){const B=_bCL.apply(this,arguments);try{const E=calleEdge(),k=OB().calle;if(!E||!k||!k.lado||!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,ac=k.acera??1.5,w=k.ancho??8,zg=(st.sot?rasante():0)+(k.cota||0),L=E.L+20,ang=-Math.atan2(E.u[1],E.u[0]),mid=[E.a[0]+E.u[0]*E.L/2,E.a[1]+E.u[1]*E.L/2];
+  const bx=(d0,d1,hh,m)=>{const me=new T.Mesh(new T.BoxGeometry(L,hh,d1-d0),m),d=(d0+d1)/2;me.position.set(mid[0]+E.n[0]*d,zg+hh/2-.01,mid[1]+E.n[1]*d);me.rotation.y=ang;me.receiveShadow=true;B.sc.add(me)};
+  bx(0,ac,.15,new T.MeshLambertMaterial({color:'#d8d4ca'}));bx(ac,ac+w,.02,new T.MeshLambertMaterial({color:'#55595d'}));const l=new T.Mesh(new T.BoxGeometry(L,.005,.12),new T.MeshBasicMaterial({color:'#ffffff'}));l.position.set(mid[0]+E.n[0]*(ac+w/2),zg+.025,mid[1]+E.n[1]*(ac+w/2));l.rotation.y=ang;B.sc.add(l)}catch(e){console.warn('calle 3D',e)}return B}}
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
