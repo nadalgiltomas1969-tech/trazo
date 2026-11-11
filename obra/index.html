@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · solar por lados con uno en blanco</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · dibujar con el dedo sin que se mueva el plano</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15705,10 +15705,48 @@ function fvBox(){const B=[];const c=contOf(fl<=-10?fl:Math.max(0,fl));if(c){cons
   let W=r.width;['#pwP .card','#solP','#obraP','#eaP'].forEach(q=>{const e=$(q);if(!e||(q==='#solP'&&e.closest('#pwP'))||(q==='#obraP'&&e.closest('#pwP')))return;const R=e.getBoundingClientRect();if(R.width&&R.left>r.left+120&&R.left<r.right)W=Math.min(W,R.left-r.left-8)});
   const L=$('#pasos'),lx=L&&L.classList.contains('open')?Math.max(0,L.getBoundingClientRect().right-r.left):0,pad=40;const aw=Math.max(120,W-lx-pad),ah=Math.max(120,r.height-pad-40);
   const sc=Math.max(1.5,Math.min(120,Math.min(aw/k.w,ah/k.h)));view.s=sc;view.ox=lx+pad/2+(aw-k.w*sc)/2-k.x*sc;view.oy=40+(ah-k.h*sc)/2-k.y*sc}}
-{const _poW=pasoOpen;pasoOpen=function(){const r=_poW.apply(this,arguments);try{fitView();render()}catch(e){}return r}}
-{const _pcW=pasoClose;pasoClose=function(){const r=_pcW.apply(this,arguments);try{fitView();render()}catch(e){}return r}}
 
 /*<</mod:solwiz2>>*/
+/*<<mod:tactil>>*/
+/* ===================== DIBUJAR CON EL DEDO SIN QUE MOLESTE: ZOOM QUIETO, DOS DEDOS PARA AMPLIAR, BARRA ABAJO, PANEL RECOGIDO ===================== */
+/* ---------- el plano se queda como lo dejas: solo «Todo» (o abrir un proyecto) lo encaja ---------- */
+let FVOK=0;
+{const _fvT=fitView;fitView=function(){if(FVOK||!(view.s>0))return _fvT.apply(this,arguments)}}
+document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#zfit')){FVOK=1;setTimeout(()=>FVOK=0,0)}},true);
+{const _lpT=loadProj;loadProj=function(){FVOK=1;try{return _lpT.apply(this,arguments)}finally{FVOK=0}}}
+/* ---------- ¿hay una herramienta que pone puntos con cada toque? ---------- */
+const tapTool=()=>{const g=n=>{try{return eval(n)}catch(e){return null}};return !!(g('OBT')||g('RXT')||g('SOLDR')||g('ZDR')||g('ALW')||g('BRP')||g('BBQPUT')||g('ABMK')||(g('XW')&&tool===g('XW').m)||$('#insP'))};
+/* ---------- con una de esas herramientas: un toque pone el punto al levantar el dedo; dos dedos amplían y mueven, un dedo arrastrado mueve el plano ---------- */
+(function(){const ids=new Map(),RP=new WeakSet();let held=null,pz=null,pan=null,mute=false;
+  {const sp=Element.prototype.setPointerCapture;Element.prototype.setPointerCapture=function(){try{return sp.apply(this,arguments)}catch(e){}}}
+  const onSvg=e=>!!(e.target&&svg.contains(e.target));
+  const replay=(h)=>{const o={bubbles:true,cancelable:true,clientX:h.x,clientY:h.y,pointerId:h.id,pointerType:'touch',isPrimary:true,button:0,buttons:1};const d=new PointerEvent('pointerdown',o);RP.add(d);(h.tg.isConnected?h.tg:svg).dispatchEvent(d);const u=new PointerEvent('pointerup',{...o,buttons:0});RP.add(u);(h.tg.isConnected?h.tg:svg).dispatchEvent(u)};
+  window.addEventListener('pointerdown',e=>{if(RP.has(e)||e.pointerType!=='touch'||!onSvg(e)||!tapTool())return;e.stopImmediatePropagation();e.preventDefault();ids.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ids.size===1){mute=false;held={id:e.pointerId,x:e.clientX,y:e.clientY,tg:e.target};pan=null;pz=null;return}
+    held=null;pan=null;mute=true;const[a,b]=[...ids.values()],r=svg.getBoundingClientRect();pz={d:Math.max(10,Math.hypot(a.x-b.x,a.y-b.y)),s:view.s,wx:((a.x+b.x)/2-r.left-view.ox)/view.s,wy:((a.y+b.y)/2-r.top-view.oy)/view.s}},true);
+  window.addEventListener('pointermove',e=>{if(RP.has(e)||e.pointerType!=='touch'||!ids.has(e.pointerId))return;ids.set(e.pointerId,{x:e.clientX,y:e.clientY});e.stopImmediatePropagation();e.preventDefault();const r=svg.getBoundingClientRect();
+    if(pz&&ids.size>=2){const[a,b]=[...ids.values()],d=Math.hypot(a.x-b.x,a.y-b.y),ns=Math.min(300,Math.max(1.5,pz.s*d/pz.d)),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;view.s=ns;view.ox=mx-pz.wx*ns;view.oy=my-pz.wy*ns;render();return}
+    if(held&&held.id===e.pointerId&&!pan&&Math.hypot(e.clientX-held.x,e.clientY-held.y)>12){pan={x:held.x,y:held.y,ox:view.ox,oy:view.oy};held=null;mute=true}
+    if(pan&&ids.size===1){view.ox=pan.ox+(e.clientX-pan.x);view.oy=pan.oy+(e.clientY-pan.y);render()}},true);
+  const up=e=>{if(RP.has(e)||e.pointerType!=='touch'||!ids.has(e.pointerId))return;e.stopImmediatePropagation();e.preventDefault();ids.delete(e.pointerId);
+    if(held&&held.id===e.pointerId&&!mute&&e.type==='pointerup'){const h=held;held=null;replay(h)}else if(held&&held.id===e.pointerId)held=null;
+    if(ids.size<2)pz=null;if(!ids.size){pan=null;mute=false}};
+  window.addEventListener('pointerup',up,true);window.addEventListener('pointercancel',up,true)})();
+/* ---------- barras de dibujo: finas, abajo, en una línea ---------- */
+(function(){const c=document.createElement('style');c.textContent=`#obBar,#rxBar,#solDrB{top:auto!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;left:50%!important;transform:translateX(-50%)!important;flex-wrap:nowrap!important;gap:6px!important;padding:4px 6px!important;max-width:calc(100vw - 16px);opacity:.96;font-size:13px!important;border-radius:20px!important}
+#obBar button,#rxBar button,#solDrB button{padding:4px 10px!important;font-size:13px!important;min-height:0!important;border-radius:14px!important}#obBar span,#rxBar span,#solDrB span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+#pwP.swMin .card{display:none!important}#swTab{position:fixed;right:0;top:45%;z-index:73;writing-mode:vertical-rl;transform:rotate(180deg);padding:12px 6px;border-radius:0 10px 10px 0;background:var(--acc);color:#fff;border:0;font-weight:600;box-shadow:0 2px 10px #0003}`;document.head.appendChild(c)})();
+/* ---------- mientras dibujas, el panel se recoge en una pestaña ---------- */
+let SWDR=false,SWMAN=null;
+function swTabSync(){const P=$('#pwP');let t=$('#swTab');if(!P){if(t)t.remove();SWMAN=null;return}const dr=tapTool();if(dr!==SWDR){SWDR=dr;SWMAN=null}const min=SWMAN?SWMAN==='min':dr;P.classList.toggle('swMin',min);
+  if(min){const n=(PASOS.find(x=>x[0]===+P.dataset.n)||[0,'Panel'])[1];if(!t){document.body.insertAdjacentHTML('beforeend','<button id="swTab" aria-label="Abrir el panel"></button>');t=$('#swTab')}t.textContent='◂ '+n}else if(t)t.remove()}
+{const _rnT=render;render=function(){const r=_rnT.apply(this,arguments);try{swTabSync()}catch(e){}return r}}
+document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#swTab')){e.stopImmediatePropagation();SWMAN='open';swTabSync()}},true);
+document.addEventListener('click',e=>{const t=e.target;if(t&&t.closest&&t.closest('#pwP .pwH')&&!t.closest('button')&&tapTool()){SWMAN='min';swTabSync()}},true);
+/* al acabar de dibujar el cierre o una acometida desde el panel, vuelve al panel (no al de «Obra») */
+{const _obT=obraOpen;obraOpen=function(){const P=$('#pwP');if(P&&+P.dataset.n===1&&['cerr','ent'].includes(st.p1t)){pasoBody();return}return _obT.apply(this,arguments)}}
+
+/*<</mod:tactil>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
