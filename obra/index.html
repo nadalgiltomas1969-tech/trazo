@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · el solar completo en una ventana</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · solar por lados con uno en blanco</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15606,7 +15606,7 @@ function swHTML(h){let t=st.p1t;if(!SWT.some(x=>x[0]===t))t='sit';const{pre,S}=s
   if(t==='sit')b+=pre+g('Ubicación y terreno')+'<p class="hint">Elige el municipio y la zona: la cota sobre el mar del terreno se pone sola. Luego, la forma del solar.</p>';
   else if(t==='forma')b+=`<h3>Forma y medidas</h3><div id="solP">${swSol('forma')}</div>`;
   else if(t==='lind')b+=`<div id="solP">${swSol('lind')}</div>`+g('El solar y la calle');
-  else if(t==='niv'){b+=g('Cotas y desniveles');let ns='';try{const x=exS();ns=x&&x.nid?`Subida sobre el terreno: ${fmt(x.nid)} m`:''}catch(e){}b+=pwRow(!!ns,'Altura de la planta baja',ns||'La planta baja va en el punto más alto del contorno; puedes subirla lo que quieras','<button data-swniv="1">Subir la planta baja…</button>')}
+  else if(t==='niv'){b+=g('Cotas y desniveles');b+=pwRow(false,'Altura de la planta baja','La planta baja va en el punto más alto del contorno de la casa; súbela solo lo que tú quieras','<button data-swniv="1">Subir la planta baja…</button>')}
   else if(t==='cerr')b+=g('Cierre del solar')+`<div id="obraP">${cP}</div>`+swCerrX();
   else if(t==='ent')b+=`<h3>Entradas y barreras</h3><p class="hint">Puertas para personas y para coches, barrera automática y bolardos, en el cierre del solar.</p><div id="obraP">${eP}</div>`+swEntX();
   else{b+=g('Servicios: por dónde entran')+g('Puertas de los contadores');Object.keys(S).forEach(k=>{if(!['Ubicación y terreno','El solar y la calle','Cotas y desniveles','Cierre del solar'].includes(k)&&!used.has(k))b+=g(k)})}
@@ -15656,6 +15656,59 @@ function swPP(p){const c=(OB().cerr||[]).find(q=>q.id===p.c);if(!c)return null;c
 function entPres(){const A={};(OB().ppar||[]).forEach(p=>{if(swVeh(p.k)&&p.k!=='bolardos'&&p.mot!==0)A.e_mot=(A.e_mot||0)+1;if((p.k==='peatonal'||(p.pea&&p.pea.on))&&p.vp!==0)A.e_vp=(A.e_vp||0)+1;if(p.bz)A.e_bz=(A.e_bz||0)+1});return Object.entries(A)}
 
 /*<</mod:solwiz>>*/
+/*<<mod:solwiz2>>*/
+/* ===================== SOLAR POR LADOS (UNO EN BLANCO), PASOS ARRIBA, COTAS EN «NIVELES», PLANO A LA IZQUIERDA ===================== */
+/* ---------- crear el solar con los lados 1, 2, 3, 4…: el que se deja en blanco se calcula ---------- */
+function slLad(){const s=SOL();if(!s)return[];if(!s.lad||!s.lad.length){let P=null;try{P=solPts(s)}catch(e){}const S=P&&P.length>=3?slSides(P):null;s.lad=S?S.map((q,i,A)=>({L:i===A.length-1?null:r2(q.L),A:Math.round(q.A*10)/10})):[{L:20,A:90},{L:30,A:90},{L:20,A:90},{L:null,A:90}]}return s.lad}
+function slLadHTML(){const s=SOL();if(!s)return'';const D=slLad(),f=v=>v==null||v===''?'':v;return `<div class="swX" id="slLB"><h4>Crear el solar con sus medidas</h4><p class="hint" style="margin:0 0 6px">Escribe los lados que sepas y deja <b>en blanco el que no sepas</b>: se calcula solo. El ángulo es el de la esquina donde empieza cada lado, por dentro (90° si es recta). Los dos ángulos del lado en blanco también salen solos.</p>
+  <table style="border-collapse:collapse;font-size:14px;width:100%"><tr><th style="text-align:left">Lado</th><th>Largo (m)</th><th>Ángulo al empezar</th><th></th></tr>${D.map((q,i)=>`<tr><td><b>${i+1}</b></td><td><input data-sll="${i}" type="number" step=".01" min="0" inputmode="decimal" value="${f(q.L)}" placeholder="en blanco" style="width:96px"></td><td style="white-space:nowrap"><input data-sla="${i}" type="number" step=".5" min="1" max="359" inputmode="decimal" value="${f(q.A)}" style="width:62px"> °</td><td>${D.length>3?`<button data-sldel="${i}" class="dng" title="Quitar el lado">✕</button>`:''}</td></tr>`).join('')}</table>
+  <div class="row" style="margin-top:6px"><button data-sladd="1">+ Lado ${D.length+1}</button><button data-slgo="1" class="pri">Crear el solar con estas medidas</button></div>${s._slmsg?`<p class="hint" style="margin:6px 0 0;color:${s._slok?'#2e7d32':'#c62828'}">${esc(s._slmsg)}</p>`:''}</div>`}
+function slCrear(){const s=SOL(),D=slLad(),n=D.length,bl=D.map((q,i)=>!(+q.L>0)?i:-1).filter(i=>i>=0);
+  const msg=(m,ok)=>{s._slmsg=m;s._slok=ok;save();pasoBody()};
+  if(bl.length!==1)return msg(bl.length?'Deja en blanco un solo lado: el que no sepas':'Deja un lado en blanco: es el que se calcula para cerrar el solar',0);
+  const b=bl[0];if(D.some((q,i)=>i!==b&&i!==(b+1)%n&&!(+q.A>0&&+q.A<360)))return msg('Falta algún ángulo (90° si la esquina es recta)',0);
+  /* cadena: del lado b+1 al lado b−1; el lado b va del último punto al primero */const Q=[[0,0]];let th=0;for(let k=0;k<n-1;k++){const i=(b+1+k)%n,p=Q[Q.length-1];Q.push([p[0]+(+D[i].L)*Math.cos(th*Math.PI/180),p[1]+(+D[i].L)*Math.sin(th*Math.PI/180)]);const j=(i+1)%n;if(k<n-2)th+=180-(+D[j].A)}
+  const P=new Array(n);for(let k=0;k<n;k++)P[(b+1+k)%n]=Q[k];const cl=Math.hypot(Q[n-1][0]-Q[0][0],Q[n-1][1]-Q[0][1]);
+  if(cl<.2)return msg('Con esas medidas el lado en blanco sale casi nulo: revisa un largo o un ángulo',0);if(Math.abs(pgArea(P))<1||slCross(P))return msg('Con esas medidas los lados se cruzan: revisa los ángulos',0);
+  /* el lado 1 en horizontal, arriba a la izquierda */const a0=Math.atan2(P[1][1]-P[0][1],P[1][0]-P[0][0]),c=Math.cos(-a0),sn=Math.sin(-a0);let R=P.map(p=>[p[0]*c-p[1]*sn,p[0]*sn+p[1]*c]);if(pgArea(R)<0)R=R.map(p=>[p[0],-p[1]]);
+  const x0=Math.min(...R.map(p=>p[0])),y0=Math.min(...R.map(p=>p[1]));R=R.map(p=>[r2(p[0]-x0),r2(p[1]-y0)]);
+  push();const keep=s.ed&&s.ed.length===n?s.ed:null;s.forma='poly';s.pts=R;if(keep)s.ed=keep;else delete s.ed;const S2=slSides(R);D[b].Lc=r2(S2[b].L);D[b].A=Math.round(S2[b].A*10)/10;D[(b+1)%n].A=Math.round(S2[(b+1)%n].A*10)/10;
+  s._slmsg=`Solar creado. Lado ${b+1} (calculado): ${fmt(r2(S2[b].L))} m · esquinas ${b+1}: ${fmt(D[b].A)}° y ${(b+1)%n+1}: ${fmt(D[(b+1)%n].A)}° · ${fmt(Math.round(Math.abs(pgArea(R))))} m²`;s._slok=1;solApply(s._slmsg)}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#slLB'))return;e.stopImmediatePropagation();const D=slLad(),v=String(t.value).trim()===''?null:parseFloat(String(t.value).replace(',','.'));
+  if(t.dataset.sll!=null)D[+t.dataset.sll].L=v!=null&&v>0?v:null;if(t.dataset.sla!=null)D[+t.dataset.sla].A=v;save()},true);
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=t.closest('#slLB [data-sladd],#slLB [data-sldel],#slLB [data-slgo]');if(!b)return;e.stopImmediatePropagation();
+  /* lo escrito y aún sin «change» */document.querySelectorAll('#slLB input').forEach(i=>i.dispatchEvent(new Event('change',{bubbles:true})));const D=slLad();
+  if(b.dataset.sladd){D.push({L:null,A:90});D.forEach((q,i)=>{if(i<D.length-1&&q.L==null)q.L=q.Lc||null});SOL()._slmsg='';save();pasoBody();return}
+  if(b.dataset.sldel!=null){D.splice(+b.dataset.sldel,1);SOL()._slmsg='';save();pasoBody();return}
+  if(b.dataset.slgo)slCrear()},true);
+/* en «Forma», arriba */
+{const _swH2=swHTML;swHTML=function(h){let r=_swH2.apply(this,arguments);try{const t=st.p1t||'sit';if(t==='forma'&&SOL())r=r.replace('<h3>Forma y medidas</h3>','<h3>Forma y medidas</h3>'+slLadHTML());if(t==='niv')r=r.replace(/(<div class="bt">)(?![\s\S]*<div class="bt">)/,niCotHTML()+'$1')}catch(e){console.warn(e)}return r}}
+/* ---------- cotas de cada esquina del solar y de la calle, en «Niveles» ---------- */
+function niCotHTML(){const s=SOL();if(!s)return'';const P=solPts(s),E=exS(),off=E.off||0,abs=!!(typeof LOC==='function'&&LOC().mun)||!!off,z=(x,y)=>{try{return exHas()?exZ(x,y):0}catch(e){return 0}};const k=OB().calle||{};
+  return `<div class="swX" id="niCB"><h4>Cotas del solar</h4><p class="hint" style="margin:0 0 6px">${abs?'En metros sobre el mar.':'En metros respecto al suelo de la planta baja (±0).'} Escribe la de cada esquina: el terreno se inclina entre ellas.</p>
+  ${P.map((p,i)=>`<div class="swRow"><b style="width:74px">Esquina ${i+1}</b><input data-nic="${i}" type="number" step=".05" inputmode="decimal" value="${r2(z(p[0],p[1])-(abs?off:0))}" style="width:96px"> m</div>`).join('')}
+  <div class="swRow"><b style="width:74px">Calle</b><input data-nicc="1" type="number" step=".05" inputmode="decimal" value="${k.cota!=null?r2(k.cota-(abs?off:0)):''}" placeholder="igual que el terreno" style="width:120px"> m <span class="hint">(en la puerta de entrada)</span></div>
+  <p class="hint" style="margin:4px 0 0">Para lomas, bancales o muchas cotas: «Cotas a mano…» arriba.</p></div>`}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#niCB'))return;e.stopImmediatePropagation();const v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v)&&!t.dataset.nicc)return;const E=exS(),off=E.off||0,abs=!!(typeof LOC==='function'&&LOC().mun)||!!off,zz=isNaN(v)?null:r2(v+(abs?off:0));
+  push();if(t.dataset.nicc){const o=OB();o.calle=o.calle||{};if(zz==null)delete o.calle.cota;else o.calle.cota=zz}
+  else{const PP=solPts(SOL());/* todas las esquinas fijas, para que el terreno se incline entre ellas */PP.forEach(q=>{if(!E.cot.some(o=>Math.hypot(o.x-q[0],o.y-q[1])<.6)){let z0=0;try{z0=exHas()?exZ(q[0],q[1]):0}catch(er){}E.cot.push({id:E.nid++,x:r2(q[0]),y:r2(q[1]),z:r2(z0)})}});const p=PP[+t.dataset.nic];const c=E.cot.find(q=>Math.hypot(q.x-p[0],q.y-p[1])<.6);if(c)c.z=zz;else E.cot.push({id:E.nid++,x:r2(p[0]),y:r2(p[1]),z:zz});try{EX.ver++}catch(er){}}
+  done();render();pasoBody()},true);
+/* ---------- pasos: arriba a la izquierda, desplegable ---------- */
+(function(){const c=document.createElement('style');c.textContent=`#pasos{left:8px!important;top:8px!important;transform:none!important;flex-direction:column!important;align-items:stretch!important;max-height:calc(100% - 16px);overflow-y:auto;opacity:1!important}
+#pasos:not(.open)>button[data-paso]{display:none!important}#pasos .psT{font-weight:600;gap:6px;justify-content:space-between}#pasos.open .psT{border-bottom:1px solid var(--line)!important;border-radius:9px 9px 0 0}`;document.head.appendChild(c)})();
+{const _pbW=pasosBar;pasosBar=function(){const r=_pbW.apply(this,arguments);try{const b=$('#pasos');if(!b)return r;const c=pasoCur(),P=PASOS.find(x=>x[0]===c)||PASOS[0];b.insertAdjacentHTML('afterbegin',`<button class="psT" data-pst="1" aria-expanded="${b.classList.contains('open')}"><span>${c}</span>${esc(P[1])} <b>${b.classList.contains('open')?'▴':'▾'}</b></button>`)}catch(e){}return r}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=$('#pasos');if(!b)return;if(t.closest('#pasos [data-pst]')){e.stopImmediatePropagation();b.classList.toggle('open');pasosBar();return}if(t.closest('#pasos [data-paso]'))setTimeout(()=>{b.classList.remove('open');try{pasosBar()}catch(er){}},0);else if(!t.closest('#pasos')&&b.classList.contains('open')){b.classList.remove('open');try{pasosBar()}catch(er){}}},true);
+/* ---------- el dibujo siempre a la izquierda, sin quedar detrás del panel ---------- */
+function fvBox(){const B=[];const c=contOf(fl<=-10?fl:Math.max(0,fl));if(c){const P=typeof isPolyC==='function'&&isPolyC(c)?cOut(c):[[c.x,c.y],[c.x+c.w,c.y+c.h]];B.push(...P)}
+  if(fl<=1){try{const s=SOL();if(s)B.push(...solPts(s))}catch(e){}}if(!B.length)return null;const xs=B.map(p=>p[0]),ys=B.map(p=>p[1]);return{x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)}}
+{const _fvW=fitView;fitView=function(){const k=fvBox();if(!k||!(k.w>0)||!(k.h>0))return _fvW.apply(this,arguments);const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
+  let W=r.width;['#pwP .card','#solP','#obraP','#eaP'].forEach(q=>{const e=$(q);if(!e||(q==='#solP'&&e.closest('#pwP'))||(q==='#obraP'&&e.closest('#pwP')))return;const R=e.getBoundingClientRect();if(R.width&&R.left>r.left+120&&R.left<r.right)W=Math.min(W,R.left-r.left-8)});
+  const L=$('#pasos'),lx=L&&L.classList.contains('open')?Math.max(0,L.getBoundingClientRect().right-r.left):0,pad=40;const aw=Math.max(120,W-lx-pad),ah=Math.max(120,r.height-pad-40);
+  const sc=Math.max(1.5,Math.min(120,Math.min(aw/k.w,ah/k.h)));view.s=sc;view.ox=lx+pad/2+(aw-k.w*sc)/2-k.x*sc;view.oy=40+(ah-k.h*sc)/2-k.y*sc}}
+{const _poW=pasoOpen;pasoOpen=function(){const r=_poW.apply(this,arguments);try{fitView();render()}catch(e){}return r}}
+{const _pcW=pasoClose;pasoClose=function(){const r=_pcW.apply(this,arguments);try{fitView();render()}catch(e){}return r}}
+
+/*<</mod:solwiz2>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
