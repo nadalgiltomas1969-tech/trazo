@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 10 nov 2026 · muros, revestimientos y suelos</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · el solar completo en una ventana</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -12887,6 +12887,7 @@ function presCalc(){const P=presCfg(),q=(PRES_Q[P.q]||PRES_Q.media)[1],o=OB(),E=
   /* terrazas */try{const Q=terPres();if(Q.length)cap('ter','Terrazas de las plantas',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* revestimientos */try{const Q=typeof rvPres==='function'?rvPres():[];if(Q.length)cap('rev','Revestimientos de fachadas y paredes',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* suelos */try{const Q=typeof suPres==='function'?suPres():[];if(Q.length)cap('sue','Suelos y rodapiés',Q.map(([k,n])=>ln(k,n)))}catch(e){}
+  /* entradas */try{const Q=typeof entPres==='function'?entPres():[];if(Q.length)cap('ent','Entradas del solar: motores, videoportero y buzón',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* tapas */try{const Q=tapPres();if(Q.length)cap('tap','Tapas de aljibes, pozo negro y arquetas',Q.map(([k,n])=>ln(k,n)))}catch(e){}
   /* 7 otros de obra */cap('otr','Acometidas y estudios',[ln('aco',1),ln('geo',1)]);
   const pem0=L.reduce((s,c)=>s+c.tot,0),ess=pem0*P.ess/100,pem=pem0+ess,gg=pem*P.gg/100,bi=pem*P.bi/100,pec=pem+gg+bi,iva=pec*P.iva/100;
@@ -15505,6 +15506,8 @@ function rvMed(){const A={},S=SD(),ZG=rvZG(),add=(k,a)=>{if(a>.005)A[k]=(A[k]||0
       rvSpans(B,1e3).forEach(sp=>{const m0=Math.max(z0,ZG+sp.z0),m1=Math.min(z1,ZG+sp.z1);if(m1<=m0)return;let a=L*(m1-m0);O.forEach(o=>a-=cut(o,z0,m0,m1));add(sp.m,a)})});
     items.filter(R=>R.t==='room'&&R.f===f&&!R.acont&&R.rv&&R.rv.length&&!R.patio).forEach(R=>{const H=freeH(f),Ls=rectsOutline(rvPieces(R));const per=Ls.reduce((s,l)=>s+pgPerim(l.P),0),O=opOn(Ls.flatMap(l=>l.P),.4);
       rvSpans(R.rv,H).forEach(sp=>{let a=per*(sp.z1-sp.z0);O.forEach(o=>a-=cut(o,0,sp.z0,sp.z1));add(sp.m,a)})})}
+  /* acabado del muro del cierre del solar, por su cara de fuera */
+  (OB().cerr||[]).forEach(c=>{if(!c.rv||!RVM[c.rv])return;const H=c.t==='murete'?.6:(c.h||(CERR[c.t]||CERR.bloque)[1]);cerrSegs(c).forEach(([a,b],i)=>{let L=Math.hypot(b[0]-a[0],b[1]-a[1]);cerrGaps(c,i).forEach(([g0,g1])=>L-=Math.max(0,g1-g0));add(c.rv,Math.max(0,L)*H)})});
   return A}
 function rvPres(){const A=rvMed();return Object.entries(A).map(([k,a])=>['rv_'+k,r2(a)])}
 
@@ -15565,6 +15568,94 @@ function suPres(){const A={};items.filter(R=>R.t==='room'&&!R.acont&&SU2[R.suelo
   return Object.entries(A).filter(([,v])=>v>.05).map(([k,v])=>[k,r2(v)])}
 
 /*<</mod:suelos>>*/
+/*<<mod:solwiz>>*/
+/* ===================== EL SOLAR COMPLETO EN UNA SOLA VENTANA · VENTANAS ESTRECHAS A LA DERECHA ===================== */
+(function(){const c=document.createElement('style');c.id='swCSS';c.textContent=`
+#pwP.dlgw{position:fixed!important;inset:auto!important;top:96px!important;right:8px!important;bottom:8px!important;left:auto!important;width:min(400px,calc(100vw - 16px))!important;background:none!important;display:block!important;padding:0!important;z-index:72;pointer-events:none}
+#pwP .card{pointer-events:auto;width:100%!important;max-width:none!important;height:100%;max-height:none!important;margin:0!important;overflow:auto;box-shadow:0 8px 30px #0003;padding:0 12px 14px!important;font-size:15px!important;box-sizing:border-box}
+#pwP .pwH{font-size:16px!important;padding:10px 0 8px!important}
+#pwP .pwT{min-width:140px!important}#pwP .pwG{margin-left:0!important}
+#solP,#obraP,#eaP,#ccP,#rfP,#sotCP{width:min(400px,calc(100vw - 16px))!important;right:8px!important}
+#pwP #solP,#pwP #obraP{position:static!important;width:auto!important;max-height:none!important;box-shadow:none!important;border:0!important;padding:0!important;background:none!important;overflow:visible!important}
+#pwP .swTabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 4px}#pwP .swTabs button{font-size:13px!important;padding:5px 8px!important;border-radius:14px}
+#pwP .swTabs button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#pwP .swX{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0}
+#pwP .swX h4{margin:0 0 4px;font-size:15px}#pwP .swRow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;margin:4px 0}
+#pwP table{max-width:100%}#pwP select,#pwP input{max-width:100%}`;document.head.appendChild(c)})();
+const SWT=[['sit','Situación'],['forma','Forma'],['lind','Linderos y calle'],['niv','Niveles'],['cerr','Cierre'],['ent','Entradas'],['serv','Servicios']];
+Object.assign(PPAR,{basculante:['Puerta basculante para coches',3],barrera:['Barrera automática',3.5],bolardos:['Bolardos retráctiles',3]});
+Object.assign(PRES_D,{p_basculante:['Puerta basculante para coches','ud',3400],p_barrera:['Barrera automática con mando','ud',1900],p_bolardos:['Bolardos retráctiles automáticos (conjunto)','ud',2800],
+  e_mot:['Motor y mando a distancia de la puerta de coches','ud',650],e_vp:['Videoportero en la entrada peatonal','ud',450],e_bz:['Buzón empotrado en el muro','ud',120]});
+const swVeh=k=>['corredera','batiente','basculante','garaje','barrera','bolardos'].includes(k);
+/* pedazos del paso 1, de la ventana del solar y del panel Obra */
+function swSec(h){const S={},re=/<h3[^>]*>([\s\S]*?)<\/h3>/g;let m,last=null,pre='',idx=[];while((m=re.exec(h)))idx.push([m.index,m[1].replace(/<[^>]+>/g,'').trim()]);pre=idx.length?h.slice(0,idx[0][0]):h;idx.forEach(([i,t],k)=>{S[t]=(S[t]||'')+h.slice(i,k+1<idx.length?idx[k+1][0]:h.length)});return{pre,S}}
+function swSol(part){let h=solHTML();h=h.replace(/<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="margin:0">El solar<\/h2><button id="solX">Cerrar<\/button><\/div>/,'');const k=h.indexOf('<h3 style="margin:12px 0 4px">Linderos</h3>');if(k<0)return part==='forma'?h:'';return part==='forma'?h.slice(0,k):h.slice(k)}
+function swObra(){if(typeof obraHTML!=='function')return['',''];const h=obraHTML(),k=h.indexOf('Cerramiento del solar y puertas</summary>');if(k<0)return['',''];const a=h.indexOf('</summary>',k)+10;let d=1,i=a;const re=/<details|<\/details>/g;re.lastIndex=a;let m;while((m=re.exec(h))){d+=m[0]==='<details'?1:-1;if(!d){i=m.index;break}}
+  const body=h.slice(a,i),j=body.indexOf('<p class="hint" style="margin:6px 0 2px">Puertas de parcela');return j<0?[body,'']:[body.slice(0,j),body.slice(j)]}
+function swNav(t){const i=SWT.findIndex(x=>x[0]===t);return `<div class="bt">${i>0?`<button data-swt="${SWT[i-1][0]}">‹ ${SWT[i-1][1]}</button>`:'<span></span>'}${i<SWT.length-1?`<button data-swt="${SWT[i+1][0]}" class="pri">Siguiente: ${SWT[i+1][1]} ›</button>`:''}</div>`}
+function swCerrX(){const o=OB(),C=o.cerr||[];const ek=RVK.filter(k=>RVM[k][4].includes('e'));let h=`<div class="swX"><h4>Por lados</h4><p class="hint" style="margin:0 0 6px">«Rodear el solar por lados» sigue la forma real del solar, un tramo por lindero: a la calle el tipo elegido arriba y a los vecinos muro de bloque de 1,80 m. Luego cambias cada tramo.</p><div class="row"><button data-swcs="1" class="pri">Rodear el solar por lados</button></div>`;
+  C.forEach((c,n)=>{const L=cerrSegs(c).reduce((s,[a,b])=>s+Math.hypot(b[0]-a[0],b[1]-a[1]),0),fin=c.t==='bloque'||c.t==='murete';h+=`<div class="swRow"><b>Tramo ${n+1}</b><span class="hint">${esc((CERR[c.t]||CERR.bloque)[0])} · ${fmt(Math.round(L*100)/100)} m${c.ld?' · '+esc(c.ld):''}</span>${c.pts.length>2?`<button data-swsplit="${c.id}">Separar por lados</button>`:''}</div>${fin?`<div class="swRow">Acabado del muro<select data-swcrv="${c.id}"><option value="">${c.t==='murete'?'Enfoscado y pintado':'Enfoscado y pintado (blanco)'}</option>${ek.map(k=>`<option value="${k}"${c.rv===k?' selected':''}>${RVM[k][0]}</option>`).join('')}</select></div>`:''}`});
+  return h+'</div>'}
+function swEntX(){const o=OB(),P=o.ppar||[];let h=`<div class="swX"><h4>Detalles de cada entrada</h4>`;if(!(o.cerr||[]).length)return h+'<p class="hint">Primero el cierre del solar (apartado anterior): las entradas van en él.</p></div>';if(!P.length)return h+'<p class="hint">Pulsa arriba el tipo de entrada y toca el tramo del cierre donde va. Luego aquí la colocas con la medida exacta.</p></div>';
+  P.forEach((p,n)=>{const c=(o.cerr||[]).find(q=>q.id===p.c);const L=c?(()=>{const[a,b]=cerrSeg(c,p.s);return Math.hypot(b[0]-a[0],b[1]-a[1])})():0;
+    h+=`<div style="border-top:1px solid var(--line);padding:4px 0"><div class="swRow"><b>${n+1}. ${esc(PPAR[p.k]?PPAR[p.k][0]:p.k)}</b> <span class="hint">${fmt(p.w)} m</span></div><div class="swRow">Empieza a<input data-swpu="${p.id}" type="number" step=".05" min="0" value="${r2(p.u-p.w/2)}" style="width:72px">m de la esquina del tramo <span class="hint">(mide ${fmt(Math.round(L*100)/100)} m)</span></div>
+      <div class="swRow">${swVeh(p.k)&&p.k!=='bolardos'?`<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-swpx="mot" data-id="${p.id}"${p.mot!==0?' checked':''}> Motor y mando</label>`:''}${p.k==='peatonal'||(p.pea&&p.pea.on)?`<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-swpx="vp" data-id="${p.id}"${p.vp!==0?' checked':''}> Videoportero</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-swpx="bz" data-id="${p.id}"${p.bz?' checked':''}> Buzón</label>`:''}</div></div>`});return h+'</div>'}
+function swHTML(h){let t=st.p1t;if(!SWT.some(x=>x[0]===t))t='sit';const{pre,S}=swSec(h),used=new Set(),g=k=>{used.add(k);return S[k]||''};
+  let b=`<div class="swTabs">${SWT.map(([k,l],i)=>`<button data-swt="${k}"${k===t?' class="on"':''}>${i+1} · ${l}</button>`).join('')}</div>`;
+  let[cP,eP]=t==='cerr'||t==='ent'?swObra():['',''];cP=cP.replace('<option value="murete">','<option value="murete" selected>');(OB().ppar||[]).forEach(p=>{if(p._mine)eP=eP.replace(new RegExp('<button data-ppopen="'+p.id+'"[^>]*>[^<]*</button><button data-abopen="'+p.id+'"[^>]*>[^<]*</button>'),'')});
+  if(t==='sit')b+=pre+g('Ubicación y terreno')+'<p class="hint">Elige el municipio y la zona: la cota sobre el mar del terreno se pone sola. Luego, la forma del solar.</p>';
+  else if(t==='forma')b+=`<h3>Forma y medidas</h3><div id="solP">${swSol('forma')}</div>`;
+  else if(t==='lind')b+=`<div id="solP">${swSol('lind')}</div>`+g('El solar y la calle');
+  else if(t==='niv'){b+=g('Cotas y desniveles');let ns='';try{const x=exS();ns=x&&x.nid?`Subida sobre el terreno: ${fmt(x.nid)} m`:''}catch(e){}b+=pwRow(!!ns,'Altura de la planta baja',ns||'La planta baja va en el punto más alto del contorno; puedes subirla lo que quieras','<button data-swniv="1">Subir la planta baja…</button>')}
+  else if(t==='cerr')b+=g('Cierre del solar')+`<div id="obraP">${cP}</div>`+swCerrX();
+  else if(t==='ent')b+=`<h3>Entradas y barreras</h3><p class="hint">Puertas para personas y para coches, barrera automática y bolardos, en el cierre del solar.</p><div id="obraP">${eP}</div>`+swEntX();
+  else{b+=g('Servicios: por dónde entran')+g('Puertas de los contadores');Object.keys(S).forEach(k=>{if(!['Ubicación y terreno','El solar y la calle','Cotas y desniveles','Cierre del solar'].includes(k)&&!used.has(k))b+=g(k)})}
+  return b+swNav(t)}
+{const _pw1SW=pw1;pw1=function(){const h=_pw1SW.apply(this,arguments);if(!isMod())return h;try{return swHTML(h)}catch(e){console.warn('solar en una ventana',e);return h}}}
+/* el «Paso 1» de abajo solo al final */
+{const _pbSW=pasoBody;pasoBody=function(){const r=_pbSW.apply(this,arguments);try{const P=$('#pwP');if(P&&+P.dataset.n===1&&isMod()&&(st.p1t||'sit')!=='serv'){const B=[...P.querySelectorAll('.card > .bt')].pop();if(B&&B.querySelector('[data-paso]'))B.remove()}}catch(e){}return r}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=t.closest('#pwP [data-swt],#pwP [data-pw="sol"],#pwP [data-swniv],#pwP [data-swcs],#pwP [data-swsplit]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();
+  if(b.dataset.swt){st.p1t=b.dataset.swt;save();pasoBody();const c=$('#pwP .card');if(c)c.scrollTop=0;return}
+  if(b.dataset.pw==='sol'){st.p1t='forma';if(!SOL()){push();st.solar=solNew();solSync();done()}pasoBody();const c=$('#pwP .card');if(c)c.scrollTop=0;return}
+  if(b.dataset.swniv){try{nivDlg()}catch(er){console.warn(er)}return}
+  if(b.dataset.swcs){const ty=($('#pwP #obCt')||{}).value||'murete';swRodear(ty);pasoBody();return}
+  if(b.dataset.swsplit){swSplit(b.dataset.swsplit);pasoBody();return}},true);
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#pwP'))return;const o=OB();
+  if(t.dataset.swcrv){const c=(o.cerr||[]).find(q=>q.id===t.dataset.swcrv);if(!c)return;e.stopImmediatePropagation();push();if(t.value){c.rv=t.value;c.col=RVM[t.value][1]}else{delete c.rv;delete c.col}done();pasoBody();return}
+  if(t.dataset.swpu){const p=(o.ppar||[]).find(q=>q.id===t.dataset.swpu);if(!p)return;e.stopImmediatePropagation();const c=(o.cerr||[]).find(q=>q.id===p.c);const v=parseFloat(String(t.value).replace(',','.'));if(!c||isNaN(v))return;const[a,bb]=cerrSeg(c,p.s),L=Math.hypot(bb[0]-a[0],bb[1]-a[1]);push();p.u=r2(Math.max(p.w/2,Math.min(L-p.w/2,v+p.w/2)));done();pasoBody();return}
+  if(t.dataset.swpx){const p=(o.ppar||[]).find(q=>q.id===t.dataset.id);if(!p)return;e.stopImmediatePropagation();push();const k=t.dataset.swpx;p[k]=t.checked?1:0;done();pasoBody();return}},true);
+/* rodear el solar siguiendo su forma: un tramo por lindero */
+function swRodear(ty){const s=SOL(),P0=s&&solPts(s);if(!P0||P0.length<3){note='Primero la forma del solar';return render()}const sg=solArea(P0)>0?1:-1,P=pgOffset(P0,.15*sg),ed=solEd(s),o=OB();push();
+  const old=new Set((o.cerr||[]).map(c=>c.id));o.cerr=[];o.ppar=(o.ppar||[]).filter(p=>!old.has(p.c));
+  P.forEach((a,i)=>{const b=P[(i+1)%P.length],k=(ed[i]||{}).t||'med',tt=k==='calle'?ty:(k==='camino'?ty:'bloque');o.cerr.push({id:OBID(),t:tt,cl:0,pts:[[r2(a[0]),r2(a[1])],[r2(b[0]),r2(b[1])]],ld:k==='calle'?'a la calle':k==='med'?'medianera':''})});
+  note='Solar cerrado por lados: '+o.cerr.length+' tramos. Ahora las entradas';done()}
+function swSplit(id){const o=OB(),c=(o.cerr||[]).find(q=>q.id===id);if(!c)return;push();const segs=cerrSegs(c),nw=segs.map(([a,b])=>({...JSON.parse(JSON.stringify(c)),id:OBID(),cl:0,pts:[a.slice(),b.slice()]}));
+  (o.ppar||[]).forEach(p=>{if(p.c===id){p.c=nw[p.s].id;p.s=0}});o.cerr=o.cerr.flatMap(q=>q.id===id?nw:[q]);note='Cierre separado en '+nw.length+' tramos';done()}
+/* todo lo del solar abre esta ventana */
+{const _soSW=solOpen;solOpen=function(){if(!isMod())return _soSW.apply(this,arguments);const P=$('#pwP');if(P&&+P.dataset.n===1){if(!['forma','lind'].includes(st.p1t))st.p1t='forma';pasoBody();return}st.p1t=['forma','lind'].includes(st.p1t)?st.p1t:'forma';pasoOpen(1)}}
+{const _obSW=obraOpen;obraOpen=function(){if($('#pwP #obraP')){pasoBody();return}if(window._SWNEW){window._SWNEW=0;st.p1t='sit';return pasoOpen(1)}return _obSW.apply(this,arguments)}}
+{const _miSW=modInit;modInit=function(){const r=_miSW.apply(this,arguments);window._SWNEW=1;return r}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#obraBtn'))return;if($('#pwP #obraP')){e.stopImmediatePropagation();pasoClose();obraOpen()}},true);
+/* barrera y bolardos: los dibuja este módulo */
+{const _dnSW=done;done=function(){try{(OB().ppar||[]).forEach(p=>{if(p.k==='barrera'||p.k==='bolardos')p._mine=1})}catch(e){}return _dnSW.apply(this,arguments)}}
+function swPP(p){const c=(OB().cerr||[]).find(q=>q.id===p.c);if(!c)return null;const[a,b]=cerrSeg(c,p.s),L=Math.hypot(b[0]-a[0],b[1]-a[1])||1,u=[(b[0]-a[0])/L,(b[1]-a[1])/L],g0=p.u-p.w/2,g1=p.u+p.w/2;return{c,a,u,g0,g1,P:t=>[a[0]+u[0]*t,a[1]+u[1]*t],n:[-u[1],u[0]]}}
+{const _rnSW=render;render=function(){const r=_rnSW.apply(this,arguments);try{if(!isMod()||(fl!==0&&!(st.sot&&fl===1)))return r;const P=OB().ppar||[];if(!P.length)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='';
+  P.forEach(p=>{const Q=swPP(p);if(!Q)return;const A=Q.P(Q.g0),B=Q.P(Q.g1),m=Q.P(p.u);
+    if(p.k==='barrera')h+=`<rect x="${A[0]*S-5}" y="${A[1]*S-5}" width="10" height="10" fill="#f9a825" stroke="#333"/><line x1="${A[0]*S}" y1="${A[1]*S}" x2="${B[0]*S}" y2="${B[1]*S}" stroke="#c62828" stroke-width="4" stroke-dasharray="8 6"/><line x1="${A[0]*S}" y1="${A[1]*S}" x2="${B[0]*S}" y2="${B[1]*S}" stroke="#fff" stroke-width="4" stroke-dasharray="8 6" stroke-dashoffset="8" opacity=".9"/>`;
+    if(p.k==='bolardos'){const n=Math.max(2,Math.round(p.w/1.2)+1);for(let k=0;k<n;k++){const q=Q.P(Q.g0+(Q.g1-Q.g0)*k/(n-1));h+=`<circle cx="${q[0]*S}" cy="${q[1]*S}" r="${Math.max(3,.1*S)}" fill="#607d8b" stroke="#263238"/>`}}
+    if(p._mine)h+=`<text class="dm" x="${m[0]*S+Q.n[0]*16}" y="${m[1]*S+Q.n[1]*16}" text-anchor="middle" style="font-size:10px;fill:#263238;paint-order:stroke;stroke:var(--bg);stroke-width:3px">${esc(PPAR[p.k][0])} ${fmt(p.w)} m</text>`;
+    const tag=[];if(swVeh(p.k)&&p.k!=='bolardos'&&p.mot!==0)tag.push('motor');if((p.k==='peatonal'||(p.pea&&p.pea.on))&&p.vp!==0)tag.push('videoportero');if(p.bz)tag.push('buzón');if(tag.length)h+=`<text class="dm" x="${m[0]*S-Q.n[0]*14}" y="${m[1]*S-Q.n[1]*14+3}" text-anchor="middle" style="font-size:9px;fill:#555;paint-order:stroke;stroke:var(--bg);stroke-width:3px">${tag.join(' · ')}</text>`});
+  if(h)g.insertAdjacentHTML('beforeend',`<g pointer-events="none">${h}</g>`)}catch(e){console.warn(e)}return r}}
+{const _b3SW=bldAll3;bldAll3=function(){const B=_b3SW.apply(this,arguments);try{const P=OB().ppar||[];if(!P.length||!window.THREE||!B||!B.sc)return B;const T=THREE,zg=st.sot?rasante():0,G=new T.Group();B.sc.add(G);
+  const M=(c,o)=>new T.MeshPhongMaterial({color:c,shininess:o||30}),bx=(w,h,d,m,x,y,z,ry)=>{const me=new T.Mesh(new T.BoxGeometry(w,h,d),m);me.position.set(x,y,z);me.rotation.y=ry||0;me.castShadow=true;G.add(me);return me};
+  P.forEach(p=>{const Q=swPP(p);if(!Q)return;const ry=-Math.atan2(Q.u[1],Q.u[0]),A=Q.P(Q.g0);
+    if(p.k==='barrera'){bx(.3,1,.3,M('#f9a825'),A[0],zg+.5,A[1],ry);const w=p.w-.2,n=Math.max(2,Math.round(w/.5));for(let k=0;k<n;k++){const q=Q.P(Q.g0+.15+(k+.5)*w/n);bx(w/n,.08,.06,M(k%2?'#ffffff':'#c62828'),q[0],zg+.92,q[1],ry)}}
+    if(p.k==='bolardos'){const n=Math.max(2,Math.round(p.w/1.2)+1),cy=new T.CylinderGeometry(.1,.1,.8,16);for(let k=0;k<n;k++){const q=Q.P(Q.g0+(Q.g1-Q.g0)*k/(n-1)),me=new T.Mesh(cy,M('#90a4ae',80));me.position.set(q[0],zg+.4,q[1]);me.castShadow=true;G.add(me);const bd=new T.Mesh(new T.CylinderGeometry(.102,.102,.06,16),M('#f9a825'));bd.position.set(q[0],zg+.68,q[1]);G.add(bd)}}
+    const post=Q.P(Q.g0-.12);if((p.k==='peatonal'||(p.pea&&p.pea.on))&&p.vp!==0)bx(.14,.24,.05,M('#263238',60),post[0]+Q.n[0]*.1,zg+1.5,post[1]+Q.n[1]*.1,ry);
+    if(p.bz){const q=Q.P(Q.g0-.45);bx(.36,.3,.14,M('#455a64',50),q[0]+Q.n[0]*.12,zg+1.15,q[1]+Q.n[1]*.12,ry)}})}catch(e){console.warn('entradas 3D',e)}return B}}
+function entPres(){const A={};(OB().ppar||[]).forEach(p=>{if(swVeh(p.k)&&p.k!=='bolardos'&&p.mot!==0)A.e_mot=(A.e_mot||0)+1;if((p.k==='peatonal'||(p.pea&&p.pea.on))&&p.vp!==0)A.e_vp=(A.e_vp||0)+1;if(p.bz)A.e_bz=(A.e_bz||0)+1});return Object.entries(A)}
+
+/*<</mod:solwiz>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
