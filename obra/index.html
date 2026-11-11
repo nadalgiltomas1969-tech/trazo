@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 11 nov 2026 · dibujar con el dedo sin que se mueva el plano</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · entradas, muro curvo y arreglos del 3D</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -6665,7 +6665,7 @@ const _build3STX=build3;build3=function(R){const B=_build3STX.apply(this,argumen
   all.forEach(({o,D,P,arr})=>{const off=floorZ(o.f)-floorZ(R.f),grp=new T.Group(),stone=M('#e6dcc4'),run=o.alf&&typeof ALFC!=='undefined'&&ALFC[o.alf]?M(ALFC[o.alf][0]):null;
     const ext=(PP,dz,mat,z0)=>{if(dz<=0)return;const sh=new T.Shape(PP.map(p=>{const q=escW(o,p);return new T.Vector2(q[0],-q[1])}));const m=new T.Mesh(new T.ExtrudeGeometry(sh,{depth:dz,bevelEnabled:false}),mat);m.rotation.x=-Math.PI/2;m.position.y=z0||0;grp.add(m)};
     D.T.forEach(t=>{const z=t.k*D.rise;try{esc3Tread(o,t,D.rise,(P,z0,dz,mt)=>ext(P,dz,mt,z0),M)}catch(e){ext(trPoly(t),z,stone)}if(run)try{ext(runPoly(t),.012,run,z)}catch(e){}});D.Ld.forEach(l=>ext(l.P,l.k*D.rise,stone));try{rails3(o,D,T,grp,M)}catch(e){}
-    grp.position.y=off;B.sc.add(grp);
+    grp.position.y=off;if(!window._ALL3)B.sc.add(grp);
     /* 3. paredes del hueco, canto del forjado y barandilla arriba */
     const onArr=(a,b)=>arr.some(l=>{const d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]);return(d(a,l[0])<.05&&d(b,l[1])<.05)||(d(a,l[1])<.05&&d(b,l[0])<.05)}),hb=holeBar(o),forj=SD().forj??.35,wallM=M('#efe8da'),edgeM=M('#9a6a3e');
     P.forEach(Q=>{const cx=Q.reduce((s,p)=>s+p[0],0)/Q.length,cy=Q.reduce((s,p)=>s+p[1],0)/Q.length;for(let i=0;i<Q.length;i++){const a=Q[i],b=Q[(i+1)%Q.length],Lg=Math.hypot(b[0]-a[0],b[1]-a[1]);if(Lg<.02)continue;let n=[-(b[1]-a[1])/Lg,(b[0]-a[0])/Lg];const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if((mx-cx)*n[0]+(my-cy)*n[1]<0)n=[-n[0],-n[1]];
@@ -11785,7 +11785,7 @@ function eaCalc(){const G=eaGrid();if(!G)return null;const e=EA(),{q,qc}=cimQ(),
   return res}
 /* poner las piezas en el proyecto */
 function eaApply(){const R=eaCalc();if(!R){note='Primero dibuja el contorno de la planta baja';return render()}push();const o=OB(),e=EA();
-  items=items.filter(i=>!(i.t==='pilar'&&i.f>=0));o.vig=(o.vig||[]).filter(v=>!v.auto);
+  items=items.filter(i=>!(i.t==='pilar'&&(i.f>=0||i.f<=-10)));o.vig=(o.vig||[]).filter(v=>!v.auto);
   R.pil.forEach(p=>{items.push({id:nid++,t:'pilar',f:p.f,x:r2(Math.min(Math.max(p.x-p.w/2,R.G.c.x),R.G.c.x+R.G.c.w-p.w)),y:r2(Math.min(Math.max(p.y-p.h/2,R.G.c.y),R.G.c.y+R.G.c.h-p.h)),w:p.w,h:p.h,mat:e.mat==='acero'?'acero':'ha',ea:1,perf:p.perf||undefined,arm:p.arm?p.arm[0]+' Ø'+p.arm[1]:undefined,Nd:Math.round(p.Nd)})});
   R.vig.forEach(v=>o.vig.push({id:OBID(),f:v.f,x1:r2(v.x1),y1:r2(v.y1),x2:r2(v.x2),y2:r2(v.y2),b:v.b,c:v.c,mat:e.mat==='acero'?'acero':(e.viga==='desc'?'ha':'plana'),auto:1,perf:v.perf||undefined,zun:v.zuncho?1:undefined}));
   Object.entries(R.forj).forEach(([f,fj])=>{o.forj[f]={...(o.forj[f]||{}),...fj}});o.cimAuto=1;o.estr=e.mat==='acero'?'acero':'ha';done();note=R.pil.filter(p=>p.f===0).length+' pilares por planta, vigas y cimentación calculados';render();eaOpen()}
@@ -14642,7 +14642,7 @@ function rpRail3(T,grp,q,zb){const m=new T.MeshLambertMaterial({color:'#8a9399'}
   [.9,.45,.1].forEach(hh=>{const r=new T.Mesh(new T.BoxGeometry(Math.hypot(L,dz),hh===.9?.045:.025,hh===.9?.045:.025),m);r.position.set((q[0]+q[3])/2,zb+(q[2]+q[5])/2+hh,(q[1]+q[4])/2);r.rotation.order='YZX';r.rotation.y=-ang;r.rotation.z=sl;grp.add(r)});
   const n=Math.max(1,Math.ceil(L/1.5));for(let i=0;i<=n;i++){const t=i/n,p=new T.Mesh(new T.BoxGeometry(.05,.92,.05),m);p.position.set(q[0]+(q[3]-q[0])*t,zb+q[2]+dz*t+.46,q[1]+(q[4]-q[1])*t);grp.add(p)}}
 {const _x3RB=extras3;extras3=function(T,f,g,z,opt){const r=_x3RB.apply(this,arguments);try{if(!isMod()||(opt&&opt.zt!=null))return r;const ph=typeof FASE3!=='undefined'?FASE3:null;if(ph==='desmonte'||ph==='cimentacion')return r;
-  items.filter(o=>o.t==='rampa'&&o.f===f).forEach(o=>{const R=rpRails(o);[...R.ramp,...R.top].forEach(q=>rpRail3(T,g,q,z))})}catch(e){console.warn('barandilla rampa 3D',e)}return r}}
+  items.filter(o=>o.t==='rampa'&&o.f===f).forEach(o=>{const R=rpRails(o);R.ramp.forEach(q=>rpRail3(T,g,q,z))})}catch(e){console.warn('barandilla rampa 3D',e)}return r}}
 /* presupuesto: se suma a los metros de barandilla */
 {const _rmRB=rampMed;rampMed=function(){const Q=_rmRB.apply(this,arguments);try{let L=0;items.filter(o=>o.t==='rampa').forEach(o=>L+=rpRailLen(o));if(L>0){Q.Lb=(Q.Lb||0)+Math.round(L*10)/10;Q.A=Q.A||0}}catch(e){}return Q}}
 
@@ -15210,6 +15210,7 @@ function polyFacSvg(c,side,horiz,rg,X,Y,base,s){const R=polyRoofZ(c),O=R.O,xs=O.
   for(let i=0;i<=n;i++){const u=u0+(u1-u0)*i/n;let h=null;for(let j=0;j<=m;j++){const v=v0+(v1-v0)*j/m,z=R.z(horiz?u:v,horiz?v:u);if(z!=null&&(h==null||z>h))h=z}if(h!=null){const[a]=rg(u,u);pts.push([a,base+h])}}
   if(pts.length<2)return '';const az=(TJ().modo||'teja')==='azotea',lo=Math.min(...pts.map(q=>q[1]));pts.sort((a,b)=>a[0]-b[0]);
   return `<path d="M${X(pts[0][0])} ${Y(Math.min(base,lo))}${pts.map(q=>`L${X(q[0])} ${Y(q[1])}`).join('')}L${X(pts[pts.length-1][0])} ${Y(Math.min(base,lo))}Z" fill="${az?'#e8e2d6':'url(#p-teja)'}" stroke="#3a1d0c" stroke-width="2" stroke-linejoin="round"/>`}
+/*<<mod:calle>>*/
 /* ===================== LA CALLE PEGADA AL LINDERO DE CALLE DEL SOLAR (CON SU INCLINACIÓN) ===================== */
 function calleEdge(){try{const s=SOL();if(!s)return null;const P=solPts(s),ed=solEd(s),ci=ed.findIndex(q=>q&&q.t==='calle');if(ci<0)return null;const a=P[ci],b=P[(ci+1)%P.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<.5)return null;
   let n=[-(b[1]-a[1])/L,(b[0]-a[0])/L];const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(exPip(m[0]+n[0]*.5,m[1]+n[1]*.5,P))n=[-n[0],-n[1]];return{a,b,L,n,u:[(b[0]-a[0])/L,(b[1]-a[1])/L]}}catch(e){return null}}
@@ -15219,8 +15220,9 @@ function calleEdge(){try{const s=SOL();if(!s)return null;const P=solPts(s),ed=so
   let ang=Math.atan2(u[1],u[0])*180/Math.PI;if(ang>90)ang-=180;if(ang<-90)ang+=180;const t=P(L/2,ac+w/2);h+=`<text transform="translate(${t[0]} ${t[1]}) rotate(${ang})" y="-6" text-anchor="middle" style="font-size:13px;font-weight:700;fill:#fff">${esc(k.nombre||'Calle')} · ${fmt(w)} m</text>`;return `<g class="cp-exterior">${h}</g>`}}
 {const _bCL=bldAll3;bldAll3=function(){const B=_bCL.apply(this,arguments);try{const E=calleEdge(),k=OB().calle;if(!E||!k||!k.lado||!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,ac=k.acera??1.5,w=k.ancho??8,zg=(st.sot?rasante():0)+(k.cota||0),L=E.L+20,ang=-Math.atan2(E.u[1],E.u[0]),mid=[E.a[0]+E.u[0]*E.L/2,E.a[1]+E.u[1]*E.L/2];
   const bx=(d0,d1,hh,m)=>{const me=new T.Mesh(new T.BoxGeometry(L,hh,d1-d0),m),d=(d0+d1)/2;me.position.set(mid[0]+E.n[0]*d,zg+hh/2-.01,mid[1]+E.n[1]*d);me.rotation.y=ang;me.receiveShadow=true;B.sc.add(me)};
-  bx(0,ac,.15,new T.MeshLambertMaterial({color:'#d8d4ca'}));bx(ac,ac+w,.02,new T.MeshLambertMaterial({color:'#55595d'}));const l=new T.Mesh(new T.BoxGeometry(L,.005,.12),new T.MeshBasicMaterial({color:'#ffffff'}));l.position.set(mid[0]+E.n[0]*(ac+w/2),zg+.025,mid[1]+E.n[1]*(ac+w/2));l.rotation.y=ang;B.sc.add(l)}catch(e){console.warn('calle 3D',e)}return B}}
+  bx(0,ac,.18,new T.MeshLambertMaterial({color:'#d8d4ca'}));bx(ac,ac+w,.07,new T.MeshLambertMaterial({color:'#55595d'}));const l=new T.Mesh(new T.BoxGeometry(L,.005,.12),new T.MeshBasicMaterial({color:'#ffffff'}));l.position.set(mid[0]+E.n[0]*(ac+w/2),zg+.065,mid[1]+E.n[1]*(ac+w/2));l.rotation.y=ang;B.sc.add(l)}catch(e){console.warn('calle 3D',e)}return B}}
 
+/*<</mod:calle>>*/
 /* ===================== SOLAR DE TRES LADOS ===================== */
 {const _shT=solHTML;solHTML=function(){let h=_shT.apply(this,arguments);try{const s=SOL();if(!s)return h;const is3=s.forma==='poly'&&s.pts&&s.pts.length===3;
   h=h.replace(/(<button data-solf="poly"[^>]*>Irregular<\/button>)/,`$1<button data-solf="tri"${is3?' style="background:var(--acc);border-color:var(--acc);color:#fff"':''}>Triángulo (3 lados)</button>`);
@@ -15626,7 +15628,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.cl
   if(t.dataset.swpx){const p=(o.ppar||[]).find(q=>q.id===t.dataset.id);if(!p)return;e.stopImmediatePropagation();push();const k=t.dataset.swpx;p[k]=t.checked?1:0;done();pasoBody();return}},true);
 /* rodear el solar siguiendo su forma: un tramo por lindero */
 function swRodear(ty){const s=SOL(),P0=s&&solPts(s);if(!P0||P0.length<3){note='Primero la forma del solar';return render()}const sg=solArea(P0)>0?1:-1,P=pgOffset(P0,.15*sg),ed=solEd(s),o=OB();push();
-  const old=new Set((o.cerr||[]).map(c=>c.id));o.cerr=[];o.ppar=(o.ppar||[]).filter(p=>!old.has(p.c));
+  const old=new Set((o.cerr||[]).map(c=>c.id));o.cerr=[];o.epil=[];o.ppar=(o.ppar||[]).filter(p=>!old.has(p.c));
   P.forEach((a,i)=>{const b=P[(i+1)%P.length],k=(ed[i]||{}).t||'med',tt=k==='calle'?ty:(k==='camino'?ty:'bloque');o.cerr.push({id:OBID(),t:tt,cl:0,pts:[[r2(a[0]),r2(a[1])],[r2(b[0]),r2(b[1])]],ld:k==='calle'?'a la calle':k==='med'?'medianera':''})});
   note='Solar cerrado por lados: '+o.cerr.length+' tramos. Ahora las entradas';done()}
 function swSplit(id){const o=OB(),c=(o.cerr||[]).find(q=>q.id===id);if(!c)return;push();const segs=cerrSegs(c),nw=segs.map(([a,b])=>({...JSON.parse(JSON.stringify(c)),id:OBID(),cl:0,pts:[a.slice(),b.slice()]}));
@@ -15715,7 +15717,7 @@ let FVOK=0;
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#zfit')){FVOK=1;setTimeout(()=>FVOK=0,0)}},true);
 {const _lpT=loadProj;loadProj=function(){FVOK=1;try{return _lpT.apply(this,arguments)}finally{FVOK=0}}}
 /* ---------- ¿hay una herramienta que pone puntos con cada toque? ---------- */
-const tapTool=()=>{const g=n=>{try{return eval(n)}catch(e){return null}};return !!(g('OBT')||g('RXT')||g('SOLDR')||g('ZDR')||g('ALW')||g('BRP')||g('BBQPUT')||g('ABMK')||(g('XW')&&tool===g('XW').m)||$('#insP'))};
+const tapTool=()=>{const g=n=>{try{return eval(n)}catch(e){return null}};return !!(g('OBT')||g('RXT')||g('SOLDR')||g('ZDR')||g('ALW')||g('BRP')||g('BBQPUT')||g('ABMK')||g('CURV')||g('CTRP')||(g('XW')&&tool===g('XW').m)||$('#insP'))};
 /* ---------- con una de esas herramientas: un toque pone el punto al levantar el dedo; dos dedos amplían y mueven, un dedo arrastrado mueve el plano ---------- */
 (function(){const ids=new Map(),RP=new WeakSet();let held=null,pz=null,pan=null,mute=false;
   {const sp=Element.prototype.setPointerCapture;Element.prototype.setPointerCapture=function(){try{return sp.apply(this,arguments)}catch(e){}}}
@@ -15747,6 +15749,109 @@ document.addEventListener('click',e=>{const t=e.target;if(t&&t.closest&&t.closes
 {const _obT=obraOpen;obraOpen=function(){const P=$('#pwP');if(P&&+P.dataset.n===1&&['cerr','ent'].includes(st.p1t)){pasoBody();return}return _obT.apply(this,arguments)}}
 
 /*<</mod:tactil>>*/
+/*<<mod:arreglos>>*/
+/* ===================== ARREGLOS: ESCALERAS Y RAMPAS EN 3D, CASETA, ENTRADAS, MURO CURVO, CONTADORES, PILARES, 3D A PANTALLA COMPLETA ===================== */
+/* ---------- 3D del edificio: huecos de escaleras y rampas en el forjado de arriba; barandilla del hueco de la rampa en su planta ---------- */
+{const _b3AR=bldAll3;bldAll3=function(){window._ALL3=1;let B;try{B=_b3AR.apply(this,arguments)}finally{window._ALL3=0}try{if(!B||!B.sc||!window.THREE||!isMod())return B;const T=THREE,H=[],grpOf=f=>(B.G&&B.G[f])||B.sc.children.find(g=>g.userData&&g.userData.f===f)||B.sc;
+  items.filter(o=>o.t==='esc').forEach(o=>{const u=above(o.f);if(u==null)return;let y=0;try{y=floorZ(u)}catch(e){return}try{escHolePolys(o).H.forEach(P=>{const b=pbb(P);H.push({x0:b.x,x1:b.x+b.w,z0:b.y,z1:b.y+b.h,y})})}catch(e){}});
+  items.filter(o=>o.t==='rampa').forEach(o=>{const u=above(o.f);if(u==null)return;let y=0;try{y=floorZ(u)}catch(e){return}try{rpRects(o).forEach(q=>H.push({x0:q.x,x1:q.x+q.w,z0:q.y,z1:q.y+q.h,y}))}catch(e){}
+    try{const R=rpRails(o),g=grpOf(u);R.top.forEach(q=>rpRail3(T,g,q,floorZ(o.f)))}catch(e){}});
+  if(H.length)slabCut(B.sc,H,T)}catch(e){console.warn('huecos 3D',e)}return B}}
+/* ---------- caseta de la terraza: se mueve arrastrándola en la planta «Tejado» ---------- */
+{const _taAR=tejAccRect;tejAccRect=function(){const A=_taAR.apply(this,arguments);try{const T=TJ();if(!A||T.acc!=='castillete'||!(T.cdx||T.cdy))return A;let x=A.x+(+T.cdx||0),y=A.y+(+T.cdy||0);const c=tejTopC();if(c){x=Math.max(c.x,Math.min(c.x+c.w-A.w,x));y=Math.max(c.y,Math.min(c.y+c.h-A.h,y))}return{...A,x:r2(x),y:r2(y)}}catch(e){return A}}}
+let CASDR=null;
+svg.addEventListener('pointerdown',e=>{try{if(fl!==-1||!isMod()||tool!=='select'||TJ().acc!=='castillete'||e.button>0)return;const A=tejAccRect();if(!A)return;const p=world(e);if(p.x<A.x||p.x>A.x+A.w||p.y<A.y||p.y>A.y+A.h)return;
+  e.stopImmediatePropagation();e.preventDefault();push();const T=TJ();CASDR={x:p.x,y:p.y,dx:+T.cdx||0,dy:+T.cdy||0,id:e.pointerId};try{svg.setPointerCapture(e.pointerId)}catch(er){}note='Arrastra la caseta donde quieras dentro de la cubierta'}catch(er){}},true);
+svg.addEventListener('pointermove',e=>{if(!CASDR||e.pointerId!==CASDR.id)return;e.stopImmediatePropagation();const p=world(e),T=TJ();T.cdx=r2(CASDR.dx+snap(p.x-CASDR.x));T.cdy=r2(CASDR.dy+snap(p.y-CASDR.y));render()},true);
+const casUp=e=>{if(!CASDR||e.pointerId!==CASDR.id)return;e.stopImmediatePropagation();CASDR=null;const A=tejAccRect();note=A?'Caseta movida: '+fmt(A.w)+' × '+fmt(A.h)+' m':'';done()};
+svg.addEventListener('pointerup',casUp,true);svg.addEventListener('pointercancel',casUp,true);
+document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('[data-casauto]')){const T=TJ();delete T.cdx;delete T.cdy}},true);
+{const _pw5AR=typeof pw5==='function'?pw5:null;if(_pw5AR)pw5=function(){let h=_pw5AR.apply(this,arguments);try{if(TJ().acc==='castillete')h=h.replace(/(<button data-casauto="1">)/,'<p class="hint" style="margin:4px 0">Para moverla, ve a la planta «Tejado» y arrástrala con el dedo.</p>$1')}catch(e){}return h}}
+/* ---------- la rampa de bajada al garaje abre su puerta de coches en el cierre ---------- */
+function rxGate(){const o=OB();if(!(o.cerr||[]).length)return;items.filter(it=>isRX(it)&&it.pts&&it.pts.length>1).forEach(it=>{const P0=it.pts[0],W=Math.max(+it.w||3,+it.wr||0)+.6;let best=null;
+  o.cerr.forEach(c=>cerrSegs(c).forEach(([a,b],i)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<W)return;const d=exDseg(P0[0],P0[1],a,b);if(d<3&&(!best||d<best.d)){const u=((P0[0]-a[0])*(b[0]-a[0])+(P0[1]-a[1])*(b[1]-a[1]))/L;best={d,c,i,L,u:Math.max(W/2,Math.min(L-W/2,u))}}}));
+  if(!best)return;o.ppar=o.ppar||[];let g=o.ppar.find(p=>p.rx===it.id);
+  if(!g&&!it.rxg){g=o.ppar.find(p=>!p.rx&&swVeh(p.k)&&p.k!=='bolardos'&&p.c===best.c.id&&p.s===best.i);if(g){g.rx=it.id}else{g={id:OBID(),c:best.c.id,s:best.i,u:best.u,w:r2(W),k:'corredera',lado:'b',rx:it.id};o.ppar.push(g);note='Puerta de coches puesta en el cierre, justo donde entra la rampa del garaje'}it.rxg=1}
+  if(g){g.c=best.c.id;g.s=best.i;g.w=r2(Math.max(g.w,W));g.u=r2(Math.max(g.w/2,Math.min(best.L-g.w/2,best.u)))}})}
+{const _dnAR=done;done=function(){try{if(isMod())rxGate()}catch(e){console.warn('rampa y puerta',e)}return _dnAR.apply(this,arguments)}}
+/* ---------- muro curvo del cierre: tres toques (principio, un punto de la curva, final) ---------- */
+let CURV=null;
+function curvPts(A,M,B){const ax=A[0],ay=A[1],bx=M[0],by=M[1],cx=B[0],cy=B[1],d=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));if(Math.abs(d)<1e-6)return[A,B];
+  const ux=((ax*ax+ay*ay)*(by-cy)+(bx*bx+by*by)*(cy-ay)+(cx*cx+cy*cy)*(ay-by))/d,uy=((ax*ax+ay*ay)*(cx-bx)+(bx*bx+by*by)*(ax-cx)+(cx*cx+cy*cy)*(bx-ax))/d,R=Math.hypot(ax-ux,ay-uy);
+  let a0=Math.atan2(ay-uy,ax-ux),am=Math.atan2(by-uy,bx-ux),a1=Math.atan2(cy-uy,cx-ux);const norm=v=>{while(v<0)v+=2*Math.PI;while(v>=2*Math.PI)v-=2*Math.PI;return v};let s1=norm(a1-a0),sm=norm(am-a0);let sweep=sm<s1?s1:s1-2*Math.PI;
+  const n=Math.max(6,Math.min(40,Math.ceil(Math.abs(sweep)*R/.5))),out=[];for(let i=0;i<=n;i++){const t=a0+sweep*i/n;out.push([r2(ux+R*Math.cos(t)),r2(uy+R*Math.sin(t))])}return out}
+function curvStart(ty){CURV={pts:[],t:ty||'bloque'};try{pasoClose()}catch(e){}fl=pbF();try{tabs()}catch(e){}note='Muro curvo: toca el principio, luego un punto de la curva y por último el final';render()}
+window.addEventListener('pointerdown',e=>{if(!CURV||!e.target||!svg.contains(e.target)||e.button>0)return;e.stopImmediatePropagation();e.preventDefault();const p=world(e);CURV.pts.push([snap(p.x),snap(p.y)]);
+  if(CURV.pts.length<3){note=CURV.pts.length===1?'Ahora un punto de la curva (por dónde pasa)':'Ahora el final del muro';render();return}
+  const P=curvPts(...CURV.pts),o=OB();push();o.cerr=o.cerr||[];o.cerr.push({id:OBID(),t:CURV.t,cl:0,pts:P,curva:1});const L=P.reduce((s,q,i)=>i?s+Math.hypot(q[0]-P[i-1][0],q[1]-P[i-1][1]):s,0);CURV=null;note='Muro curvo de '+fmt(Math.round(L*100)/100)+' m';done();try{st.p1t='cerr';pasoOpen(1)}catch(er){}},true);
+document.addEventListener('keydown',e=>{if(CURV&&e.key==='Escape'){CURV=null;note='';render()}});
+{const _rnCV=render;render=function(){const r=_rnCV.apply(this,arguments);try{if(!CURV||!CURV.pts.length)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h=CURV.pts.map(p=>`<circle cx="${p[0]*S}" cy="${p[1]*S}" r="6" fill="var(--acc)"/>`).join('');if(CURV.pts.length===2)h+=`<line x1="${CURV.pts[0][0]*S}" y1="${CURV.pts[0][1]*S}" x2="${CURV.pts[1][0]*S}" y2="${CURV.pts[1][1]*S}" stroke="var(--acc)" stroke-dasharray="6 4"/>`;g.insertAdjacentHTML('beforeend',`<g pointer-events="none">${h}</g>`)}catch(e){}return r}}
+/* ---------- entrada con pilares: coches + peatonal (tres pilares), o solo una puerta (dos) ---------- */
+Object.assign(PRES_D,{e_pil:['Pilar de obra de la entrada, con su acabado','ud',420]});
+function epL(){const o=OB();return o.epil||(o.epil=[])}
+function entCalle(){const s=SOL();if(!s)return null;const P0=solPts(s),ed=solEd(s),i=ed.findIndex(q=>q.t==='calle');if(i<0)return null;const sg=solArea(P0)>0?1:-1,P=pgOffset(P0,.15*sg);return{a:P[i],b:P[(i+1)%P.length],i}}
+function entPoner(cfg){const o=OB(),E=entCalle();if(!E){note='Marca primero qué lindero da a la calle (apartado «Linderos y calle»)';return render()}const pw=+cfg.pw||.4,wc=cfg.tipo==='pea'?0:(+cfg.wc||3.5),wp=cfg.tipo==='coches'?0:(+cfg.wp||1);
+  const tot=pw+(wc?wc+pw:0)+(wp?wp+pw:0),L=Math.hypot(E.b[0]-E.a[0],E.b[1]-E.a[1]),u0=Math.max(0,Math.min(L-tot,+cfg.d||0)),ux=(E.b[0]-E.a[0])/L,uy=(E.b[1]-E.a[1])/L,at=t=>[E.a[0]+ux*t,E.a[1]+uy*t];
+  push();o.cerr=o.cerr||[];o.ppar=o.ppar||[];let c=null,s=0,conv=t=>t;
+  /* si ya hay cierre en esa linde, las puertas van en él; si no, un tramo justo del ancho de la entrada */
+  for(const q of o.cerr){const S=cerrSegs(q);for(let i=0;i<S.length;i++){const[a,b]=S[i];if(exDseg(a[0],a[1],E.a,E.b)<.35&&exDseg(b[0],b[1],E.a,E.b)<.35){const Ls=Math.hypot(b[0]-a[0],b[1]-a[1]),ta=(a[0]-E.a[0])*ux+(a[1]-E.a[1])*uy,tb=(b[0]-E.a[0])*ux+(b[1]-E.a[1])*uy;
+    if(u0>=Math.min(ta,tb)-.01&&u0+tot<=Math.max(ta,tb)+.01){c=q;s=i;conv=tb>ta?(t=>t-ta):(t=>ta-t);break}}}if(c)break}
+  if(!c){const A=at(u0),B=at(u0+tot);c={id:OBID(),t:cfg.cerr||'bloque',cl:0,pts:[[r2(A[0]),r2(A[1])],[r2(B[0]),r2(B[1])]],ent:1};o.cerr.push(c);s=0;conv=t=>t-u0}
+  const H=+cfg.ph||2.1,rv=cfg.rv||'',pil=t=>{const p=at(t);epL().push({id:OBID(),x:r2(p[0]),y:r2(p[1]),w:pw,H,rv,ang:Math.atan2(uy,ux)})};
+  let t=u0;pil(t+pw/2);t+=pw;if(wc){o.ppar.push({id:OBID(),c:c.id,s,u:r2(conv(t+wc/2)),w:r2(wc),k:cfg.kc||'corredera',lado:'b'});t+=wc;pil(t+pw/2);t+=pw}
+  if(wp){o.ppar.push({id:OBID(),c:c.id,s,u:r2(conv(t+wp/2)),w:r2(wp),k:'peatonal',lado:'b',vp:1});t+=wp;pil(t+pw/2)}
+  note='Entrada puesta: '+(wc&&wp?'puerta de coches y peatonal con tres pilares':wc?'puerta de coches con dos pilares':'puerta peatonal con dos pilares');done()}
+function entHTML(){const o=OB(),P=epL(),ek=RVK.filter(k=>RVM[k][4].includes('e'));const E=entCalle(),L=E?Math.hypot(E.b[0]-E.a[0],E.b[1]-E.a[1]):0;
+  return `<div class="swX" id="entB"><h4>Entrada con pilares</h4><p class="hint" style="margin:0 0 6px">Pone las puertas en la linde de la calle con sus pilares de obra. Si ahí no hay cierre, hace solo la entrada.</p>
+  <div class="g2"><label>Qué lleva<select data-ent="tipo"><option value="ambas">Coches + peatonal (3 pilares)</option><option value="pea">Solo peatonal (2 pilares)</option><option value="coches">Solo coches (2 pilares)</option></select></label><label>Puerta de coches<select data-ent="kc"><option value="corredera">Corredera</option><option value="batiente">Batiente</option><option value="basculante">Basculante</option></select></label>
+  <label>Ancho coches (m)<input data-ent="wc" type="number" step=".1" value="3.5"></label><label>Ancho peatonal (m)<input data-ent="wp" type="number" step=".1" value="1"></label>
+  <label>Pilares (m de lado)<input data-ent="pw" type="number" step=".05" value=".4"></label><label>Alto de los pilares (m)<input data-ent="ph" type="number" step=".1" value="2.1"></label>
+  <label>Acabado de los pilares<select data-ent="rv"><option value="">Enfoscado y pintado</option>${ek.map(k=>`<option value="${k}">${RVM[k][0]}</option>`).join('')}</select></label><label>Desde la esquina (m)<input data-ent="d" type="number" step=".1" value="${E?r2(Math.max(0,L/2-3)):0}"></label></div>
+  <div class="row"><button data-entgo="1" class="pri">Poner la entrada</button></div>${P.length?`<p class="hint" style="margin:6px 0 2px">${P.length} pilar${P.length>1?'es':''} de entrada.</p><div class="row"><button data-entdel="1" class="dng">Quitar los pilares</button></div>`:''}
+  <h4 style="margin-top:10px">Caminos de entrada</h4><div class="row"><button data-entz="peatonal">Dibujar el camino peatonal</button><button data-entz="acceso">Dibujar el paso de coches</button></div></div>`}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;const b=t.closest('#entB [data-entgo],#entB [data-entdel],#entB [data-entz],#pwP [data-curv]');if(!b)return;e.stopImmediatePropagation();
+  if(b.dataset.entgo){const cfg={};document.querySelectorAll('#entB [data-ent]').forEach(i=>cfg[i.dataset.ent]=i.value);entPoner(cfg);pasoBody();return}
+  if(b.dataset.entdel){push();OB().epil=[];done();pasoBody();return}if(b.dataset.entz){zStart(b.dataset.entz);return}if(b.dataset.curv){curvStart(($('#pwP #obCt')||{}).value||'bloque')}},true);
+{const _seAR=swEntX;swEntX=function(){return entHTML()+_seAR.apply(this,arguments)}}
+{const _scAR=swCerrX;swCerrX=function(){return _scAR.apply(this,arguments).replace('<button data-swcs="1" class="pri">Rodear el solar por lados</button>','<button data-swcs="1" class="pri">Rodear el solar por lados</button><button data-curv="1">Dibujar un muro curvo</button>')}}
+/* pilares de la entrada: plano, 3D y presupuesto */
+{const _rnEP=render;render=function(){const r=_rnEP.apply(this,arguments);try{const P=OB().epil||[];if(!P.length||!isMod()||(fl!==0&&!(st.sot&&fl===1)))return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;
+  g.insertAdjacentHTML('beforeend',`<g pointer-events="none">${P.map(p=>`<rect x="${-p.w/2*S}" y="${-p.w/2*S}" width="${p.w*S}" height="${p.w*S}" transform="translate(${p.x*S} ${p.y*S}) rotate(${p.ang*180/Math.PI})" fill="${p.rv&&RVM[p.rv]?RVM[p.rv][1]:'#d7d2c8'}" stroke="#333" stroke-width="1.5"/>`).join('')}</g>`)}catch(e){}return r}}
+{const _b3EP=bldAll3;bldAll3=function(){const B=_b3EP.apply(this,arguments);try{const P=OB().epil||[];if(!P.length||!B||!B.sc||!window.THREE)return B;const T=THREE,zg=st.sot?rasante():0;
+  P.forEach(p=>{const col=p.rv&&RVM[p.rv]?RVM[p.rv][1]:'#e9e4da',m=new T.Mesh(new T.BoxGeometry(p.w,p.H,p.w),new T.MeshLambertMaterial({color:col}));m.position.set(p.x,zg+p.H/2,p.y);m.rotation.y=-p.ang;m.castShadow=true;B.sc.add(m);const cp=new T.Mesh(new T.BoxGeometry(p.w+.08,.06,p.w+.08),new T.MeshLambertMaterial({color:'#bdb6a8'}));cp.position.set(p.x,zg+p.H+.03,p.y);cp.rotation.y=-p.ang;B.sc.add(cp)})}catch(e){console.warn(e)}return B}}
+{const _epP=entPres;entPres=function(){const A=_epP.apply(this,arguments);const n=(OB().epil||[]).length;if(n)A.push(['e_pil',n]);return A}}
+/* ---------- contadores: ponerlos tocando donde van, aunque no haya acometida ---------- */
+let CTRP=null;
+{const _clAR=ctrList;ctrList=function(){let L=_clAR.apply(this,arguments);try{const o=OB(),M=o.ctrP||{};Object.keys(M).forEach(k=>{if(!L.some(q=>q.k===k))L.push({k,seg:null,u:0})});
+  L=L.map(q=>{const m=M[q.k];if(!m)return q;const L2=Math.hypot(m.b[0]-m.a[0],m.b[1]-m.a[1]);if(L2<.3)return q;const seg={on:m.on,a:m.a,b:m.b,L:L2,th:m.th||0,d:0},w=CTRK[q.k].w;return{k:q.k,seg,u:Math.max(w/2+.05,Math.min(L2-w/2-.05,(o.ctrU&&o.ctrU[q.k]!=null)?o.ctrU[q.k]:m.u)),ux:(m.b[0]-m.a[0])/L2,uy:(m.b[1]-m.a[1])/L2}})}catch(e){console.warn(e)}return L}}
+function ctrCands(){const o=OB(),S=[];(o.cerr||[]).forEach(c=>{try{cerrSegs(c).forEach(([a,b])=>{if(Math.hypot(b[0]-a[0],b[1]-a[1])>=.8)S.push({on:'cerr',a,b,th:((CERR[c.t]||[])[2])||.2})})}catch(e){}});
+  const c=contOf(pbF());if(c){const P=typeof isPolyC==='function'&&isPolyC(c)?pgCW(cOut(c)):(()=>{const E=(SD().ext||.3)/2;return[[c.x-E,c.y-E],[c.x+c.w+E,c.y-E],[c.x+c.w+E,c.y+c.h+E],[c.x-E,c.y+c.h+E]]})();P.forEach((a,i)=>S.push({on:'fach',a,b:P[(i+1)%P.length],th:0}))}return S}
+window.addEventListener('pointerdown',e=>{if(!CTRP||!e.target||!svg.contains(e.target)||e.button>0)return;e.stopImmediatePropagation();e.preventDefault();const p=world(e);let best=null;ctrCands().forEach(s=>{const d=exDseg(p.x,p.y,s.a,s.b);if(!best||d<best.d)best={...s,d}});
+  if(!best||best.d>1.5){note='Toca encima del cierre o de la fachada, donde va el contador';return render()}const o=OB(),L=Math.hypot(best.b[0]-best.a[0],best.b[1]-best.a[1]),u=((p.x-best.a[0])*(best.b[0]-best.a[0])+(p.y-best.a[1])*(best.b[1]-best.a[1]))/L;
+  push();o.ctrP=o.ctrP||{};o.ctrP[CTRP]={on:best.on,a:best.a.map(r2),b:best.b.map(r2),th:best.th,u:r2(u)};o.ctrU=o.ctrU||{};delete o.ctrU[CTRP];note=CTRK[CTRP].t+' puesto '+(best.on==='cerr'?'en el cierre':'en la fachada');CTRP=null;done();try{st.p1t='serv';pasoOpen(1)}catch(er){}},true);
+{const _pw1CT=pw1;pw1=function(){let h=_pw1CT.apply(this,arguments);try{if(!isMod()||(st.p1t||'sit')!=='serv')return h;const o=OB();h=h.replace(/(<h3>Puertas de los contadores<\/h3>)/,`$1<div class="swX"><h4>Poner un contador tocando donde va</h4><p class="hint" style="margin:0 0 6px">Toca el botón y luego el cierre o la fachada: el armario se queda ahí, aunque no hayas dibujado la acometida.</p><div class="row" style="flex-wrap:wrap;gap:4px">${Object.entries(CTRK).map(([k,v])=>`<button data-ctrp="${k}">${esc(k==='elec'?'Contador de luz':v.t)}${o.ctrP&&o.ctrP[k]?' ✓':''}</button>`).join('')}</div></div>`)}catch(e){}return h}}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#pwP [data-ctrp]');if(!b)return;e.stopImmediatePropagation();CTRP=b.dataset.ctrp;try{pasoClose()}catch(er){}fl=pbF();try{tabs()}catch(er){}note='Toca el cierre o la fachada donde va: '+CTRK[CTRP].t;render()},true);
+/* ---------- estructura automática: al rehacerla se quitan también los pilares de los parkings ---------- */
+{const _eaAR=eaApply;eaApply=function(){const before=items.filter(i=>i.t==='pilar'&&i.f<=-10).length;const r=_eaAR.apply(this,arguments);try{const U=UGL().map((k,i)=>-10-i);if(U.length){const P0=items.filter(i=>i.t==='pilar'&&i.f===0);if(P0.length){items=items.filter(i=>!(i.t==='pilar'&&i.f<=-10));U.forEach(f=>P0.forEach(p=>items.push({...p,id:nid++,f})));done()}}}catch(e){console.warn(e)}return r}}
+/* ---------- 3D a pantalla completa ---------- */
+(function(){const c=document.createElement('style');c.textContent=`body.v3full #v3d .fb,body.v3full #v3m,body.v3full #v3pad,body.v3full #v3d .fb2,body.v3full #v3d [id^="v3"]:not(#v3c):not(#v3fsX):not(#v3d){display:none!important}
+body.v3full #v3c{position:fixed!important;inset:0!important;z-index:31}#v3fsX{display:none;position:fixed;top:8px;right:8px;z-index:40;padding:6px 12px;border-radius:16px;opacity:.85}body.v3full #v3fsX{display:block}body.v3nopad #v3pad{display:none!important}`;document.head.appendChild(c)})();
+(function(){const fb=$('#v3d .fb');if(!fb)return;fb.insertAdjacentHTML('beforeend','<button id="v3fs" title="Ver el 3D en toda la pantalla">⛶ Pantalla completa</button><button id="v3pd" aria-pressed="true">Flechas</button>');$('#v3d').insertAdjacentHTML('beforeend','<button id="v3fsX">✕ Salir de pantalla completa</button>');
+  const rs=()=>setTimeout(()=>window.dispatchEvent(new Event('resize')),60);
+  $('#v3fs').onclick=()=>{document.body.classList.add('v3full');try{const d=document.documentElement;if(d.requestFullscreen)d.requestFullscreen().catch(()=>{})}catch(e){}rs()};
+  $('#v3fsX').onclick=()=>{document.body.classList.remove('v3full');try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}rs()};
+  document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('v3full')){document.body.classList.remove('v3full');rs()}});
+  $('#v3pd').onclick=()=>{const on=document.body.classList.toggle('v3nopad');$('#v3pd').setAttribute('aria-pressed',String(!on))};
+  $('#v3x').addEventListener('click',()=>{document.body.classList.remove('v3full');try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}})})();
+/* ---------- forma del solar: lo de afinar punto a punto, recogido (no dos tablas a la vez) ---------- */
+{const _swH3=swHTML;swHTML=function(h){let r=_swH3.apply(this,arguments);try{if((st.p1t||'sit')!=='forma')return r;const a=r.indexOf('<p class="hint" style="margin:8px 0 4px">Los vértices del solar');if(a<0)return r;const b=r.indexOf('</div><div class="bt">',a);if(b<0)return r;
+  r=r.slice(0,a)+'<details class="swX"><summary><b>Afinar el solar punto a punto o lado a lado</b></summary>'+r.slice(a,b)+'</details>'+r.slice(b)}catch(e){}return r}}
+/* ---------- la calle por encima del terreno (antes se mezclaban y salía a manchas) ---------- */
+{const _b3CL=bldAll3;bldAll3=function(){const B=_b3CL.apply(this,arguments);try{const E=calleEdge();if(!E||!B||!B.sc||!window.THREE)return B;const L=[];B.sc.updateMatrixWorld(true);
+  B.sc.traverse(o=>{if(!o.isMesh||!o.visible||(o.userData&&o.userData.terr))return;const b=new THREE.Box3().setFromObject(o);if(b.max.y>.2||b.max.y<-.2||b.max.y-b.min.y>.3)return;const cx=(b.min.x+b.max.x)/2,cz=(b.min.z+b.max.z)/2,d=(cx-E.a[0])*E.n[0]+(cz-E.a[1])*E.n[1];if(d>.3&&Math.max(b.max.x-b.min.x,b.max.z-b.min.z)>4)L.push(o)});
+  L.forEach(o=>{o.position.y+=.06;if(o.material){o.material.polygonOffset=true;o.material.polygonOffsetFactor=-2;o.material.polygonOffsetUnits=-2}})}catch(e){console.warn(e)}return B}}
+
+/*<</mod:arreglos>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
