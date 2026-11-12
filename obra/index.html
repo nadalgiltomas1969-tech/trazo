@@ -15904,7 +15904,7 @@ const SCRM={
   tej:[['Tipo de tejado',()=>{tool='select';toolsUI();sel='all';render();panel()}],['Caseta',()=>scrTool('caseta')],['Chimenea',()=>scrTool('chim')],['Canalones y bajantes',()=>{try{pasoOpen(5)}catch(e){scrTool('baj')}}]]
 };
 function scrKey(){const c=scrCur();return c==='f'&&scrSot(fl)?'sot':c}
-function scrBar(){const T=$('#tabs');if(!T)return;const c=scrCur();
+function scrBar(){const T=$('#tabs');if(!T)return;const c=scrCur();document.body.classList.toggle('scrsol',c==='sol');
   let h=`<button data-scr="sol" aria-pressed="${c==='sol'}">Solar</button><button data-scr="exc" data-f="-2" aria-pressed="${c==='exc'}">Excavación</button><button data-scr="cim" aria-pressed="${c==='cim'}">Cimentación</button>`;
   for(let u=UGL().length-1;u>=0;u--)h+=`<button data-f="${-10-u}" aria-pressed="${c==='f'&&fl===-10-u}">${fname(-10-u)}</button>`;
   for(let i=0;i<F();i++)h+=`<button data-f="${i}" aria-pressed="${c==='f'&&fl===i}">${fname(i)}</button>`;
@@ -15925,6 +15925,7 @@ function scrMenu(){let m=$('#scrM');const tl=$('#tools');if(!tl)return;if(!m){m=
 document.head.insertAdjacentHTML('beforeend',`<style id="scrCss">
 body:not(.scrmas) .tools .mbtn:not(.mkeep){display:none!important}
 body:not(.scrmas) #pasos{display:none!important}
+body:not(.scrsol) #solHint,body:not(.scrsol) #tfBox{display:none!important}
 #scrM{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 #scrM button{background:#fff4e8;border-color:#e3b98f;padding:5px 9px;font-size:14px}
 #scrM button.on{background:#d35400;color:#fff;border-color:#d35400}
