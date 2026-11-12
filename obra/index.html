@@ -15888,28 +15888,31 @@ function vpUI(n){const V=V3;if(!V||!V.B||!V.B.floors){if(n<40)setTimeout(()=>vpU
 /*<<mod:pantallas>>*/
 /* ===== Pantallas por etapa: Solar · Excavación · Cimentación · sótanos · plantas · Tejado ===== */
 let COLST=.1,MMODE=false,COLMIN=false;
-const scrSot=f=>{try{return isUG(f)||(typeof isSotF==='function'&&isSotF(f))}catch(e){return false}};
+const scrSot=f=>f<=-10||(f===0&&!!st.sot);
+const SOTK={sotano:'Sótano',bodega:'Bodega',parking:'Parking'};
+function scrName(f){if(f===0&&st.sot)return (SOTK[st.sotT]||'Sótano')+' −1';if(f<=-10){const u=-10-f;return (SOTK[UGL()[u]]||'Sótano')+' −'+(u+(st.sot?2:1))}return fname(f)}
 function scrCur(){if(fl===-2)return st.scr==='cim'?'cim':'exc';if(st.scr==='sol'&&fl>=0)return 'sol';if(fl===-1)return 'tej';return 'f'}
 function scrTool(t){const b=document.querySelector('[data-tool="'+t+'"]');if(b)b.click();else{tool=t;toolsUI();render()}}
 function scrSol(t){st.p1t=t;save();try{pasoOpen(1)}catch(e){console.warn(e)}try{scrMenu()}catch(e){}}
 function scrFase(k){st.fase=k;save();try{pasoOpen(3)}catch(e){console.warn(e)}}
-function scrSotF(){for(let i=0;i<F();i++)if(typeof isSotF==='function'&&isSotF(i))return i;const u=UGL().length;return u?-10:null}
+function scrSotF(){if(st.sot)return 0;return UGL().length?-10:null}
 function scrAcab(){const c=contOf(fl);if(!c){note='Primero el contorno de '+fname(fl).toLowerCase();return render()}tool='select';toolsUI();sel=c.id;render();panel();setTimeout(()=>{const b=document.querySelector('#rvFB,#suB');if(b)b.scrollIntoView({block:'start'})},60)}
 const SCRM={
   sol:[['Situación',()=>scrSol('sit'),'sit'],['Forma y medidas',()=>scrSol('forma'),'forma'],['Calle y linderos',()=>scrSol('lind'),'lind'],['Cotas del terreno',()=>scrSol('niv'),'niv'],['Cierre',()=>scrSol('cerr'),'cerr'],['Entradas',()=>scrSol('ent'),'ent'],['Acometidas',()=>scrSol('serv'),'serv']],
   exc:[['Zona y tierras',()=>scrFase('exc')],['Rampa del garaje',()=>{const f=scrSotF();if(f==null){note='Para la rampa hace falta un sótano o un parking (Obra ▾)';return render()}fl=f;st.scr=null;tabs();rxStart()}],['Aljibe',()=>aljOpen(null)],['Pozo negro',()=>aljOpen(fosNew())]],
   cim:[['Pilares y zapatas',()=>scrFase('cim')],['Estructura automática',()=>eaOpen()],['Calcular cimentación',()=>cimCalcOpen()],['Saneamiento',()=>scrTool('tub')],['Ver en 3D',()=>stOpen3D()]],
-  sot:[['Muros',()=>scrTool('wall')],['Plazas',()=>scrTool('plaza')],['Rampa',()=>scrTool('rampa')],['Escalera',()=>scrTool('esc')],['Ascensor',()=>{const b=document.querySelector('[data-asc]');if(b)b.click()}],['Trasteros',()=>scrTool('room')],['Pilares',()=>scrTool('pilar')]],
+  sot:[['Muros',()=>scrTool('wall')],['Plazas',()=>scrTool('plaza')],['Rampa',()=>scrTool('rampa')],['Escalera',()=>scrTool('esc')],['Ascensor',()=>{const b=document.querySelector('[data-asc]');if(b)b.click()}],['Trasteros',()=>scrTool('room')],['Pilares',()=>scrTool('pilar')],['Quitar este sótano',()=>sotQuitar()]],
   f:[['Habitaciones',()=>scrTool('room')],['Muros y tabiques',()=>scrTool('wall')],['Puertas',()=>scrTool('door')],['Ventanas',()=>scrTool('window')],['Escalera',()=>scrTool('esc')],['Ascensor',()=>{const b=document.querySelector('[data-asc]');if(b)b.click()}],['Balcón',()=>scrTool('balc')],['Acabados',scrAcab]],
   tej:[['Tipo de tejado',()=>{tool='select';toolsUI();sel='all';render();panel()}],['Caseta',()=>scrTool('caseta')],['Chimenea',()=>scrTool('chim')],['Canalones y bajantes',()=>{try{pasoOpen(5)}catch(e){scrTool('baj')}}]]
 };
 function scrKey(){const c=scrCur();return c==='f'&&scrSot(fl)?'sot':c}
 function scrBar(){const T=$('#tabs');if(!T)return;const c=scrCur();document.body.classList.toggle('scrsol',c==='sol');
   let h=`<button data-scr="sol" aria-pressed="${c==='sol'}">Solar</button><button data-scr="exc" data-f="-2" aria-pressed="${c==='exc'}">Excavación</button><button data-scr="cim" aria-pressed="${c==='cim'}">Cimentación</button>`;
-  for(let u=UGL().length-1;u>=0;u--)h+=`<button data-f="${-10-u}" aria-pressed="${c==='f'&&fl===-10-u}">${fname(-10-u)}</button>`;
-  for(let i=0;i<F();i++)h+=`<button data-f="${i}" aria-pressed="${c==='f'&&fl===i}">${fname(i)}</button>`;
+  h+=`<button data-sotadd="1" class="sotAdd">+ Sótano</button>`;
+  for(let u=UGL().length-1;u>=0;u--)h+=`<button data-f="${-10-u}" aria-pressed="${c==='f'&&fl===-10-u}">${scrName(-10-u)}</button>`;
+  for(let i=0;i<F();i++)h+=`<button data-f="${i}" aria-pressed="${c==='f'&&fl===i}">${scrName(i)}</button>`;
   h+=`<button data-f="-1" aria-pressed="${c==='tej'}">Tejado</button>`;T.innerHTML=h;T.classList.add('scr');
-  T.querySelectorAll('button').forEach(b=>b.onclick=()=>scrGo(b.dataset.scr||'f',b.dataset.f));scrMenu()}
+  T.querySelectorAll('button').forEach(b=>b.onclick=b.dataset.sotadd?()=>sotDlg():()=>scrGo(b.dataset.scr||'f',b.dataset.f));scrMenu()}
 function scrGo(k,f){try{closeMenus()}catch(e){}try{xwStop()}catch(e){}try{if(ALW)aljClose()}catch(e){}
   ['#pwP','#eaP','#ccP','#solP','#obraP'].forEach(q=>{const e=$(q);if(e&&q!=='#pwP')e.remove()});try{pasoClose()}catch(e){}
   tool='select';sel=null;
@@ -15920,17 +15923,33 @@ function scrGo(k,f){try{closeMenus()}catch(e){}try{xwStop()}catch(e){}try{if(ALW
 function scrMenu(){let m=$('#scrM');const tl=$('#tools');if(!tl)return;if(!m){m=document.createElement('div');m.id='scrM';const un=$('#undo');(un&&un.parentElement===tl?un:tl.firstChild).after(m)}
   const k=scrKey(),L=SCRM[k]||[];m.innerHTML=L.map((q,i)=>`<button data-scm="${i}"${q[2]&&q[2]===st.p1t&&$('#pwP')?' class="on"':''}>${q[0]}</button>`).join('')+`<button id="scrMas" aria-pressed="${document.body.classList.contains('scrmas')}">${document.body.classList.contains('scrmas')?'Menos ▴':'Más ▾'}</button>`;
   m.querySelectorAll('[data-scm]').forEach(b=>b.onclick=e=>{e.stopPropagation();try{closeMenus()}catch(er){}try{L[+b.dataset.scm][1]()}catch(er){console.warn(er)}});
-  $('#scrMas').onclick=e=>{e.stopPropagation();document.body.classList.toggle('scrmas');scrMenu();try{menuUI()}catch(er){}}}
+  $('#scrMas').onclick=e=>{e.stopPropagation();masSet(!document.body.classList.contains('scrmas'))}}
+function masSet(on){const kk=MENUS.find(m=>m.btn.classList.contains('mkeep')),box=kk?kk.btn.parentElement:null;let P=$('#mgMas');if(!P){document.body.insertAdjacentHTML('beforeend','<div id="mgMas" hidden></div>');P=$('#mgMas')}
+  if(on){MENUS.forEach(m=>{if(!m.btn.classList.contains('mkeep'))P.appendChild(m.btn)});const r=$('#scrMas').getBoundingClientRect();P.style.top=(r.bottom+6)+'px';P.style.left=Math.max(6,Math.min(r.left,innerWidth-330))+'px';P.hidden=false}
+  else{try{closeMenus()}catch(e){}const k=MENUS.find(m=>m.btn.classList.contains('mkeep'));MENUS.forEach(m=>{if(!m.btn.classList.contains('mkeep')&&box)box.insertBefore(m.btn,k?k.btn:null)});P.hidden=true}
+  document.body.classList.toggle('scrmas',on);scrMenu();try{menuUI()}catch(er){}}
+document.addEventListener('pointerdown',e=>{if(!document.body.classList.contains('scrmas'))return;const t=e.target;if(t.closest&&(t.closest('#mgMas')||t.closest('#scrMas')||t.closest('.pop')))return;masSet(false)},true);
+document.addEventListener('click',e=>{const t=e.target;if(t.closest&&t.closest('.pop')&&document.body.classList.contains('scrmas')&&t.closest('button'))setTimeout(()=>masSet(false),0)});
 {const _tabsS=tabs;tabs=function(){const r=_tabsS.apply(this,arguments);try{scrBar()}catch(e){console.warn(e)}return r}}
 document.head.insertAdjacentHTML('beforeend',`<style id="scrCss">
-body:not(.scrmas) .tools .mbtn:not(.mkeep){display:none!important}
-body:not(.scrmas) #pasos{display:none!important}
+#pasos{display:none!important}
+#tools .mbtn:not(.mkeep){display:none!important}
+#mgMas{position:fixed;z-index:85;display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;box-shadow:0 6px 20px #0003;width:320px}
+#mgMas[hidden]{display:none}
+#mgMas .mbtn{text-align:left}
+#tools{flex-wrap:nowrap!important}
+#tabs.scr{flex-wrap:nowrap;overflow-x:auto}
+#tabs .sotAdd{border-style:dashed;color:#d35400;font-weight:600}
+#sotD{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+#sotD>div{background:var(--panel);color:var(--ink);border-radius:12px;padding:16px;width:min(360px,92vw);display:flex;flex-direction:column;gap:10px}
+#sotD .r{display:flex;gap:8px;flex-wrap:wrap}
 body:not(.scrsol) #solHint,body:not(.scrsol) #tfBox{display:none!important}
-#scrM{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#scrM{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto;min-width:0;flex:1 1 auto;scrollbar-width:thin}
+#scrM button{flex:0 0 auto;white-space:nowrap}
 #scrM button{background:#fff4e8;border-color:#e3b98f;padding:5px 9px;font-size:14px}
 #scrM button.on{background:#d35400;color:#fff;border-color:#d35400}
 body:not(.scrmas) #pwP .swTabs{display:none}
-#scrMas{background:var(--panel)!important;border-color:var(--line)!important}
+#scrMas{background:var(--panel)!important;border-color:var(--line)!important;color:var(--ink)!important}
 #tabs.scr button[data-scr]{font-weight:600}
 #colW{position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:10px;z-index:9;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:5px solid #d35400;border-radius:12px;padding:6px 10px;box-shadow:0 4px 16px #0003;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:calc(100% - 110px)}
 #colW .cwA{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,34px);gap:3px}
@@ -15985,6 +16004,27 @@ document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.targ
 /* 3D: acercar hacia el punto que señalas, poco a poco y sin atravesar de golpe */
 function z3At(s,cam,B,f,X,Y,cv){const o=s.dist,n=Math.max(.4,Math.min(80,o*f));if(Math.abs(n-o)<1e-6)return;let W=null;try{const r=cv.getBoundingClientRect(),v=new THREE.Vector2((X-r.left)/r.width*2-1,-(Y-r.top)/r.height*2+1),rc=new THREE.Raycaster();rc.setFromCamera(v,cam);const vis=q=>{while(q){if(!q.visible)return false;q=q.parent}return true};const h=rc.intersectObjects(B.sc.children,true).find(q=>q.distance>.05&&vis(q.object));W=h?h.point:rc.ray.at(o,new THREE.Vector3())}catch(e){}
   if(W){const k=n/o;s.tx=W.x+(s.tx-W.x)*k;s.ty=W.y+(s.ty-W.y)*k;s.tz=W.z+(s.tz-W.z)*k}s.dist=n}
+
+/* ---------- sótanos: añadir y quitar ---------- */
+function sotDlg(){const o=$('#sotD');if(o)o.remove();const n=(st.sot?1:0)+UGL().length;
+  document.body.insertAdjacentHTML('beforeend',`<div id="sotD" role="dialog" aria-label="Añadir sótano"><div><b>Añadir un nivel bajo tierra (−${n+1})</b>
+  <span class="hint">Se pone debajo de ${n?'el último sótano':'la planta baja'}. Lleva el mismo contorno; luego lo cambias si quieres.</span>
+  <div class="r"><label><input type="radio" name="sotT" value="sotano" checked> Sótano</label><label><input type="radio" name="sotT" value="parking"> Parking</label><label><input type="radio" name="sotT" value="bodega"> Bodega</label></div>
+  <label>Altura de suelo a suelo (m)<input id="sotH" type="number" step=".05" min="2.2" max="5" value="2.8"></label>
+  <div class="r"><button id="sotOk" class="pri">Añadir</button><button id="sotNo">Cancelar</button></div></div></div>`);
+  $('#sotD').querySelectorAll('[name=sotT]').forEach(r=>r.onchange=()=>{$('#sotH').value=r.value==='parking'?'3':'2.8'});
+  $('#sotNo').onclick=()=>$('#sotD').remove();$('#sotD').onclick=e=>{if(e.target.id==='sotD')$('#sotD').remove()};
+  $('#sotOk').onclick=()=>{const t=$('#sotD [name=sotT]:checked').value,h=Math.max(2.2,Math.min(5,+$('#sotH').value||2.8));$('#sotD').remove();sotAdd(t,h)}}
+function sotAdd(t,h){if(!st.sot){addSot();st.sotT=t;st.fhs=st.fhs||{};st.fhs[0]=h;fl=0}
+  else{push();st.ug=[...UGL(),t];const u=st.ug.length-1,f=-10-u;st.fhs=st.fhs||{};st.fhs[f]=h;const c=contOf(u?f+1:0);if(c&&!contOf(f)){const k=JSON.parse(JSON.stringify(c));k.id=nid++;k.f=f;items.push(k)}fl=f}
+  st.scr=null;tool='select';sel=null;toolsUI();tabs();note=scrName(fl)+' añadido';done()}
+function sotQuitar(){const f=fl,nm=scrName(f);if(!scrSot(f))return;
+  if(f===0&&UGL().length){note='Quita primero los niveles de más abajo';return render()}
+  if(f<=-10&&-10-f<UGL().length-1){note='Quita primero los niveles de más abajo';return render()}
+  askYes('¿Quitar '+nm+'? Se borra lo que tenga dibujado.').then(ok=>{if(!ok)return;
+    if(f===0){push();items=items.filter(i=>!(i.f===0&&i.t!=='cont'));remSot();delete st.sotT}else{delFloor(f)}
+    fl=st.sot?0:pbF();if(UGL().length)fl=-10-(UGL().length-1);if(!UGL().length&&!st.sot)fl=pbF();tabs();toolsUI();done()})}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#mgMas .mbtn');if(!b)return;setTimeout(()=>{const m=MENUS.find(q=>q.btn===b);if(!m||m.pop.hidden)return;const P=$('#mgMas').getBoundingClientRect(),r=b.getBoundingClientRect(),w=m.pop.offsetWidth;m.pop.style.zIndex=86;m.pop.style.left=Math.max(6,P.left-w-6)+'px';m.pop.style.top=Math.max(6,Math.min(r.top,innerHeight-m.pop.offsetHeight-6))+'px'},0)},true);
 
 /*<</mod:pantallas>>*/
 /*<<mod:pjvacios>>*/
