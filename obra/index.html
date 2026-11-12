@@ -16245,6 +16245,21 @@ body.vwin #zoom{right:auto!important;left:10px!important}
 #gMenu .pop.inG button{text-align:left}
 </style>`);
 setTimeout(()=>{rwScan();rwTop();try{fitView()}catch(e){}},0);
+/* ---------- panel: nunca vacío, título real, contenido en los parkings ---------- */
+function ugAbove(f){return f===-10?(st.sot?0:pbF()):f+1}
+function ugHTML(){const f=fl,c=contOf(f),it=(t,q)=>items.filter(o=>o.f===f&&o.t===t&&(!q||q(o))).length,pl=it('plaza'),rp=it('rampa')+items.filter(o=>o.t==='rampx').length,as=it('monta',o=>o.asc),h=(st.fhs&&st.fhs[f])||3;
+  return `<h2>${esc(scrName(f))}</h2><label>Altura de suelo a suelo (m)<input id="ugH" type="number" step=".05" min="2.2" max="5" value="${h}"></label>
+  <p class="hint">${c?`Contorno: ${fmt(c.w)} × ${fmt(c.h)} m · ${fmt(r2(c.w*c.h))} m²`:'Esta planta aún no tiene contorno.'}</p>
+  <p class="hint">Plazas: <b>${pl}</b> · Rampas: <b>${rp}</b> · Ascensor: <b>${as?'sí':'no'}</b></p>
+  <div class="row"><button id="ugCp">${c?'Volver a copiar':'Copiar'} el contorno de ${esc(scrName(ugAbove(f)).toLowerCase())}</button></div>`}
+function dockFix(){const d=$('#dock');if(!d)return;let u=$('#dkUG');if(fl<=-10){if(!u){d.insertAdjacentHTML('beforeend','<section id="dkUG"></section>');u=$('#dkUG')}if(!u.contains(document.activeElement))u.innerHTML=ugHTML()}else if(u)u.remove();
+  let hn=$('#dkHint');const need=!cur()&&fl>-10;if(need&&!hn){d.insertAdjacentHTML('afterbegin','<p id="dkHint" class="hint" style="margin:0 0 8px">Toca un elemento del plano para verlo aquí.</p>')}else if(!need&&hn)hn.remove()}
+document.addEventListener('click',e=>{if(!(e.target.closest&&e.target.closest('#ugCp')))return;const f=fl,c=contOf(ugAbove(f));if(!c){note='La planta de arriba no tiene contorno';return render()}push();items=items.filter(o=>!(o.t==='cont'&&o.f===f));const k=JSON.parse(JSON.stringify(c));k.id=nid++;k.f=f;items.push(k);note='Contorno copiado';done()});
+document.addEventListener('change',e=>{if(e.target.id!=='ugH')return;push();st.fhs=st.fhs||{};st.fhs[fl]=Math.max(2.2,Math.min(5,+e.target.value||3));done()});
+{const _rtD=rwTitle;rwTitle=function(el){if(el.id==='dock'){const it=cur();try{if(it&&it.t!=='cont')return colName(it)}catch(e){}return (contOf(fl)?'Contorno de ':'')+(typeof scrName==='function'?scrName(fl):'la planta')}return _rtD.apply(this,arguments)}}
+{const _ruD=rwUpd;rwUpd=function(){try{dockFix()}catch(e){}_ruD.apply(this,arguments);const b=$('#rwin .rwBox[data-w="dock"]');if(b){const nd=document.body.classList.contains('nodock')&&fl>-10;b.hidden=nd||!$('#v3d').hidden}try{if(document.scrollingElement)document.scrollingElement.scrollLeft=0}catch(e){}}}
+document.head.insertAdjacentHTML('beforeend',`<style id="rwCss2">html,body{overflow-x:hidden!important;max-width:100vw}.bar,#tools{min-width:0!important;overflow:hidden}#scrM{flex:1 1 0!important}
+body.nodock #rwin #dock #dkUG{display:block!important}#rwin #dock #dkUG{padding:2px 0}</style>`);
 
 /*<</mod:ventanas>>*/
 </script>
