@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · pozo negro dentro de la casa</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · cada planta en 3D por dentro</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15863,6 +15863,27 @@ const FOSP={jardin:'En el jardín',bajo:'Bajo la casa (enterrado bajo el suelo)'
 {const _awF2=aljWarn;aljWarn=function(a){const w=_awF2.apply(this,arguments);if(a&&a.k&&a.pos!=='jardin'&&/^Muy pegado a la casa/.test(w||''))return '';return w}}
 
 /*<</mod:fosa2>>*/
+/*<<mod:v3plantas>>*/
+/* ===================== 3D: CADA PLANTA POR DENTRO ===================== */
+/* el suelo de cada planta se puede pisar al recorrerla */
+{const _b3VP=bldAll3;bldAll3=function(){const B=_b3VP.apply(this,arguments);try{if(!B)return B;B.walk=B.walk||[];for(let f=0;f<F();f++){const c=contOf(f);if(!c)continue;const P=typeof isPolyC==='function'&&isPolyC(c)?cOut(c):null,z=floorZ(f);B.walk.push({h:(x,y)=>(P?pgPip(x,y,P):(x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h))?z:null,vp:1})}}catch(e){console.warn(e)}return B}}
+const vpName=f=>{try{if(st.sot&&f===0)return 'Sótano';const pb=pbF();if(f===pb)return 'Planta baja';if(typeof isGolf==='function'&&isGolf(f))return 'Golfas';return 'Planta '+(f-pb)}catch(e){return 'Planta '+f}};
+function vpShow(v){const V=V3;if(!V||!V.B||!V.B.floors)return;const B=V.B,Fs=B.floors.map(g=>g.userData.f).filter((f,i,a)=>a.indexOf(f)===i).sort((a,b)=>a-b),top=Fs[Fs.length-1];let solo=null,upto=top;
+  if(v==='all')upto=top;else if(v[0]==='h')upto=+v.slice(2);else{solo=+v.slice(2);upto=solo}
+  B.floors.forEach(g=>{const f=g.userData.f;g.visible=solo!=null?f===solo:f<=upto;g.children.forEach(ch=>{if(ch.userData.ceil)ch.visible=solo!=null?false:f!==upto||upto===top})});
+  if(B.roof)B.roof.children.forEach(ch=>{ch.visible=solo==null&&upto===top});
+  B.sc.children.forEach(o=>{if(B.floors.includes(o)||o===B.roof)return;if(o.userData&&(o.userData.terr||o.userData.cerr||o.userData.f!=null))o.visible=solo==null});
+  if(solo!=null){const c=contOf(solo),s=V.st;if(c&&s){const P=typeof isPolyC==='function'&&isPolyC(c)?cOut(c):[[c.x,c.y],[c.x+c.w,c.y+c.h]],xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);s.mode='walk';s.px=(Math.min(...xs)+Math.max(...xs))/2;s.pz=(Math.min(...ys)+Math.max(...ys))/2;s.h=s.ey=floorZ(solo);s.lpitch=0;try{$('#v3m').textContent='Dentro de '+vpName(solo).toLowerCase()+': flechas para avanzar y girar · arrastra para mirar · «Desde arriba» para verla entera'}catch(e){}}}
+  const sel=$('#v3fl select');if(sel&&sel.value!==v)sel.value=v;VPCUR=v}
+let VPCUR='all';
+function vpUI(n){const V=V3;if(!V||!V.B||!V.B.floors){if(n<40)setTimeout(()=>vpUI(n+1),150);return}const L=$('#v3fl');if(!L){if(n<40)setTimeout(()=>vpUI(n+1),150);return}if(L.dataset.vp)return;L.dataset.vp=1;
+  const Fs=V.B.floors.map(g=>g.userData.f).filter((f,i,a)=>a.indexOf(f)===i).sort((a,b)=>a-b);
+  L.innerHTML=`<button data-vpd="-1" title="Planta de abajo">‹</button><select aria-label="Plantas">${Fs.map(f=>`<option value="s:${f}">Solo ${vpName(f).toLowerCase()} (por dentro)</option>`).join('')}${Fs.slice(0,-1).map(f=>`<option value="h:${f}">Hasta ${vpName(f).toLowerCase()}</option>`).join('')}<option value="all" selected>Todas</option></select><button data-vpd="1" title="Planta de arriba">›</button>`;
+  L.querySelector('select').onchange=e=>vpShow(e.target.value);
+  L.querySelectorAll('[data-vpd]').forEach(b=>b.onclick=()=>{const d=+b.dataset.vpd;let i=VPCUR[0]==='s'?Fs.indexOf(+VPCUR.slice(2)):(d>0?-1:Fs.length);i=Math.max(0,Math.min(Fs.length-1,i+d));vpShow('s:'+Fs[i])})}
+{const _o3VP=open3D;open3D=function(R){VPCUR='all';const r=_o3VP.apply(this,arguments);if(R&&R.allView)setTimeout(()=>vpUI(0),400);return r}}
+
+/*<</mod:v3plantas>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
