@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · ventanas a la derecha y menú único</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · entrada y bloqueo</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15963,7 +15963,7 @@ body:not(.scrmas) #pwP .swTabs{display:none}
 /* los menús Proyecto y Vista siguen siempre a la vista */
 {const _mUI=menuUI;menuUI=function(){const r=_mUI.apply(this,arguments);try{MENUS.forEach(m=>{if(m.name==='Proyecto'||m.name==='Vista')m.btn.classList.add('mkeep')})}catch(e){}return r}}
 /* ---------- ventana común para colocar: flechas, medidas y M ---------- */
-const colName=it=>{if(!it)return'';if(it.t==='pista'&&typeof PISTA!=='undefined')return (PISTA[it.k]||['Pista'])[0];if(it.t==='zext'&&typeof ZEX!=='undefined')return (ZEX[it.k]||['Zona'])[0].split(' (')[0];if(it.t==='obj'&&typeof CATK!=='undefined'&&CATK[it.ok])return CATK[it.ok][0];if(it.t==='monta')return it.asc?'Ascensor':'Montaplatos';if(it.t==='aljibe')return (typeof fosNm==='function'&&it.k)?fosNm(it):'Aljibe';const m={obj:'Mueble',esc:'Escalera',plaza:'Plaza',rampa:'Rampa',pilar:'Pilar',wall:'Muro',room:'Habitación',door:'Puerta',window:'Ventana',arco:'Arco',baj:'Bajante',chim:'Chimenea',farol:'Farola',label:'Texto',pneg:'Pozo negro',pozo:'Pozo',tonel:'Tonel',deco:'Adorno',balc:'Balcón',tub:'Tubería',cota:'Cota'};return it.name||m[it.t]||'Elemento'};
+let colName=it=>{if(!it)return'';if(it.t==='pista'&&typeof PISTA!=='undefined')return (PISTA[it.k]||['Pista'])[0];if(it.t==='zext'&&typeof ZEX!=='undefined')return (ZEX[it.k]||['Zona'])[0].split(' (')[0];if(it.t==='obj'&&typeof CATK!=='undefined'&&CATK[it.ok])return CATK[it.ok][0];if(it.t==='monta')return it.asc?'Ascensor':'Montaplatos';if(it.t==='aljibe')return (typeof fosNm==='function'&&it.k)?fosNm(it):'Aljibe';const m={obj:'Mueble',esc:'Escalera',plaza:'Plaza',rampa:'Rampa',pilar:'Pilar',wall:'Muro',room:'Habitación',door:'Puerta',window:'Ventana',arco:'Arco',baj:'Bajante',chim:'Chimenea',farol:'Farola',label:'Texto',pneg:'Pozo negro',pozo:'Pozo',tonel:'Tonel',deco:'Adorno',balc:'Balcón',tub:'Tubería',cota:'Cota'};return it.name||m[it.t]||'Elemento'};
 const colOk=it=>it&&it.t!=='cont'&&tool==='select'&&!XW&&!ALW&&$('#v3d').hidden&&(Array.isArray(it.pts)||it.t==='wall'||typeof it.x==='number');
 function colNudge(dx,dy){const it=cur();if(!it)return;kbNudge(it,dx,dy)}
 function colRot(){const it=cur();if(!it)return;if(it.t==='obj'&&typeof rotObj==='function'){rotObj(it);return}push();if('r' in it||['door','window','arco','esc','plaza'].includes(it.t))it.r=(((it.r||0)+90)%360);else if(typeof it.w==='number'&&typeof it.h==='number'){const cx=it.x+it.w/2,cy=it.y+it.h/2,w=it.w;it.w=it.h;it.h=w;it.x=r2(cx-it.w/2);it.y=r2(cy-it.h/2)}else{note='Este elemento no se gira';return render()}done()}
@@ -16262,6 +16262,137 @@ document.head.insertAdjacentHTML('beforeend',`<style id="rwCss2">html,body{overf
 body.nodock #rwin #dock #dkUG{display:block!important}#rwin #dock #dkUG{padding:2px 0}</style>`);
 
 /*<</mod:ventanas>>*/
+/*<<mod:entrada>>*/
+/* ===== Diseñar la entrada del solar: paredes de acceso, murete curvo, columnas, puertas y barreras, extras ===== */
+let ENT=null;
+const EMAT={bloque:['Bloque visto','#cfc8bc'],enfoscado:['Enfoscado y pintado','#efe8da'],piedra:['Piedra','#b9a58a'],forro:['Forro de piedra','#a89275'],marés:['Marés','#e2cfa0']};
+const EPUE={corr:['Puerta corredera',2200],bat:['Puerta batiente de dos hojas',1800],basc:['Puerta basculante',2600],peat:['Puerta peatonal',650],barr:['Barrera de brazo',1500],bol:['Bolardos',120]};
+const EEXT={buzon:['Buzón',90,.4,.3,'#8d6e63'],video:['Videoportero',380,.2,.1,'#263238'],luz:['Armario contador de luz',320,.6,.3,'#90a4ae'],agua:['Armario contador de agua',320,.6,.3,'#64b5f6'],gas:['Armario contador de gas',320,.5,.3,'#ffb74d'],tel:['Armario de teléfono y fibra',280,.4,.25,'#a1887f'],farola:['Farola',450,.3,.3,'#424242']};
+const ERJ={'':'Sin hierros',barrotes:'Barrotes',forja:'Forja',lamas:'Lamas de metal'};
+PRES_D.e2_mur=['Murete de acceso (incluye cimiento)','m²',95];PRES_D.e2_col=['Columna de entrada','ud',280];PRES_D.e2_rem=['Remate de columna','ud',60];PRES_D.e2_far=['Farol en columna','ud',140];PRES_D.e2_rj=['Hierros sobre murete','m',120];PRES_D.e2_mot=['Motor de puerta','ud',650];
+Object.entries(EPUE).forEach(([k,v])=>PRES_D['e2_p_'+k]=[v[0],k==='bol'?'ud':'ud',v[1]]);Object.entries(EEXT).forEach(([k,v])=>PRES_D['e2_x_'+k]=[v[0],'ud',v[1]]);
+const isE=it=>it&&['emur','ecol','epue','eext'].includes(it.t);
+const eNm=it=>it.t==='emur'?(it.cv?'Murete curvo':'Pared de acceso'):it.t==='ecol'?'Columna':it.t==='epue'?(EPUE[it.k]||['Puerta'])[0]:it.t==='eext'?(EEXT[it.k]||['Extra'])[0]:'';
+function emPoly(it){return it.cv&&it.pts.length===3?curvPts(it.pts[0],it.pts[1],it.pts[2]):it.pts}
+{const _bbE=bboxOf;bboxOf=function(i){if(i&&Array.isArray(i.pts)&&i.pts.length&&!(typeof i.w==='number')){const P=i.t==='emur'?emPoly(i):i.pts,xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),th=i.t==='emur'?(i.th||.3)/2:0;return{x:x-th,y:y-th,w:Math.max(...xs)-x+2*th,h:Math.max(...ys)-y+2*th}}return _bbE.apply(this,arguments)}}
+{const _cnE=colName;colName=function(it){if(isE(it))return eNm(it);return _cnE.apply(this,arguments)}}
+{const _vE=vmsg;vmsg=function(it){if(isE(it))return '';return _vE.apply(this,arguments)}}
+try{HAS3D.push('emur','ecol','epue','eext');ord.emur=.7;ord.ecol=.8;ord.epue=.75;ord.eext=.85}catch(e){}
+/* ---------- planta ---------- */
+function eSVG(it,S,d){const on=it.id===sel,sc=on?'#d0661e':'#1f2a33',sw=on?3:1.5;
+  if(it.t==='ecol'){const x=it.x*S,y=it.y*S,w=it.w*S,h=it.h*S;return `<g${d}>${it.forma==='red'?`<circle cx="${x+w/2}" cy="${y+h/2}" r="${w/2}" fill="#8d8478" stroke="${sc}" stroke-width="${sw}"/>`:`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#8d8478" stroke="${sc}" stroke-width="${sw}"/>`}<text x="${x+w/2}" y="${y-4}" text-anchor="middle" style="font:10px sans-serif;fill:#5d4037">${fmt(it.alt||2.2)} m</text></g>`}
+  if(it.t==='emur'){const P=emPoly(it),th=(it.th||.3)*S,col=(EMAT[it.mat]||EMAT.bloque)[1],p=P.map(q=>q[0]*S+' '+q[1]*S).join('L'),A=P[0],B=P[P.length-1];
+    return `<g${d}><path d="M${p}" fill="none" stroke="${sc}" stroke-width="${th+sw*2}" stroke-linecap="butt" stroke-linejoin="round"/><path d="M${p}" fill="none" stroke="${col}" stroke-width="${th}" stroke-linecap="butt" stroke-linejoin="round"/>${it.rj?`<path d="M${p}" fill="none" stroke="#263238" stroke-width="1.5" stroke-dasharray="2 4"/>`:''}<text x="${A[0]*S}" y="${A[1]*S-8}" text-anchor="middle" style="font:700 11px sans-serif;fill:#6d4c41;paint-order:stroke;stroke:#fff;stroke-width:3px">${fmt(it.h0)} m</text><text x="${B[0]*S}" y="${B[1]*S-8}" text-anchor="middle" style="font:700 11px sans-serif;fill:#6d4c41;paint-order:stroke;stroke:#fff;stroke-width:3px">${fmt(it.h1)} m</text></g>`}
+  if(it.t==='epue'){const[A,B]=it.pts,L=Math.hypot(B[0]-A[0],B[1]-A[1]),x1=A[0]*S,y1=A[1]*S,x2=B[0]*S,y2=B[1]*S,mx=(x1+x2)/2,my=(y1+y2)/2;let g=`<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${on?'#d0661e':'#37474f'}" stroke-width="${on?6:4}"/>`;
+    if(it.k==='bat'&&L>.1){const ux=(x2-x1)/2,uy=(y2-y1)/2,nx=-uy,ny=ux;g+=`<path d="M${x1} ${y1}Q${x1+nx} ${y1+ny} ${mx+nx*.0} ${my}M${x2} ${y2}Q${x2+nx} ${y2+ny} ${mx} ${my}" fill="none" stroke="#78909c" stroke-dasharray="4 3"/>`}
+    if(it.k==='bol'){const n=Math.max(2,Math.round(L/1.2)+1);g='';for(let i=0;i<n;i++){const t=i/(n-1);g+=`<circle cx="${x1+(x2-x1)*t}" cy="${y1+(y2-y1)*t}" r="${Math.max(2.5,.1*S)}" fill="#ffca28" stroke="#37474f"/>`}}
+    if(it.k==='barr')g+=`<rect x="${x1-.15*S}" y="${y1-.15*S}" width="${.3*S}" height="${.3*S}" fill="#c62828"/>`;
+    return `<g${d}>${g}<text x="${mx}" y="${my-8}" text-anchor="middle" style="font:700 11px sans-serif;fill:#37474f;paint-order:stroke;stroke:#fff;stroke-width:3px">${(EPUE[it.k]||['Puerta'])[0]} · ${fmt(r2(L))} m${it.motor?' · motor':''}</text></g>`}
+  if(it.t==='eext'){const E=EEXT[it.k]||EEXT.buzon,x=it.x*S,y=it.y*S,w=it.w*S,h=it.h*S;return `<g${d}><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${E[4]}" stroke="${sc}" stroke-width="${sw}"/><text x="${x+w/2}" y="${y+h+11}" text-anchor="middle" style="font:10px sans-serif;fill:#37474f;paint-order:stroke;stroke:#fff;stroke-width:3px">${E[0].replace('Armario contador de ','')}</text></g>`}return ''}
+{const _drE=draw;draw=function(it,g){if(isE(it))return eSVG(it,view.s,g?'':` data-id="${it.id}"`);return _drE.apply(this,arguments)}}
+/* ---------- 3D ---------- */
+function ent3(T,B){const base=st.sot?rasante():0,zt=(x,y)=>{try{return base+tzAt(x,y)}catch(e){return base}};const M=c=>new T.MeshLambertMaterial({color:c});
+  const add=(g,x,y,z,ry)=>{const m=new T.Mesh(g[0],g[1]);m.position.set(x,y,z);if(ry)m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;B.sc.add(m);return m};
+  items.filter(isE).forEach(it=>{
+    if(it.t==='ecol'){const cx=it.x+it.w/2,cy=it.y+it.h/2,z=zt(cx,cy),a=it.alt||2.2;add([it.forma==='red'?new T.CylinderGeometry(it.w/2,it.w/2,a,20):new T.BoxGeometry(it.w,a,it.h),M('#a39a8c')],cx,z+a/2,cy);
+      if(it.remate)add([new T.BoxGeometry(it.w+.12,.1,it.h+.12),M('#ddd5c6')],cx,z+a+.05,cy);if(it.farol){const l=add([new T.SphereGeometry(.14,14,10),new T.MeshLambertMaterial({color:'#fff3c4',emissive:'#ffcc66',emissiveIntensity:.8})],cx,z+a+(it.remate?.25:.16),cy)}return}
+    if(it.t==='emur'){const P=emPoly(it);let tot=0;const L=[];for(let i=0;i<P.length-1;i++){const l=Math.hypot(P[i+1][0]-P[i][0],P[i+1][1]-P[i][1]);L.push(l);tot+=l}let acc=0;const th=it.th||.3,col=(EMAT[it.mat]||EMAT.bloque)[1];
+      for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],l=L[i];if(l<.01){continue}const t=(acc+l/2)/(tot||1),h=(it.h0||1)+((it.h1==null?it.h0:it.h1)-(it.h0||1))*t,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,z=zt(mx,my),ry=-Math.atan2(b[1]-a[1],b[0]-a[0]);
+        add([new T.BoxGeometry(l+(P.length>2?.04:0),h,th),M(col)],mx,z+h/2,my,ry);add([new T.BoxGeometry(l+(P.length>2?.04:0),.05,th+.04),M('#e6dfd2')],mx,z+h+.025,my,ry);
+        if(it.rj){const rh=.9,g=add([new T.BoxGeometry(l,rh,.04),new T.MeshLambertMaterial({color:'#263238',transparent:true,opacity:.45})],mx,z+h+.05+rh/2,my,ry)}acc+=l}return}
+    if(it.t==='epue'){const[A,Bp]=it.pts,l=Math.hypot(Bp[0]-A[0],Bp[1]-A[1]),mx=(A[0]+Bp[0])/2,my=(A[1]+Bp[1])/2,z=zt(mx,my),ry=-Math.atan2(Bp[1]-A[1],Bp[0]-A[0]),a=it.alt||(it.k==='peat'?2:1.8);if(l<.05)return;
+      if(it.k==='bol'){const n=Math.max(2,Math.round(l/1.2)+1);for(let i=0;i<n;i++){const t=i/(n-1),x=A[0]+(Bp[0]-A[0])*t,y=A[1]+(Bp[1]-A[1])*t;add([new T.CylinderGeometry(.1,.1,.9,14),M('#5d5d5d')],x,zt(x,y)+.45,y)}return}
+      if(it.k==='barr'){add([new T.BoxGeometry(.3,1,.3),M('#c62828')],A[0],zt(A[0],A[1])+.5,A[1]);add([new T.BoxGeometry(l,.08,.08),M('#ffffff')],mx,z+.95,my,ry);return}
+      const col=it.k==='basc'?'#546e7a':'#37474f';add([new T.BoxGeometry(l,a,.06),new T.MeshLambertMaterial({color:col,transparent:it.k!=='basc',opacity:it.k==='basc'?1:.7})],mx,z+a/2,my,ry);
+      if(it.k!=='basc'){const n=Math.max(2,Math.round(l/.12));for(let i=0;i<=n;i+=2){}}return}
+    if(it.t==='eext'){const E=EEXT[it.k]||EEXT.buzon,cx=it.x+it.w/2,cy=it.y+it.h/2,z=zt(cx,cy);if(it.k==='farola'){add([new T.CylinderGeometry(.06,.08,3.2,10),M('#424242')],cx,z+1.6,cy);add([new T.SphereGeometry(.2,14,10),new T.MeshLambertMaterial({color:'#fff3c4',emissive:'#ffcc66',emissiveIntensity:.8})],cx,z+3.3,cy);return}
+      const hh=it.k==='video'?.25:it.k==='buzon'?.35:.7;add([new T.BoxGeometry(it.w,hh,it.h),M(E[4])],cx,z+(it.k==='video'?1.5:it.k==='buzon'?1.1:.5)+hh/2,cy)}})}
+{const _bE=bldAll3;bldAll3=function(){const B=_bE.apply(this,arguments);try{if(B&&B.sc&&window.THREE)ent3(THREE,B)}catch(e){console.warn('entrada 3D',e)}return B}}
+/* ---------- presupuesto ---------- */
+{const _epE=entPres;entPres=function(){const A=_epE.apply(this,arguments);try{let m2=0,rj=0;const c={};items.filter(isE).forEach(it=>{if(it.t==='emur'){const P=emPoly(it);let l=0;for(let i=0;i<P.length-1;i++)l+=Math.hypot(P[i+1][0]-P[i][0],P[i+1][1]-P[i][1]);m2+=l*((it.h0||1)+(it.h1==null?it.h0:it.h1))/2;if(it.rj)rj+=l}
+  if(it.t==='ecol'){c.e2_col=(c.e2_col||0)+1;if(it.remate)c.e2_rem=(c.e2_rem||0)+1;if(it.farol)c.e2_far=(c.e2_far||0)+1}
+  if(it.t==='epue'){const l=Math.hypot(it.pts[1][0]-it.pts[0][0],it.pts[1][1]-it.pts[0][1]),k='e2_p_'+it.k;c[k]=(c[k]||0)+(it.k==='bol'?Math.max(2,Math.round(l/1.2)+1):1);if(it.motor)c.e2_mot=(c.e2_mot||0)+1}
+  if(it.t==='eext'){const k='e2_x_'+it.k;c[k]=(c[k]||0)+1}});if(m2)A.push(['e2_mur',r2(m2)]);if(rj)A.push(['e2_rj',r2(rj)]);Object.entries(c).forEach(e=>A.push(e))}catch(e){}return A}}
+/* ---------- colocar tocando ---------- */
+function eCols(){return items.filter(o=>o.t==='ecol')}
+function eSnap(p){let best=null;eCols().forEach(c=>{const cx=c.x+c.w/2,cy=c.y+c.h/2,d=Math.hypot(p.x-cx,p.y-cy);if(d<Math.max(.6,c.w)&&(!best||d<best.d))best={d,c,x:r2(cx),y:r2(cy)}});items.filter(o=>o.t==='emur').forEach(m=>{const P=emPoly(m);[P[0],P[P.length-1]].forEach(q=>{const d=Math.hypot(p.x-q[0],p.y-q[1]);if(d<.5&&(!best||d<best.d))best={d,x:q[0],y:q[1],m}})});return best}
+function entTool(k,sub){ENT={k,sub,pts:[]};try{xwStop()}catch(e){}tool='select';sel=null;toolsUI();const T={col:'Toca donde va la columna',mur:'Pared de acceso: toca el principio y luego el final (cerca de una columna se pega a ella)',curv:'Murete curvo: toca el principio, luego el final y por último un punto de la curva',pue:'Toca la primera columna o el extremo de la pared, y luego la segunda',ext:'Toca donde va: '+((EEXT[sub]||['el elemento'])[0]).toLowerCase()};note=T[k]+' · Esc para cancelar';render()}
+function eHDlg(it,ca,cb){const o=$('#emD');if(o)o.remove();const c0=ca&&items.find(q=>q.id===ca),c1=cb&&items.find(q=>q.id===cb),d0=c0?Math.min(1.2,(c0.alt||2.2)-.3):1,d1=c1?Math.min(1.2,(c1.alt||2.2)-.3):d0;
+  document.body.insertAdjacentHTML('beforeend',`<div id="emD" class="sotDlg" role="dialog" aria-label="Alturas del murete"><div><b>Alturas del ${it.cv?'murete curvo':'murete'}</b>
+  <label>${c0?`Altura del murete junto a la columna (la columna mide ${fmt(c0.alt||2.2)} m)`:'Altura al principio'} (m)<input id="emH0" type="number" step=".05" min=".2" max="4" value="${r2(d0)}"></label>
+  <label>${c1?`Altura junto a la otra columna (mide ${fmt(c1.alt||2.2)} m)`:'Altura en el otro extremo'} (m)<input id="emH1" type="number" step=".05" min=".2" max="4" value="${r2(d1)}"></label>
+  <span class="hint">Si pones alturas distintas, el murete sube o baja en rampa.</span><div class="r"><button id="emOk" class="pri">Aceptar</button></div></div></div>`);
+  $('#emOk').onclick=()=>{it.h0=Math.max(.2,+$('#emH0').value||1);it.h1=Math.max(.2,+$('#emH1').value||it.h0);$('#emD').remove();done()}}
+function entTap(p){const f=aljFG(),sn=eSnap(p),q=sn?{x:sn.x,y:sn.y}:{x:r2(Math.round(p.x*20)/20),y:r2(Math.round(p.y*20)/20)},k=ENT.k;
+  if(k==='col'){push();const s=.4,o={id:nid++,t:'ecol',f,x:r2(q.x-s/2),y:r2(q.y-s/2),w:s,h:s,alt:2.2,forma:'cuad',remate:1,farol:0};items.push(o);ENT=null;sel=o.id;note='Columna puesta: cambia su alto y forma en la ventana de la derecha';done();return}
+  if(k==='ext'){push();const E=EEXT[ENT.sub]||EEXT.buzon,o={id:nid++,t:'eext',f,k:ENT.sub,x:r2(q.x-E[2]/2),y:r2(q.y-E[3]/2),w:E[2],h:E[3]};items.push(o);ENT=null;sel=o.id;note=E[0]+' puesto';done();return}
+  ENT.pts.push([q.x,q.y]);(ENT.at=ENT.at||[]).push(sn&&sn.c?sn.c.id:0);
+  if((k==='mur'||k==='pue')&&ENT.pts.length===2){const[A,B]=ENT.pts;if(Math.hypot(B[0]-A[0],B[1]-A[1])<.2){ENT.pts.pop();ENT.at.pop();note='Demasiado corto: toca más lejos';return render()}push();
+    if(k==='pue'){let a=A.slice(),b=B.slice();const L=Math.hypot(b[0]-a[0],b[1]-a[1]),ux=(b[0]-a[0])/L,uy=(b[1]-a[1])/L;const ca=items.find(o=>o.id===ENT.at[0]),cb=items.find(o=>o.id===ENT.at[1]);if(ca){a=[r2(a[0]+ux*ca.w/2),r2(a[1]+uy*ca.w/2)]}if(cb){b=[r2(b[0]-ux*cb.w/2),r2(b[1]-uy*cb.w/2)]}
+      const o={id:nid++,t:'epue',f,k:ENT.sub||'corr',pts:[a,b],motor:ENT.sub==='corr'||ENT.sub==='basc'?1:0,alt:ENT.sub==='peat'?2:1.8};items.push(o);ENT=null;sel=o.id;note=(EPUE[o.k]||['Puerta'])[0]+' puesta';done();return}
+    const o={id:nid++,t:'emur',f,pts:[A,B],th:.3,mat:'bloque',rj:'',h0:1,h1:1};items.push(o);const at=ENT.at;ENT=null;sel=o.id;done();eHDlg(o,at[0],at[1]);return}
+  if(k==='curv'&&ENT.pts.length===3){push();const[A,B,Mid]=ENT.pts,o={id:nid++,t:'emur',f,cv:1,pts:[A,Mid,B],th:.3,mat:'bloque',rj:'',h0:1,h1:1};items.push(o);const at=ENT.at;ENT=null;sel=o.id;done();eHDlg(o,at[0],at[1]);return}
+  note=k==='curv'?(ENT.pts.length===1?'Ahora toca el final del murete':'Ahora toca un punto por donde pase la curva'):'Ahora toca el final';render()}
+$('#cvw').addEventListener('pointerdown',e=>{if(!ENT||e.button===2)return;if(e.target.closest&&e.target.closest('#jarB,#rwin,button,input,select'))return;if(e.pointerType==='touch'&&e.isPrimary===false)return;e.stopImmediatePropagation();e.preventDefault();entTap(world(e))},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ENT){ENT=null;note='';render()}});
+{const _rE=render;render=function(){const r=_rE.apply(this,arguments);try{if(ENT&&ENT.pts.length){const g=svg.querySelector('g[transform^="translate"]'),S=view.s;if(g)g.insertAdjacentHTML('beforeend','<g pointer-events="none">'+ENT.pts.map(p=>`<circle cx="${p[0]*S}" cy="${p[1]*S}" r="6" fill="#d35400" stroke="#fff" stroke-width="2"/>`).join('')+(ENT.pts.length>1?`<path d="M${ENT.pts.map(p=>p[0]*S+' '+p[1]*S).join('L')}" stroke="#d35400" stroke-dasharray="5 4" fill="none" stroke-width="2"/>`:'')+'</g>')}}catch(e){}return r}}
+/* ---------- ficha en la ventana de colocar ---------- */
+function eFields(it){const n=(k,l,v,st2)=>`<label class="cwX cwFl">${l}<input data-ef="${k}" type="number" step="${st2||.05}" value="${v}"></label>`,s=(k,l,O,v)=>`<label class="cwX cwFl">${l}<select data-ef="${k}">${Object.entries(O).map(([a,b])=>`<option value="${a}"${a===v?' selected':''}>${Array.isArray(b)?b[0]:b}</option>`).join('')}</select></label>`,c=(k,l,v)=>`<label class="cwX cwFc"><input type="checkbox" data-ef="${k}"${v?' checked':''}> ${l}</label>`;
+  if(it.t==='ecol')return n('alt','Alto (m)',it.alt||2.2)+n('w','Lado o diámetro (m)',it.w)+s('forma','Forma',{cuad:'Cuadrada',red:'Redonda'},it.forma||'cuad')+c('remate','Remate',it.remate)+c('farol','Farol',it.farol);
+  if(it.t==='emur')return n('h0','Alto al principio / junto a columna (m)',it.h0)+n('h1','Alto en el otro extremo (m)',it.h1)+n('th','Ancho (m)',it.th||.3,.01)+s('mat','Acabado',EMAT,it.mat||'bloque')+s('rj','Hierros encima',ERJ,it.rj||'');
+  if(it.t==='epue')return s('k','Tipo',EPUE,it.k)+(it.k!=='bol'&&it.k!=='barr'?n('alt','Alto (m)',it.alt||1.8):'')+(it.k!=='bol'?c('motor','Con motor',it.motor):'');
+  if(it.t==='eext')return s('k','Qué es',EEXT,it.k);return ''}
+{const _cuE=colUI;colUI=function(){_cuE.apply(this,arguments);try{const it=cur(),w=$('#colW');if(w&&isE(it)&&!w.querySelector('[data-ef]')&&!it.lk){const b=w.querySelector('b');if(b)b.insertAdjacentHTML('afterend','<div class="cwF">'+eFields(it)+'</div>')}}catch(e){}}}
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.ef)return;const it=cur();if(!isE(it))return;push();const k=t.dataset.ef;let v=t.type==='checkbox'?(t.checked?1:0):t.tagName==='SELECT'?t.value:+t.value;
+  if(k==='w'){const cx=it.x+it.w/2,cy=it.y+it.h/2;v=Math.max(.15,v);it.w=it.h=v;it.x=r2(cx-v/2);it.y=r2(cy-v/2)}else if(k==='k'&&it.t==='eext'){const E=EEXT[v],cx=it.x+it.w/2,cy=it.y+it.h/2;it.k=v;it.w=E[2];it.h=E[3];it.x=r2(cx-E[2]/2);it.y=r2(cy-E[3]/2)}else it[k]=v;done()});
+/* ---------- la pantalla Entrada (dentro de Solar) ---------- */
+function entFit(){const s=SOL();if(!s)return;const P=solPts(s),E=solEd(s);let i=E.findIndex(q=>q&&q.t==='calle');if(i<0)i=0;const a=P[i],b=P[(i+1)%P.length];const x0=Math.min(a[0],b[0])-6,x1=Math.max(a[0],b[0])+6,y0=Math.min(a[1],b[1])-6,y1=Math.max(a[1],b[1])+6;
+  const r=svg.getBoundingClientRect();if(!r.width)return;const W=window.innerWidth>700?Math.min(r.width,window.innerWidth-400-r.left):r.width,H=r.height,w=x1-x0,h=y1-y0,sc=Math.max(2,Math.min(120,Math.min((W-40)/w,(H-40)/h)));view.s=sc;view.ox=(W-w*sc)/2-x0*sc;view.oy=(H-h*sc)/2-y0*sc}
+function entGo(){try{scrGo('f',aljFG())}catch(e){}st.scr='ent';fl=aljFG();tabs();entFit();done();note='Entrada: pon columnas, paredes de acceso, el murete curvo y la puerta o barrera'}
+{const _scE=scrCur;scrCur=function(){if(st.scr==='ent'&&fl===aljFG())return 'ent';return _scE.apply(this,arguments)}}
+{const _sbE=scrBar;scrBar=function(){_sbE.apply(this,arguments);try{if(scrCur()==='ent'){const T=$('#tabs');T.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.scr==='sol'?'true':'false'))}}catch(e){}}}
+{const _sgE=scrGo;scrGo=function(k,f){ENT=null;return _sgE.apply(this,arguments)}}
+const ePop=(b,L)=>jarPop(b||$('#scrM'),L);
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#jarPop [data-jp^="E:"]');if(!b)return;e.stopImmediatePropagation();$('#jarPop').remove();const[,k,sub]=b.dataset.jp.split(':');entTool(k,sub)},true);
+SCRM.ent=[['‹ Solar',()=>scrGo('sol')],['Columna',()=>entTool('col')],['Pared de acceso',()=>entTool('mur')],['Murete curvo',()=>entTool('curv')],['Puerta o barrera ▾',b=>ePop(b,Object.entries(EPUE).map(([k,v])=>['E:pue:'+k,v[0]]))],['Extras ▾',b=>ePop(b,Object.entries(EEXT).map(([k,v])=>['E:ext:'+k,v[0]]))],['Acercar a la entrada',()=>{entFit();render()}]];
+{const i=SCRM.sol.findIndex(q=>q[2]==='ent');if(i>=0)SCRM.sol[i]=['Entradas',entGo,'ent2']}
+document.head.insertAdjacentHTML('beforeend',`<style id="entCss">.sotDlg{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}.sotDlg>div{background:var(--panel);color:var(--ink);border-radius:12px;padding:16px;width:min(380px,92vw);display:flex;flex-direction:column;gap:10px}.sotDlg .r{display:flex;gap:8px}
+#colW .cwF{display:flex;flex-wrap:wrap;gap:6px;width:100%}#colW .cwFl{display:flex;flex-direction:column;font-size:12px;flex:1 1 140px}#colW .cwFl input,#colW .cwFl select{width:100%}#colW .cwFc{display:flex;align-items:center;gap:6px;font-size:14px}</style>`);
+
+/* ===== Lo hecho queda bloqueado al pasar a otro tema ===== */
+function tpOf(it){if(!it)return '';if(it.tp)return it.tp;if(isE(it))return 'ent';if(it.f===-2)return ['aljibe','rampx'].includes(it.t)?'exc':'cim';if(it.f===-1)return 'tej';
+  if(it.f===aljFG()&&(isZ(it)||['pisc','bbq','pista'].includes(it.t)||(it.t==='obj'&&(it.ext||/^(ar_|jd_)/.test(it.ok||'')))))return 'jar';return 'f'+it.f}
+function tpCur(){const c=scrCur();return c==='f'?'f'+fl:c}
+const TPNM=t=>t==='sol'?'el solar':t==='ent'?'la entrada':t==='exc'?'la excavación':t==='cim'?'la cimentación':t==='jar'?'el jardín':t==='tej'?'el tejado':(t[0]==='f'?scrName(+t.slice(1)).toLowerCase():t);
+function tpLock(t){let n=0;items.forEach(it=>{if(it.t!=='cont'&&tpOf(it)===t&&!it.lk){it.lk=1;n++}});if(t==='sol'&&(OB().cerr||[]).length&&!OB().lkC){OB().lkC=1;n++}return n}
+function tpLocked(t){return items.some(it=>it.lk&&tpOf(it)===t)||(t==='sol'&&OB().lkC)}
+function tpUnlock(t){items.forEach(it=>{if(tpOf(it)===t)delete it.lk});if(t==='sol')delete OB().lkC;note='Desbloqueado: ya puedes cambiar '+TPNM(t);done()}
+{const _sgL=scrGo;scrGo=function(k,f){const t0=tpCur();const r=_sgL.apply(this,arguments);try{const t1=tpCur();if(t0&&t1!==t0){const n=tpLock(t0);if(n){note='🔒 Lo de '+TPNM(t0)+' queda bloqueado. Para cambiarlo, vuelve allí y pulsa «Desbloquear»';save();tabs();render()}}}catch(e){console.warn(e)}return r}}
+{const _egL=entGo;entGo=function(){const t0=tpCur();_egL.apply(this,arguments);if(t0!=='ent'&&tpLock(t0)){note='🔒 Lo de '+TPNM(t0)+' queda bloqueado';save();tabs();render()}}}
+/* candado en las pestañas y botón para desbloquear */
+{const _sbL=scrBar;scrBar=function(){_sbL.apply(this,arguments);try{$('#tabs').querySelectorAll('button').forEach(b=>{let t=b.dataset.scr||(b.dataset.f!=null?(+b.dataset.f===-1?'tej':'f'+b.dataset.f):'');if(b.dataset.scr==='exc')t='exc';if(!t||b.dataset.sotadd)return;const L=t==='sol'?(tpLocked('sol')||tpLocked('ent')):tpLocked(t);if(L&&!b.textContent.includes('🔒'))b.textContent+=' 🔒'})}catch(e){}}}
+{const _smL=scrMenu;scrMenu=function(){_smL.apply(this,arguments);try{const t=tpCur(),m=$('#scrM');if(m&&tpLocked(t)&&!m.querySelector('#tpUn')){m.insertAdjacentHTML('afterbegin','<button id="tpUn" class="tpUn">🔒 Desbloquear para cambiar</button>');$('#tpUn').onclick=e=>{e.stopPropagation();tpUnlock(t);tabs()}}}catch(e){}}}
+/* lo bloqueado no se mueve, no se borra y no lo tocan las funciones automáticas */
+let LKDOWN=false;const lkMsg=it=>'🔒 Bloqueado: es de '+TPNM(tpOf(it))+'. Para cambiarlo, ve a su pantalla y pulsa «Desbloquear»';
+$('#cvw').addEventListener('pointerdown',e=>{LKDOWN=false;const g=e.target.closest&&e.target.closest('[data-id]');if(!g)return;const it=items.find(i=>i.id===+g.dataset.id);if(it&&it.lk){LKDOWN=true}},true);
+$('#cvw').addEventListener('pointermove',e=>{if(LKDOWN&&e.buttons){e.stopImmediatePropagation();const it=cur();if(it&&it.lk&&note!==lkMsg(it)){note=lkMsg(it);render()}}},true);
+addEventListener('pointerup',()=>{LKDOWN=false},true);
+{const _knL=kbNudge;kbNudge=function(it){if(it&&it.lk){note=lkMsg(it);return render()}return _knL.apply(this,arguments)}}
+{const _dlL=del;del=function(){const it=cur();if(it&&it.lk){note=lkMsg(it);return render()}return _dlL.apply(this,arguments)}}
+{const _crL=colRot;colRot=function(){const it=cur();if(it&&it.lk){note=lkMsg(it);return render()}return _crL.apply(this,arguments)}}
+{const _cdL=colDel;colDel=function(){const it=cur();if(it&&it.lk){note=lkMsg(it);return render()}return _cdL.apply(this,arguments)}}
+{const _swL=swRodear;swRodear=function(){if(OB().lkC){note='🔒 El cierre del solar está bloqueado. Ve a Solar y pulsa «Desbloquear»';return render()}return _swL.apply(this,arguments)}}
+{const _eaL=eaApply;eaApply=function(){if(tpLocked('cim')){note='🔒 La cimentación está bloqueada: ve a Cimentación y pulsa «Desbloquear» para recolocar la estructura';return render()}return _eaL.apply(this,arguments)}}
+document.addEventListener('click',e=>{const t=e.target;if(!t.closest)return;if(t.closest('#ugCp')&&tpLocked('f'+fl)){e.stopImmediatePropagation();note='🔒 Esta planta está bloqueada: pulsa «Desbloquear» para copiar el contorno';render()}
+  if(t.closest('#clW button')&&OB().lkC&&!t.closest('[data-clx],[data-clg]')){e.stopImmediatePropagation();note='🔒 El cierre del solar está bloqueado. Ve a Solar y pulsa «Desbloquear»';render()}},true);
+document.addEventListener('change',e=>{if(e.target.closest&&e.target.closest('#clW')&&OB().lkC){e.stopImmediatePropagation();note='🔒 El cierre del solar está bloqueado';render()}},true);
+/* en la ventana: aviso de bloqueado y el panel en solo lectura */
+{const _cuL=colUI;colUI=function(){_cuL.apply(this,arguments);try{const it=cur(),w=$('#colW');if(w&&it&&it.lk){w.innerHTML=`<b>${esc(colName(it))}</b><span class="cwD">🔒 Bloqueado (es de ${esc(TPNM(tpOf(it)))})</span><button data-lkun="1">Desbloquear ${esc(TPNM(tpOf(it)))}</button><button data-cw="ok" class="pri">Listo</button>`}
+  const d=$('#dkSel');if(d)d.querySelectorAll('input,select,textarea,button').forEach(x=>{if(it&&it.lk){if(!x.disabled){x.disabled=true;x.dataset.lkd=1}}else if(x.dataset.lkd){x.disabled=false;delete x.dataset.lkd}})}catch(e){}}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-lkun]');if(!b)return;e.stopImmediatePropagation();const it=cur();if(it){tpUnlock(tpOf(it));tabs()}},true);
+document.head.insertAdjacentHTML('beforeend',`<style id="lkCss">#scrM .tpUn{background:#fff3cd!important;border-color:#e0a800!important;font-weight:700}</style>`);
+
+/*<</mod:entrada>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
