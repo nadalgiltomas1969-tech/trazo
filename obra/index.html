@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · pantallas por etapa</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · jardín por tramos</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15922,7 +15922,7 @@ function scrGo(k,f){try{closeMenus()}catch(e){}try{xwStop()}catch(e){}try{if(ALW
   toolsUI();tabs();done();if(k==='sol')scrSol(st.p1t||'forma')}
 function scrMenu(){let m=$('#scrM');const tl=$('#tools');if(!tl)return;if(!m){m=document.createElement('div');m.id='scrM';const un=$('#undo');(un&&un.parentElement===tl?un:tl.firstChild).after(m)}
   const k=scrKey(),L=SCRM[k]||[];m.innerHTML=L.map((q,i)=>`<button data-scm="${i}"${q[2]&&q[2]===st.p1t&&$('#pwP')?' class="on"':''}>${q[0]}</button>`).join('')+`<button id="scrMas" aria-pressed="${document.body.classList.contains('scrmas')}">${document.body.classList.contains('scrmas')?'Menos ▴':'Más ▾'}</button>`;
-  m.querySelectorAll('[data-scm]').forEach(b=>b.onclick=e=>{e.stopPropagation();try{closeMenus()}catch(er){}try{L[+b.dataset.scm][1]()}catch(er){console.warn(er)}});
+  m.querySelectorAll('[data-scm]').forEach(b=>b.onclick=e=>{e.stopPropagation();try{closeMenus()}catch(er){}try{L[+b.dataset.scm][1](b)}catch(er){console.warn(er)}});
   $('#scrMas').onclick=e=>{e.stopPropagation();masSet(!document.body.classList.contains('scrmas'))}}
 function masSet(on){const kk=MENUS.find(m=>m.btn.classList.contains('mkeep')),box=kk?kk.btn.parentElement:null;let P=$('#mgMas');if(!P){document.body.insertAdjacentHTML('beforeend','<div id="mgMas" hidden></div>');P=$('#mgMas')}
   if(on){MENUS.forEach(m=>{if(!m.btn.classList.contains('mkeep'))P.appendChild(m.btn)});const r=$('#scrMas').getBoundingClientRect();P.style.top=(r.bottom+6)+'px';P.style.left=Math.max(6,Math.min(r.left,innerWidth-330))+'px';P.hidden=false}
@@ -15963,7 +15963,7 @@ body:not(.scrmas) #pwP .swTabs{display:none}
 /* los menús Proyecto y Vista siguen siempre a la vista */
 {const _mUI=menuUI;menuUI=function(){const r=_mUI.apply(this,arguments);try{MENUS.forEach(m=>{if(m.name==='Proyecto'||m.name==='Vista')m.btn.classList.add('mkeep')})}catch(e){}return r}}
 /* ---------- ventana común para colocar: flechas, medidas y M ---------- */
-const colName=it=>{if(!it)return'';if(it.t==='monta')return it.asc?'Ascensor':'Montaplatos';if(it.t==='aljibe')return (typeof fosNm==='function'&&it.k)?fosNm(it):'Aljibe';const m={obj:'Mueble',esc:'Escalera',plaza:'Plaza',rampa:'Rampa',pilar:'Pilar',wall:'Muro',room:'Habitación',door:'Puerta',window:'Ventana',arco:'Arco',baj:'Bajante',chim:'Chimenea',farol:'Farola',label:'Texto',pneg:'Pozo negro',pozo:'Pozo',tonel:'Tonel',deco:'Adorno',balc:'Balcón',tub:'Tubería',cota:'Cota'};return it.name||m[it.t]||'Elemento'};
+const colName=it=>{if(!it)return'';if(it.t==='pista'&&typeof PISTA!=='undefined')return (PISTA[it.k]||['Pista'])[0];if(it.t==='zext'&&typeof ZEX!=='undefined')return (ZEX[it.k]||['Zona'])[0].split(' (')[0];if(it.t==='obj'&&typeof CATK!=='undefined'&&CATK[it.ok])return CATK[it.ok][0];if(it.t==='monta')return it.asc?'Ascensor':'Montaplatos';if(it.t==='aljibe')return (typeof fosNm==='function'&&it.k)?fosNm(it):'Aljibe';const m={obj:'Mueble',esc:'Escalera',plaza:'Plaza',rampa:'Rampa',pilar:'Pilar',wall:'Muro',room:'Habitación',door:'Puerta',window:'Ventana',arco:'Arco',baj:'Bajante',chim:'Chimenea',farol:'Farola',label:'Texto',pneg:'Pozo negro',pozo:'Pozo',tonel:'Tonel',deco:'Adorno',balc:'Balcón',tub:'Tubería',cota:'Cota'};return it.name||m[it.t]||'Elemento'};
 const colOk=it=>it&&it.t!=='cont'&&tool==='select'&&!XW&&!ALW&&$('#v3d').hidden&&(Array.isArray(it.pts)||it.t==='wall'||typeof it.x==='number');
 function colNudge(dx,dy){const it=cur();if(!it)return;kbNudge(it,dx,dy)}
 function colRot(){const it=cur();if(!it)return;if(it.t==='obj'&&typeof rotObj==='function'){rotObj(it);return}push();if('r' in it||['door','window','arco','esc','plaza'].includes(it.t))it.r=(((it.r||0)+90)%360);else if(typeof it.w==='number'&&typeof it.h==='number'){const cx=it.x+it.w/2,cy=it.y+it.h/2,w=it.w;it.w=it.h;it.h=w;it.x=r2(cx-it.w/2);it.y=r2(cy-it.h/2)}else{note='Este elemento no se gira';return render()}done()}
@@ -16088,6 +16088,107 @@ document.head.insertAdjacentHTML('beforeend',`<style id="clCss">#clW{position:fi
 #clW .clR{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}#clW label{display:flex;flex-direction:column;font-size:13px;gap:2px}#clW .clC{flex-direction:row;align-items:center;gap:6px;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:6px 10px}#clW input[type=number]{width:90px}#clW .hint{font-size:13px}</style>`);
 
 /*<</mod:cerrlados>>*/
+/*<<mod:jardin>>*/
+/* ===== Pantalla Jardín: tramos de 20 m desde la calle, solo el contorno de los edificios ===== */
+let JPUT=null;try{ord.pista=.6}catch(e){}
+ZEX.parterre=['Parterre de flores con pared seca','#e7a6c0',95];
+PRES_D.zx_parterre=['Parterre de flores: tierra, plantas y pared seca de piedra','m²',95];
+const PISTA={padel:['Pista de pádel',10,20,'#2f6fb5',38000],tenis:['Pista de tenis',18.3,36.6,'#3d7a4f',45000],petanca:['Pista de petanca',4,15,'#d8c7a0',2500],multi:['Pista multideporte',15,28,'#b5533c',30000],caseta:['Caseta de herramientas',2.5,2,'#8d6e63',3500]};
+Object.entries(PISTA).forEach(([k,v])=>PRES_D['pt_'+k]=[v[0]+' (completa)','ud',v[4]]);
+PRES_D.zx_psec=['Pared seca de los parterres','m',85];
+const JARB=['ar_olivo','ar_algarrobo','ar_higuera','ar_almez','ar_palmera','ar_palmito','ar_cipres','ar_morera','ar_jacaranda','ar_magnolio','ar_laurel','ar_platano'].filter(k=>CATK[k]);
+const JMAS=['jd_pergola','jd_fuente','jd_est_red','jd_est_rect','jd_banco_p','jd_banco_h','jd_mesa_p','jd_cossiol','jd_rosaleda','jd_columpio','jd_pozo','jd_reloj'].filter(k=>CATK[k]);
+const isJar=()=>st.scr==='jar'&&fl===aljFG();
+/* tramos de 20 m desde la calle hacia el fondo */
+function jarAx(){const s=SOL();if(!s)return null;const P=solPts(s),xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),R={x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)},l=(OB().calle&&OB().calle.lado)||'s';
+  const v=l==='s'||l==='n',D=v?R.y1-R.y0:R.x1-R.x0;return{R,l,D,n:Math.max(1,Math.ceil((D-.5)/20))}}
+function jarBand(i){const A=jarAx();if(!A)return null;const {R,l}=A;if(i==null||i<0)return{...R};const a=20*i,b=Math.min(A.D,20*(i+1));
+  if(l==='s')return{x0:R.x0,x1:R.x1,y0:R.y1-b,y1:R.y1-a};if(l==='n')return{x0:R.x0,x1:R.x1,y0:R.y0+a,y1:R.y0+b};if(l==='e')return{x0:R.x1-b,x1:R.x1-a,y0:R.y0,y1:R.y1};return{x0:R.x0+a,x1:R.x0+b,y0:R.y0,y1:R.y1}}
+function jarFit(){const B=jarBand(st.jb);if(!B)return;const r=svg.getBoundingClientRect();if(!r.width)return;const W=window.innerWidth>700?Math.min(r.width,window.innerWidth-400-r.left):r.width,H=r.height,m=2.5,w=B.x1-B.x0+2*m,h=B.y1-B.y0+2*m;
+  const sc=Math.max(1.5,Math.min(120,Math.min((W-40)/w,(H-90)/h)));view.s=sc;view.ox=(W-w*sc)/2-(B.x0-m)*sc;view.oy=50+(H-50-h*sc)/2-(B.y0-m)*sc}
+function jarGo(i){const A=jarAx();if(!A){note='Primero la forma del solar (pantalla Solar)';return render()}st.jb=i;save();jarFit();render()}
+/* edificios: los contornos de la planta del jardín */
+function jarBlds(){const L=[];const f=aljFG();items.filter(o=>o.t==='cont'&&o.f===f).forEach(c=>{const E=(SD().ext||.3)/2;L.push({x0:c.x-E,y0:c.y-E,x1:c.x+c.w+E,y1:c.y+c.h+E})});items.filter(o=>o.t==='pista'&&o.k==='caseta'&&o.f===f).forEach(o=>L.push({x0:o.x,y0:o.y,x1:o.x+o.w,y1:o.y+o.h}));return L}
+function jarWhy(x,y){const B=jarBand(st.jb);if(B&&(x<B.x0-.01||x>B.x1+.01||y<B.y0-.01||y>B.y1+.01))return 'Eso queda fuera de este tramo: pasa al tramo siguiente o anterior';const s=SOL();if(s&&!zPip(x,y,solPts(s)))return 'Eso queda fuera del solar';
+  if(jarBlds().some(b=>x>b.x0&&x<b.x1&&y>b.y0&&y<b.y1))return 'Ahí hay un edificio: en el jardín no se dibuja dentro';return ''}
+/* barra de tramos */
+function jarBar(){let b=$('#jarB');if(!isJar()||!$('#v3d').hidden){if(b)b.remove();return}const A=jarAx();if(!b){$('#cvw').insertAdjacentHTML('beforeend','<div id="jarB" role="toolbar" aria-label="Tramos del jardín"></div>');b=$('#jarB')}
+  const i=st.jb==null?0:st.jb,n=A?A.n:1;const k=JSON.stringify([i,n]);if(b.dataset.k===k)return;b.dataset.k=k;
+  b.innerHTML=!A?'<span>Primero la forma del solar</span>':i<0?`<b>Todo el jardín</b><button data-jb="0">Volver al tramo 1</button>`:`<button data-jb="${i-1}"${i===0?' disabled':''}>‹ Tramo anterior</button><b>Tramo ${i+1} de ${n} · ${i===0?'de la calle a la fachada':'del metro '+(20*i)+' al '+Math.min(Math.round(A.D),20*(i+1))}</b>${i<n-1?`<button class="pri" data-jb="${i+1}">Siguientes 20 m ›</button>`:''}<button data-jb="-1">Ver todo el jardín</button>`}
+document.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('#jarB [data-jb]');if(!t)return;e.stopPropagation();jarGo(+t.dataset.jb)});
+/* plano: fuera del tramo en gris, edificios solo como contorno, sin el interior */
+const JEXT=it=>['zext','pisc','bbq','pista','cota','label','aljibe','guia'].includes(it.t)||(it.t==='obj'&&(it.ext||/^(ar_|jd_)/.test(it.ok||'')));
+{const _rJ=render;render=function(){const r=_rJ.apply(this,arguments);try{document.body.classList.toggle('scrjar',isJar());jarBar();if(!isJar())return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;
+  g.querySelectorAll('[data-id]').forEach(el=>{const it=items.find(i=>i.id===+el.dataset.id);if(it&&!JEXT(it))el.style.display='none'});
+  let h='<g class="jarO" pointer-events="none">';jarBlds().forEach(b=>{h+=`<rect x="${b.x0*S}" y="${b.y0*S}" width="${(b.x1-b.x0)*S}" height="${(b.y1-b.y0)*S}" fill="#cfd3d6" fill-opacity=".9" stroke="#37474f" stroke-width="3"/><path d="M${b.x0*S} ${b.y0*S}L${b.x1*S} ${b.y1*S}M${b.x1*S} ${b.y0*S}L${b.x0*S} ${b.y1*S}" stroke="#90a4ae" stroke-width="1"/><text x="${(b.x0+b.x1)/2*S}" y="${(b.y0+b.y1)/2*S}" text-anchor="middle" style="font:700 14px sans-serif;fill:#37474f;paint-order:stroke;stroke:#fff;stroke-width:3px">Edificio · no se dibuja aquí</text>`});
+  const B=jarBand(st.jb);if(B&&st.jb>=0){const X=-1e5;h+=`<path d="M${X} ${X}H${-X}V${-X}H${X}Z M${B.x0*S} ${B.y0*S}V${B.y1*S}H${B.x1*S}V${B.y0*S}Z" fill="#000" fill-opacity=".28" fill-rule="evenodd"/><rect x="${B.x0*S}" y="${B.y0*S}" width="${(B.x1-B.x0)*S}" height="${(B.y1-B.y0)*S}" fill="none" stroke="#d35400" stroke-width="2" stroke-dasharray="8 5"/>`}
+  items.filter(z=>isZ(z)&&z.k==='parterre').forEach(z=>{const th=(z.pw&&z.pw.th)||.35;h+=`<path d="M${z.pts.map(p=>p[0]*S+' '+p[1]*S).join('L')}Z" fill="none" stroke="#a1887f" stroke-width="${Math.max(2,th*S)}" stroke-linejoin="round"/>`});
+  g.insertAdjacentHTML('beforeend',h+'</g>')}catch(e){console.warn('jardín',e)}return r}}
+/* pistas y caseta: dibujo en planta */
+function pistaSVG(it,S,d,sc){const x=it.x*S,y=it.y*S,w=it.w*S,h=it.h*S,P=PISTA[it.k]||PISTA.multi,lg=it.h>=it.w,L=(a,b,c,e)=>`<path d="M${a} ${b}L${c} ${e}" stroke="#fff" stroke-width="1.6"/>`;let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${P[3]}" stroke="${it.id===sel?'#d0661e':'#1f2a33'}" stroke-width="${it.id===sel?3:1.5}"/>`;
+  const cx=x+w/2,cy=y+h/2;
+  if(it.k==='padel'){s+=lg?L(x,cy,x+w,cy)+L(x,cy-6.95*S,x+w,cy-6.95*S)+L(x,cy+6.95*S,x+w,cy+6.95*S)+L(cx,cy-6.95*S,cx,cy+6.95*S):L(cx,y,cx,y+h)+L(cx-6.95*S,y,cx-6.95*S,y+h)+L(cx+6.95*S,y,cx+6.95*S,y+h)+L(cx-6.95*S,cy,cx+6.95*S,cy)}
+  else if(it.k==='tenis'){const a=(lg?10.97:23.77)*S/2,b=(lg?23.77:10.97)*S/2,sa=(lg?8.23:23.77)*S/2,sb=(lg?23.77:8.23)*S/2;s+=`<rect x="${cx-a}" y="${cy-b}" width="${2*a}" height="${2*b}" fill="#5a9a6a" stroke="#fff" stroke-width="1.6"/><rect x="${cx-sa}" y="${cy-sb}" width="${2*sa}" height="${2*sb}" fill="none" stroke="#fff" stroke-width="1.2"/>`+(lg?L(cx-a,cy,cx+a,cy)+L(cx-sa,cy-6.4*S,cx+sa,cy-6.4*S)+L(cx-sa,cy+6.4*S,cx+sa,cy+6.4*S)+L(cx,cy-6.4*S,cx,cy+6.4*S):L(cx,cy-b,cx,cy+b)+L(cx-6.4*S,cy-sb,cx-6.4*S,cy+sb)+L(cx+6.4*S,cy-sb,cx+6.4*S,cy+sb)+L(cx-6.4*S,cy,cx+6.4*S,cy))}
+  else if(it.k==='multi'){s+=(lg?L(x,cy,x+w,cy):L(cx,y,cx,y+h))+`<circle cx="${cx}" cy="${cy}" r="${1.8*S}" fill="none" stroke="#fff" stroke-width="1.6"/>`}
+  else if(it.k==='caseta'){s+=`<path d="M${x} ${y}L${x+w} ${y+h}M${x+w} ${y}L${x} ${y+h}" stroke="#5d4037" stroke-width="1.2"/>`}
+  else if(it.k==='petanca'){s+=`<rect x="${x+2}" y="${y+2}" width="${Math.max(0,w-4)}" height="${Math.max(0,h-4)}" fill="none" stroke="#a1887f" stroke-width="2"/>`}
+  s+=`<text x="${cx}" y="${cy-4}" text-anchor="middle" style="font:700 12px sans-serif;fill:#fff;paint-order:stroke;stroke:#0008;stroke-width:3px">${P[0]}</text><text x="${cx}" y="${cy+12}" text-anchor="middle" style="font:11px sans-serif;fill:#fff;paint-order:stroke;stroke:#0008;stroke-width:3px">${fmt(it.w)} × ${fmt(it.h)} m</text>`;
+  return `<g${d}${sc}>${s}</g>`}
+{const _drJ=draw;draw=function(it,g){if(it.t==='pista'){const d=g?'':` data-id="${it.id}"`;return pistaSVG(it,view.s,d,'')}return _drJ.apply(this,arguments)}}
+function jarFoot(it){const b=bboxOf(it);if(!b)return '';if(jarBlds().some(q=>!(it.t==='pista'&&it.k==='caseta'&&q.x0===it.x&&q.y0===it.y)&&b.x<q.x1-.01&&b.x+b.w>q.x0+.01&&b.y<q.y1-.01&&b.y+b.h>q.y0+.01))return 'No cabe ahí: pisa el edificio';const s=SOL();if(s){const P=solPts(s);if([[b.x,b.y],[b.x+b.w,b.y],[b.x,b.y+b.h],[b.x+b.w,b.y+b.h]].some(([x,y])=>!zPip(x,y,P)))return 'No cabe ahí: se sale del solar'}return ''}
+{const _vJ=vmsg;vmsg=function(it){if(it&&(it.t==='pista'||(it.t==='obj'&&it.ext)))return jarFoot(it);if(isZ(it))return '';return _vJ.apply(this,arguments)}}
+try{HAS3D.push('pista')}catch(e){}
+/* colocar tocando: pistas, árboles y cosas del jardín */
+function jarPut(k){JPUT={k};try{xwStop()}catch(e){}ZDR=null;try{zUI()}catch(e){}tool='select';sel=null;toolsUI();const nm=PISTA[k]?PISTA[k][0]:(CATK[k]||[k])[0];note='Toca en el jardín donde va: '+nm.toLowerCase();render()}
+function jarZona(k){if(!isJar())scrGo('jar');zStart(k);if(k==='parterre')note='Toca las esquinas del parterre. La pared seca es de 50 cm de alto y 35 de ancho; luego la cambias si quieres'}
+$('#cvw').addEventListener('pointerdown',e=>{if(!isJar()||e.button===2)return;if(!(JPUT||ZDR||BBQPUT))return;if(e.target.closest&&e.target.closest('#jarB,#colW,#zexW,#obBar,button,input,select'))return;if(e.pointerType==='touch'&&e.isPrimary===false)return;
+  const p=world(e),why=jarWhy(p.x,p.y);if(why){e.stopImmediatePropagation();e.preventDefault();note=why;render();return}
+  if(JPUT){e.stopImmediatePropagation();e.preventDefault();const k=JPUT.k,f=aljFG();push();let o;if(PISTA[k]){const P=PISTA[k];o={id:nid++,t:'pista',k,f,w:P[1],h:P[2],x:r2(snap(p.x-P[1]/2)),y:r2(snap(p.y-P[2]/2))}}else{const d=CATK[k];o={id:nid++,t:'obj',f,ok:k,w:d[1],h:d[2],x:r2(snap(p.x-d[1]/2)),y:r2(snap(p.y-d[2]/2)),r:0,o:0,ext:1}}
+    const why2=jarFoot(o);if(why2){undo.pop();note=why2+'. Toca en otro sitio';return render()}items.push(o);JPUT=null;sel=o.id;tool='select';note='Listo: '+(PISTA[k]?PISTA[k][0]:CATK[k][0]).toLowerCase()+'. Muévelo con las flechas o arrastrándolo';done()}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&JPUT){JPUT=null;note='';render()}});
+/* parterre: alto y ancho de la pared seca en la barra de colocar */
+{const _cUI=colUI;colUI=function(){_cUI.apply(this,arguments);try{const it=cur(),w=$('#colW');if(w&&it&&isZ(it)&&it.k==='parterre'&&!w.querySelector('[data-pw]')){const q=it.pw||{h:.5,th:.35};w.querySelector('b').insertAdjacentHTML('afterend',`<label class="cwX" style="display:flex;flex-direction:column;font-size:12px">Alto pared (m)<input data-pw="h" type="number" step=".05" min=".2" value="${q.h}" style="width:70px"></label><label class="cwX" style="display:flex;flex-direction:column;font-size:12px">Ancho (m)<input data-pw="th" type="number" step=".05" min=".1" value="${q.th}" style="width:70px"></label>`)}}catch(e){}}}
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.pw)return;const it=cur();if(!it)return;push();it.pw={h:.5,th:.35,...(it.pw||{}),[t.dataset.pw]:Math.max(.05,+t.value||.35)};done()});
+{const _zsJ=zStart;zStart=function(k){const r=_zsJ.apply(this,arguments);return r}}
+/* ventanita para elegir árbol, pista o cosa */
+function jarPop(btn,L){const o=$('#jarPop');if(o)o.remove();const r=btn.getBoundingClientRect();document.body.insertAdjacentHTML('beforeend',`<div id="jarPop" class="pop" style="position:fixed;z-index:86;left:${Math.max(6,Math.min(r.left,innerWidth-260))}px;top:${r.bottom+4}px;display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;box-shadow:0 6px 20px #0003">${L.map(([k,t])=>`<button data-jp="${k}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
+  $('#jarPop').querySelectorAll('[data-jp]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();$('#jarPop').remove();const k=b.dataset.jp;if(k==='@pisc')psDlg();else if(k==='@bbq')bbqTool();else jarPut(k)})}
+document.addEventListener('pointerdown',e=>{const p=$('#jarPop');if(p&&!p.contains(e.target))p.remove()},true);
+const jBtn=()=>document.activeElement&&document.activeElement.closest?document.activeElement.closest('button'):null;
+SCRM.jar=[['Césped',()=>jarZona('jardin')],['Camino de coches',()=>jarZona('acceso')],['Camino a pie',()=>jarZona('peatonal')],['Parterre con pared seca',()=>jarZona('parterre')],['Huerto',()=>jarZona('huerto')],
+  ['Árboles ▾',b=>jarPop(b||$('#scrM'),JARB.map(k=>[k,CATK[k][0]]))],
+  ['Pistas y deporte ▾',b=>jarPop(b||$('#scrM'),[['padel','Pista de pádel (10 × 20 m)'],['tenis','Pista de tenis (18,3 × 36,6 m)'],['multi','Pista multideporte (15 × 28 m)'],['petanca','Pista de petanca (4 × 15 m)'],['@pisc','Piscina…']])],
+  ['Más cosas ▾',b=>jarPop(b||$('#scrM'),[['@bbq','Barbacoa con porche'],['caseta','Caseta de herramientas (2,5 × 2 m)'],...JMAS.map(k=>[k,CATK[k][0]])])]];
+/* la pantalla Jardín en la fila de pantallas */
+{const _scJ=scrCur;scrCur=function(){if(st.scr==='jar'&&fl===aljFG())return 'jar';return _scJ.apply(this,arguments)}}
+{const _sbJ=scrBar;scrBar=function(){_sbJ.apply(this,arguments);try{const T=$('#tabs'),pb=T&&T.querySelector(`[data-f="${pbF()}"]`);if(pb&&!T.querySelector('[data-scr="jar"]')){pb.insertAdjacentHTML('afterend',`<button data-scr="jar" aria-pressed="${scrCur()==='jar'}">Jardín</button>`);T.querySelector('[data-scr="jar"]').onclick=()=>scrGo('jar')}
+  if(scrCur()==='jar')T.querySelectorAll('[data-f]').forEach(b=>b.setAttribute('aria-pressed','false'))}catch(e){console.warn(e)}}}
+{const _sgJ=scrGo;scrGo=function(k,f){JPUT=null;if(k!=='jar')return _sgJ.apply(this,arguments);_sgJ.call(this,'f',aljFG());st.scr='jar';fl=aljFG();if(st.jb==null)st.jb=0;const A=jarAx();if(A&&st.jb>=A.n)st.jb=0;tabs();jarFit();done()}}
+/* 3D: pistas, caseta y pared seca de los parterres */
+function jar3(T,B){const base=st.sot?rasante():0,zt=(x,y)=>{try{return base+tzAt(x,y)}catch(e){return base}};
+  const box=(w,h,d,col,x,y,z,op)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshLambertMaterial(op?{color:col,transparent:true,opacity:op}:{color:col}));m.position.set(x,y,z);m.castShadow=!op;m.receiveShadow=true;B.sc.add(m);return m};
+  items.filter(o=>o.t==='pista').forEach(o=>{const P=PISTA[o.k]||PISTA.multi,cx=o.x+o.w/2,cy=o.y+o.h/2,z0=zt(cx,cy);
+    if(o.k==='caseta'){box(o.w,2.2,o.h,'#d7ccc8',cx,z0+1.1,cy);const r=box(o.w+.3,.12,o.h+.3,'#6d4c41',cx,z0+2.3,cy);return}
+    const c=document.createElement('canvas'),K=20;c.width=Math.max(8,Math.round(o.w*K));c.height=Math.max(8,Math.round(o.h*K));const g=c.getContext('2d');
+    const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');g.fillStyle=P[3];g.fillRect(0,0,c.width,c.height);g.strokeStyle='#fff';g.lineWidth=2;const ln=(a,b,cc,d)=>{g.beginPath();g.moveTo(a*K,b*K);g.lineTo(cc*K,d*K);g.stroke()};const w=o.w,h=o.h,lg=h>=w,mx=w/2,my=h/2;
+    if(o.k==='padel'){if(lg){ln(0,my,w,my);ln(0,my-6.95,w,my-6.95);ln(0,my+6.95,w,my+6.95);ln(mx,my-6.95,mx,my+6.95)}else{ln(mx,0,mx,h);ln(mx-6.95,0,mx-6.95,h);ln(mx+6.95,0,mx+6.95,h);ln(mx-6.95,my,mx+6.95,my)}}
+    if(o.k==='tenis'){const a=(lg?10.97:23.77)/2,b=(lg?23.77:10.97)/2;g.fillStyle='#5a9a6a';g.fillRect((mx-a)*K,(my-b)*K,2*a*K,2*b*K);g.strokeRect((mx-a)*K,(my-b)*K,2*a*K,2*b*K);if(lg)ln(mx-a,my,mx+a,my);else ln(mx,my-b,mx,my+b)}
+    if(o.k==='multi'){if(lg)ln(0,my,w,my);else ln(mx,0,mx,h);g.beginPath();g.arc(mx*K,my*K,1.8*K,0,7);g.stroke()}
+    const tx=new T.CanvasTexture(c);const sl=new T.Mesh(new T.BoxGeometry(w,.1,h),[0,1,2,3,4,5].map(i=>i===2?new T.MeshLambertMaterial({map:tx}):new T.MeshLambertMaterial({color:'#9e9e9e'})));sl.position.set(cx,z0+.05,cy);sl.receiveShadow=true;B.sc.add(sl);
+    const net=(len,along)=>{const n=box(along?len:.03,.9,along?.03:len,'#eeeeee',cx,z0+.5,cy,.6)};if(o.k==='padel'||o.k==='tenis')net(lg?w:h,lg);
+    if(o.k==='padel'){const gl='#bfe3f2',ms='#455a64';const wall=(x,y,a,b,hh,col,op)=>box(a,hh,b,col,x,z0+.1+hh/2,y,op);
+      if(lg){[o.y+.03,o.y+h-.03].forEach(yy=>wall(cx,yy,w,.06,3,gl,.35));[o.x+.03,o.x+w-.03].forEach(xx=>{wall(xx,o.y+2,.06,4,3,gl,.35);wall(xx,o.y+h-2,.06,4,3,gl,.35);wall(xx,cy,.04,h-8,3,ms,.25)})}
+      else{[o.x+.03,o.x+w-.03].forEach(xx=>wall(xx,cy,.06,h,3,gl,.35));[o.y+.03,o.y+h-.03].forEach(yy=>{wall(o.x+2,yy,4,.06,3,gl,.35);wall(o.x+w-2,yy,4,.06,3,gl,.35);wall(cx,yy,w-8,.04,3,ms,.25)})}}
+    if(o.k==='tenis'||o.k==='multi'){const hh=o.k==='tenis'?3:2;[[cx,o.y,w,.04],[cx,o.y+h,w,.04],[o.x,cy,.04,h],[o.x+w,cy,.04,h]].forEach(([x,y,a,b])=>box(a,hh,b,'#2e7d32',x,z0+.1+hh/2,y,.25))}});
+  items.filter(z=>isZ(z)&&z.k==='parterre').forEach(z=>{const q={h:.5,th:.35,...(z.pw||{})},P=z.pts,sg=solArea(P)>0?1:-1;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L<.05)continue;
+    const nx=-(b[1]-a[1])/L*sg,ny=(b[0]-a[0])/L*sg,mx=(a[0]+b[0])/2+nx*q.th/2,my=(a[1]+b[1])/2+ny*q.th/2,z0=zt(mx,my);const m=new T.Mesh(new T.BoxGeometry(L+q.th,q.h,q.th),typeof maresM3==='function'?new T.MeshLambertMaterial({color:'#b9a58a'}):new T.MeshLambertMaterial({color:'#b9a58a'}));m.position.set(mx,z0+q.h/2,my);m.rotation.y=-Math.atan2(b[1]-a[1],b[0]-a[0]);m.castShadow=true;m.receiveShadow=true;B.sc.add(m)}})}
+{const _bJ=bldAll3;bldAll3=function(){const B=_bJ.apply(this,arguments);try{if(B&&B.sc&&window.THREE&&isMod())jar3(THREE,B)}catch(e){console.warn('jardín 3D',e)}return B}}
+/* presupuesto */
+{const _epJ=entPres;entPres=function(){const A=_epJ.apply(this,arguments);try{const c={};items.filter(o=>o.t==='pista').forEach(o=>c[o.k]=(c[o.k]||0)+1);Object.entries(c).forEach(([k,n])=>A.push(['pt_'+k,n]));let L=0;items.filter(z=>isZ(z)&&z.k==='parterre').forEach(z=>{for(let i=0;i<z.pts.length;i++){const a=z.pts[i],b=z.pts[(i+1)%z.pts.length];L+=Math.hypot(b[0]-a[0],b[1]-a[1])}});if(L)A.push(['zx_psec',r2(L)])}catch(e){}return A}}
+document.head.insertAdjacentHTML('beforeend',`<style id="jarCss">#jarB{position:absolute;top:8px;left:8px;z-index:8;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--panel);border:1px solid var(--line);border-top:4px solid #2e7d32;border-radius:10px;padding:6px 8px;box-shadow:0 3px 12px #0002;font-size:14px;max-width:calc(100% - 90px)}
+#tabs [data-scr="jar"]{color:#2e7d32;font-weight:600}#tabs [data-scr="jar"][aria-pressed="true"]{background:#2e7d32;color:#fff;border-color:#2e7d32}</style>`);
+
+/*<</mod:jardin>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
