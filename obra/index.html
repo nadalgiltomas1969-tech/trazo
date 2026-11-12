@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · jardín por tramos</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · ventanas a la derecha y menú único</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -16189,6 +16189,64 @@ document.head.insertAdjacentHTML('beforeend',`<style id="jarCss">#jarB{position:
 #tabs [data-scr="jar"]{color:#2e7d32;font-weight:600}#tabs [data-scr="jar"][aria-pressed="true"]{background:#2e7d32;color:#fff;border-color:#2e7d32}</style>`);
 
 /*<</mod:jardin>>*/
+/*<<mod:ventanas>>*/
+/* ===== Ventanas a la derecha, bajando desde arriba, plegables; un solo «☰ Menú» con todo junto ===== */
+const RWS=['#gMenu','#pwP','#clW','#aljW','#zexW','#colW','#obraP','#eaP','#ccP','#dock'];
+const RWT={gMenu:'Menú',dock:'Elemento seleccionado',pwP:'Paso',clW:'Cierre del solar',aljW:'Aljibe o pozo',zexW:'Zona',colW:'Colocar',obraP:'Datos de la obra',eaP:'Estructura',ccP:'Cimentación'};
+document.body.classList.add('vwin');
+document.body.insertAdjacentHTML('beforeend','<div id="rwin" aria-label="Ventanas"></div>');
+function rwTop(){const t=$('#tabs'),r=$('#rwin');if(!t||!r)return;const b=t.getBoundingClientRect().bottom;r.style.top=Math.max(40,b+6)+'px'}
+function rwTitle(el){const id=el.id;if(id==='colW'){try{return 'Colocar: '+colName(cur())}catch(e){}}if(id==='dock'){const it=cur();try{if(it&&it.t!=='cont')return colName(it)}catch(e){}const h=el.querySelector('h2');return (h&&h.textContent.trim())||'Panel de la planta'}
+  const h=el.querySelector('h2,h3,b,strong');const t=h&&h.textContent.trim();return (t&&t.length<60?t:'')||RWT[id]||'Ventana'}
+function rwWrap(el){const box=document.createElement('div');box.className='rwBox';box.dataset.w=el.id;box.innerHTML='<div class="rwH" role="button" tabindex="0"><span class="rwT"></span><span class="rwA" aria-hidden="true">▴</span></div>';el.before(box);box.appendChild(el);$('#rwin').appendChild(box);return box}
+function rwOpen(box){document.querySelectorAll('#rwin .rwBox').forEach(b=>b.classList.toggle('fold',b!==box));rwUpd()}
+function rwUpd(){document.querySelectorAll('#rwin .rwBox').forEach(b=>{const el=b.querySelector('#'+b.dataset.w);if(!el){b.remove();return}b.querySelector('.rwT').textContent=rwTitle(el);b.querySelector('.rwA').textContent=b.classList.contains('fold')?'▾':'▴';b.hidden=el.hidden&&b.dataset.w!=='dock'});
+  /* el menú siempre arriba del todo */const g=document.querySelector('#rwin .rwBox[data-w="gMenu"]');if(g&&g!==$('#rwin').firstChild)$('#rwin').prepend(g)}
+let RWBUSY=0;
+function rwScan(){if(RWBUSY)return;RWBUSY=1;try{let nw=null;RWS.forEach(q=>{const el=$(q);if(!el)return;if(el.parentElement&&el.parentElement.classList.contains('rwBox'))return;if(q==='#obraP'&&el.closest('#pwP'))return;if(q==='#dock'&&$('#rwin .rwBox[data-w="dock"]'))return;const b=rwWrap(el);if(q==='#dock')b.classList.add('fold');else nw=b});
+  document.querySelectorAll('#rwin .rwBox').forEach(b=>{if(!b.querySelector('#'+b.dataset.w))b.remove()});if(nw)rwOpen(nw);else rwUpd();rwTop()}finally{RWBUSY=0}}
+new MutationObserver(()=>rwScan()).observe(document.body,{childList:true});
+new MutationObserver(()=>rwScan()).observe($('#cvw'),{childList:true});
+document.addEventListener('click',e=>{const h=e.target.closest&&e.target.closest('#rwin .rwH');if(!h)return;e.stopPropagation();const b=h.parentElement;if(b.classList.contains('fold'))rwOpen(b);else{b.classList.add('fold');rwUpd()}});
+addEventListener('resize',rwTop);
+{const _rRW=render;render=function(){const r=_rRW.apply(this,arguments);try{rwScan()}catch(e){}return r}}
+/* ---------- ☰ Menú: todo junto ---------- */
+const GMS=[['Proyecto y obra',['Proyecto'],[['Datos de la obra',()=>{gmClose();obraOpen()}]]],['Dibujar',['Dibujar','Bajo tierra']],['Huecos y elementos',['Huecos','Elementos']],['Instalaciones',['Instalaciones']],['Catálogos',['Catálogos']],['Vista',['Vista']]];
+function gmBack(){MENUS.forEach(m=>{if(m.pop.classList.contains('inG')){m.pop.classList.remove('inG');m.pop.hidden=true;document.body.appendChild(m.pop)}})}
+function gmClose(){gmBack();const g=$('#gMenu');if(g)g.remove();rwScan()}
+function gmOpen(){if($('#gMenu')){gmClose();return}try{closeMenus()}catch(e){}
+  document.body.insertAdjacentHTML('beforeend',`<div id="gMenu">${GMS.map((s,i)=>`<details data-gi="${i}"><summary>${s[0]}</summary><div class="gmS"></div></details>`).join('')}<div class="row"><button id="gmX">Cerrar el menú</button></div></div>`);
+  const G=$('#gMenu');G.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>{const S=GMS[+d.dataset.gi],box=d.querySelector('.gmS');
+    if(d.open){G.querySelectorAll('details').forEach(o=>{if(o!==d&&o.open)o.open=false});box.innerHTML='';(S[2]||[]).forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;box.appendChild(b)});
+      S[1].forEach(n=>{const m=MENUS.find(q=>q.name===n);if(!m)return;if(S[1].length>1){const h=document.createElement('div');h.className='gmSub';h.textContent=n;box.appendChild(h)}m.pop.classList.add('inG');m.pop.hidden=false;m.pop.style.left='';m.pop.style.top='';box.appendChild(m.pop)})}
+    else{MENUS.forEach(m=>{if(box.contains(m.pop)){m.pop.classList.remove('inG');m.pop.hidden=true;document.body.appendChild(m.pop)}})}}));
+  $('#gmX').onclick=gmClose;rwScan()}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#gMenu .pop button');if(!b)return;setTimeout(()=>{if(b.id==='delFl'||b.id==='clear')return;gmClose()},0)},true);
+(function(){const tl=$('#tools');if(tl&&!$('#gmBtn')){const b=document.createElement('button');b.id='gmBtn';b.textContent='☰ Menú';b.onclick=e=>{e.stopPropagation();gmOpen()};tl.appendChild(b)}})();
+document.head.insertAdjacentHTML('beforeend',`<style id="rwCss">
+body.vwin #scrMas,body.vwin #obraBtn,body.vwin #tools .mbtn,body.vwin #dockMin{display:none!important}
+body.vwin #zoom{right:auto!important;left:10px!important}
+#gmBtn{margin-left:auto;font-weight:700;background:#263238;color:#fff;border-color:#263238;flex:0 0 auto}
+@media (min-width:600px) and (min-aspect-ratio:1/1){body.vwin:not(.nopan):not(.nodock):not(.pbelow){grid-template-columns:minmax(0,1fr)!important}body.vwin #cvw{grid-column:1/-1!important}}
+#rwin{position:fixed;right:8px;top:120px;bottom:8px;width:min(380px,calc(100vw - 16px));z-index:78;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+#rwin .rwBox{pointer-events:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:4px solid #d35400;border-radius:12px;box-shadow:0 6px 18px #0003;display:flex;flex-direction:column;min-height:0;flex:0 1 auto;overflow:hidden}
+#rwin .rwBox[data-w="gMenu"]{border-top-color:#263238}#rwin .rwBox[data-w="dock"]{border-top-color:#1565c0}
+#rwin .rwBox.fold{flex:0 0 auto}#rwin .rwBox.fold>:not(.rwH){display:none!important}
+#rwin .rwH{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-weight:700;font-size:14px;user-select:none;background:color-mix(in srgb,var(--panel) 85%,#d35400 15%)}
+#rwin .rwT{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#rwin .rwA{font-size:16px}
+#rwin .rwBox>:not(.rwH){position:static!important;transform:none!important;inset:auto!important;width:auto!important;max-width:none!important;max-height:none!important;min-height:0!important;margin:0!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:auto!important;flex:0 1 auto;z-index:auto!important}
+#rwin .rwBox:not(.fold) #dock{display:block!important;padding:10px!important}
+#rwin #colW{padding:8px 10px!important}
+#rwin #colW [data-cw="min"]{display:none!important}
+#gMenu{padding:10px 12px!important;display:flex;flex-direction:column;gap:6px}
+#gMenu details{border:1px solid var(--line);border-radius:10px;padding:2px 8px}#gMenu summary{cursor:pointer;font-weight:700;padding:8px 2px;font-size:15px}
+#gMenu .gmS{display:flex;flex-direction:column;gap:5px;padding:0 0 8px}#gMenu .gmSub{font-size:12px;color:var(--mute);margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+#gMenu .pop.inG{position:static!important;display:flex!important;flex-direction:column;gap:5px;box-shadow:none!important;border:0!important;padding:0!important;background:none!important;max-height:none!important;width:auto!important}
+#gMenu .pop.inG button{text-align:left}
+</style>`);
+setTimeout(()=>{rwScan();rwTop();try{fitView()}catch(e){}},0);
+
+/*<</mod:ventanas>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
