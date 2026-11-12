@@ -169,7 +169,7 @@ body.nolbl #cv text.nm:not(.keep),body.nolbl #cv text.dm:not(.keep),body.nolbl #
 <div id="cvw">
   <svg id="cv" role="img" aria-label="Lienzo del plano"></svg>
   <div id="msg"></div>
-  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · cierre a medida y ascensor (arreglado)</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
+  <div id="ver" aria-label="Versión de la app">Trazo Obra nueva · versión 12 nov 2026 · pozo negro dentro de la casa</div><div id="zoom"><button id="zin" aria-label="Acercar">+</button><button id="zout" aria-label="Alejar">−</button><button id="zfit" aria-label="Ver todo el contorno" style="font-size:13px">Todo</button></div>
   <div id="fac" hidden><div class="fb" id="fb"></div><div class="fb" id="fb2"></div><div class="fb" id="fb3"></div><svg id="fsv" role="img" aria-label="Fachada generada del plano"></svg></div>
 </div>
 <div id="dock">
@@ -15855,6 +15855,14 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.da
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('#ascB [data-asck="del"]');if(!b)return;const it=cur();if(!it)return;push();items=items.filter(o=>o!==it);sel=null;done();panel()});
 
 /*<</mod:cierre2>>*/
+/*<<mod:fosa2>>*/
+/* ===================== POZO NEGRO, FOSA O DEPURADORA TAMBIÉN DENTRO DE LA CASA ===================== */
+const FOSP={jardin:'En el jardín',bajo:'Bajo la casa (enterrado bajo el suelo)',parking:'En el sótano o parking (depósito visto)'};
+{const _uiF2=aljUI;aljUI=function(){const r=_uiF2.apply(this,arguments);try{const a=aljCur(),w=$('#aljW');if(!a||!a.k||!w)return r;const G=w.querySelector('.xwG');if(G&&!G.querySelector('[data-alji="pos"]'))G.insertAdjacentHTML('afterbegin',`<label>Dónde va<select data-alji="pos">${Object.entries(FOSP).filter(([k])=>k!=='parking'||st.sot).map(([k,t])=>`<option value="${k}"${a.pos===k?' selected':''}>${t}</option>`).join('')}</select></label>`);
+  if(a.pos!=='jardin'){const D=w.querySelector('.xwD small');if(D)D.textContent=a.pos==='bajo'?'Va enterrado bajo el suelo de la casa: su tapa queda como un registro en el suelo, reforzada si pasan coches. Déjale paso para vaciarlo con la manguera del camión.':'Va dentro del sótano o del parking como un depósito con su tapa: déjale paso para vaciarlo.'}}catch(e){console.warn(e)}return r}}
+{const _awF2=aljWarn;aljWarn=function(a){const w=_awF2.apply(this,arguments);if(a&&a.k&&a.pos!=='jardin'&&/^Muy pegado a la casa/.test(w||''))return '';return w}}
+
+/*<</mod:fosa2>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
