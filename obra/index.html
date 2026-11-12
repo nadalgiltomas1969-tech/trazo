@@ -15995,6 +15995,59 @@ const pjVacio=q=>!q||!q.data||!Array.isArray(q.data.items)||!q.data.items.length
 document.addEventListener('click',e=>{if(!(e.target&&e.target.closest&&e.target.closest('#iniNew')))return;setTimeout(()=>{try{let k=0;Object.keys(PJ.p).forEach(id=>{if(id!==PJ.cur&&pjVacio(PJ.p[id])){delete PJ.p[id];k++}});if(k)save()}catch(er){}},400)},true);
 
 /*<</mod:pjvacios>>*/
+/*<<mod:cerrlados>>*/
+/* ===== Cierre del solar: todo el perímetro o fachada por fachada, con los armarios de contadores ===== */
+let CLW=null;
+const CLM=['bloque','murete','piedra','pseca'];
+const CLK={elec:'Luz',agua:'Agua',gas:'Gas',tel:'Teléfono y fibra'};
+function solFitV(){const s=SOL();if(!s)return;const P=solPts(s);if(!P||P.length<2)return;const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys)-3,y1=Math.max(...ys)+3;
+  const r=svg.getBoundingClientRect();if(!r.width)return;const W=window.innerWidth>700?Math.min(r.width,window.innerWidth-400-r.left):r.width,H=r.height,w=x1-x0||1,h=y1-y0||1;
+  const sc=Math.max(1.5,Math.min(120,Math.min((W-60)/w,(H-60)/h)));view.s=sc;view.ox=(W-w*sc)/2-x0*sc;view.oy=(H-h*sc)/2-y0*sc}
+function clSides(){const s=SOL(),P0=s&&solPts(s);if(!P0||P0.length<3)return null;const sg=solArea(P0)>0?1:-1;return{P:pgOffset(P0,.15*sg),ed:solEd(s)}}
+function clCerr(i){const C=OB().cerr||[];return C.find(c=>c.lado===i)||null}
+function clPorLados(){const S=clSides();if(!S)return false;const C=OB().cerr||[];return S.P.length&&S.P.every((p,i)=>C.some(c=>c.lado===i))||C.some(c=>c.lado!=null)}
+function clRodear(ty){swRodear(ty||'bloque');(OB().cerr||[]).forEach((c,i)=>c.lado=i);save()}
+function clStart(i){const S0=clSides();if(S0){const c0=S0.ed.findIndex(e=>e&&e.t==='calle');if(c0>=0)i=c0}OBT=null;try{obBar()}catch(e){}if(!clSides()){note='Primero la forma del solar (pantalla Solar → Forma y medidas)';return render()}if(!clPorLados())clRodear('lamas');CLW={i,s0:i};solFitV();render()}
+function clNew(i,t){const S=clSides();const a=S.P[i],b=S.P[(i+1)%S.P.length],k=(S.ed[i]||{}).t||'med';const c={id:OBID(),t,cl:0,lado:i,pts:[[r2(a[0]),r2(a[1])],[r2(b[0]),r2(b[1])]],ld:k==='calle'?'a la calle':k==='med'?'medianera':''};(OB().cerr=OB().cerr||[]).push(c);return c}
+function clLado(i){const S=clSides(),a=S.P[i],b=S.P[(i+1)%S.P.length],k=(S.ed[i]||{}).t||'med';return{a,b,L:Math.hypot(b[0]-a[0],b[1]-a[1]),k,nm:k==='calle'?'a la calle':k==='med'?'medianera':k==='camino'?'al camino':'lindero'}}
+function clCtrOn(i){const M=OB().ctrP||{};return Object.keys(CLK).filter(k=>M[k]&&M[k].lado===i)}
+function clCtrPon(i,k,on){const o=OB();o.ctrP=o.ctrP||{};if(!on){delete o.ctrP[k];if(o.ctrU)delete o.ctrU[k];return}const D=clLado(i),c=clCerr(i),th=c?cfOf(c).th:.2;
+  const used=clCtrOn(i).filter(q=>q!==k).map(q=>o.ctrP[q].u+CTRK[q].w/2);let u=Math.max(.6,...used.map(v=>v+.25))+CTRK[k].w/2;if(u+CTRK[k].w/2>D.L-.1)u=D.L/2;
+  o.ctrP[k]={on:'cerr',a:D.a.slice(),b:D.b.slice(),u:r2(u),th,lado:i};if(o.ctrU)delete o.ctrU[k]}
+function clHTML(){const S=clSides();if(!S)return'';const n=S.P.length,i=CLW.i,s0=CLW.s0||0,ord=(i-s0+n)%n,nx=(i+1)%n,pv=(i-1+n)%n;
+  if(i<0){return `<b>Cierre en todo el perímetro</b><span class="hint">Elige cómo es y se pone igual en los ${n} lados. Luego lo afinas fachada por fachada.</span>
+    <div class="clR">${Object.entries(CERR).map(([k,v])=>`<button data-cla="${k}">${esc(v[0])}</button>`).join('')}</div><div class="clR"><button data-clg="${s0}">Fachada por fachada ›</button><button data-clx="1">Cerrar</button></div>`}
+  const D=clLado(i),c=clCerr(i),q=c?cfOf(c):null,mur=c&&CLM.includes(c.t),on=clCtrOn(i);
+  let h=`<b>Fachada ${ord+1} de ${n} · ${D.nm} · ${fmt(r2(D.L))} m</b><div class="clR"><label>Cierre<select data-clf="t"><option value=""${c?'':' selected'}>Sin cierre (entrada, medianera…)</option>${Object.entries(CERR).map(([k,v])=>`<option value="${k}"${c&&c.t===k?' selected':''}>${esc(v[0])}</option>`).join('')}</select></label>`;
+  if(c){h+=mur?`<label>Alto del muro (m)<input data-clf="hm" type="number" step=".05" min=".2" value="${q.hm}"></label>`:`<label>Alto (m)<input data-clf="h" type="number" step=".05" min=".3" value="${c.h||(CERR[c.t]||CERR.bloque)[1]}"></label>`;
+    h+=`<label>Ancho (m)<input data-clf="th" type="number" step=".01" min=".03" value="${q.th}"></label>`;
+    if(mur)h+=`<label>Hierros<select data-clf="rj">${Object.entries(CFRJ).map(([k,v])=>`<option value="${k}"${q.rj===k?' selected':''}>${v}</option>`).join('')}</select></label>${q.rj?`<label>Alto de los hierros (m)<input data-clf="hr" type="number" step=".05" min=".2" value="${q.hr}"></label>`:''}`}
+  h+=`</div><div class="clR"><span>Armarios de contadores en esta fachada:</span>${Object.entries(CLK).map(([k,v])=>`<label class="clC"><input type="checkbox" data-clk="${k}"${on.includes(k)?' checked':''}> ${v}</label>`).join('')}</div>
+  <div class="clR"><button data-clg="${pv}"${ord===0?' disabled':''}>‹ Anterior</button>${ord<n-1?`<button class="pri" data-clg="${nx}">Siguiente fachada ›</button>`:`<button class="pri" data-clx="1">Terminar</button>`}<button data-clg="-1">Todo el perímetro</button>${ord<n-1?'<button data-clx="1">Listo</button>':''}</div>`;return h}
+function clUI(){let w=$('#clW');if(!CLW||!clSides()||!$('#v3d').hidden){if(w&&CLW&&clSides()){w.hidden=true;return}if(w)w.remove();CLW=null;return}if(!w){document.body.insertAdjacentHTML('beforeend','<div id="clW" role="dialog" aria-label="Cierre del solar por fachadas"></div>');w=$('#clW')}w.hidden=false;
+  const k=JSON.stringify([CLW.i,(OB().cerr||[]).length]);if(w.dataset.k===k&&w.contains(document.activeElement))return;w.dataset.k=k;w.innerHTML=clHTML()}
+{const _rCL=render;render=function(){const r=_rCL.apply(this,arguments);try{clUI();if(CLW&&CLW.i>=0&&clSides()){const g=svg.querySelector('g[transform^="translate"]');if(g){const D=clLado(CLW.i),S=view.s,mx=(D.a[0]+D.b[0])/2*S,my=(D.a[1]+D.b[1])/2*S;
+  g.insertAdjacentHTML('beforeend',`<g pointer-events="none"><path d="M${D.a[0]*S} ${D.a[1]*S}L${D.b[0]*S} ${D.b[1]*S}" stroke="#d35400" stroke-width="9" stroke-opacity=".45" stroke-linecap="round"/><text x="${mx}" y="${my-10}" text-anchor="middle" style="font:700 14px sans-serif;fill:#d35400;paint-order:stroke;stroke:#fff;stroke-width:4px">Fachada ${((CLW.i-(CLW.s0||0)+clSides().P.length)%clSides().P.length)+1} · ${fmt(r2(D.L))} m</text></g>`)}}}catch(e){console.warn(e)}return r}}
+/* botones en la barra del cerramiento */
+{const _obBarCL=obBar;obBar=function(){const r=_obBarCL.apply(this,arguments);try{const b=$('#obBar');if(b&&OBT&&OBT.k==='cerr'&&SOL()&&!$('#clAll')){const t=$('#obBarT');(t||b.firstChild).insertAdjacentHTML('afterend','<button id="clAll" style="font-weight:600">Cierre en todo el perímetro</button><button id="clLad">Fachada por fachada ›</button>')}}catch(e){}return r}}
+{const _obToolCL=obTool;obTool=function(k){const r=_obToolCL.apply(this,arguments);if(k==='cerr'&&SOL()){solFitV();render()}return r}}
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest)return;
+  if(t.closest('#clAll')){e.stopImmediatePropagation();clStart(0);if(CLW){CLW.i=-1;render()}return}
+  if(t.closest('#clLad')){e.stopImmediatePropagation();clStart(0);return}
+  const b=t.closest('#clW button');if(!b)return;e.stopImmediatePropagation();
+  if(b.dataset.cla){const ty=b.dataset.cla;push();if(!clPorLados())clRodear(ty);const S=clSides();for(let i=0;i<S.P.length;i++){const c=clCerr(i)||clNew(i,ty);c.t=ty;delete c.cf;delete c.h}note='Cierre en todo el perímetro: '+CERR[ty][0].toLowerCase();CLW.i=CLW.s0||0;done();return}
+  if(b.dataset.clg!=null){CLW.i=+b.dataset.clg;render();return}
+  if(b.dataset.clx){CLW=null;note='Cierre del solar listo';done()}},true);
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#clW')||!CLW)return;e.stopImmediatePropagation();const i=CLW.i;push();
+  if(t.dataset.clk){clCtrPon(i,t.dataset.clk,t.checked);done();return}
+  const f=t.dataset.clf;let c=clCerr(i);
+  if(f==='t'){if(!t.value){if(c){const o=OB();o.cerr=o.cerr.filter(q=>q!==c);o.ppar=(o.ppar||[]).filter(p=>p.c!==c.id)}}else if(c){c.t=t.value;delete c.cf;delete c.h}else clNew(i,t.value);$('#clW').dataset.k='';done();return}
+  if(!c)return;const v=t.tagName==='SELECT'?t.value:+t.value;if(f==='h'){if(v>0)c.h=v}else{c.cf={...(c.cf||{}),[f]:v}}if(f==='rj')$('#clW').dataset.k='';
+  Object.keys(OB().ctrP||{}).forEach(k=>{const m=OB().ctrP[k];if(m.lado===i)m.th=cfOf(c).th});done()},true);
+document.head.insertAdjacentHTML('beforeend',`<style id="clCss">#clW{position:fixed;right:8px;top:calc(140px + env(safe-area-inset-top,0px));z-index:77;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:5px solid #d35400;border-radius:12px;padding:10px 12px;box-shadow:0 6px 20px #0003;display:flex;flex-direction:column;gap:8px;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 160px);overflow:auto;font-size:15px}
+#clW .clR{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}#clW label{display:flex;flex-direction:column;font-size:13px;gap:2px}#clW .clC{flex-direction:row;align-items:center;gap:6px;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:6px 10px}#clW input[type=number]{width:90px}#clW .hint{font-size:13px}</style>`);
+
+/*<</mod:cerrlados>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
