@@ -15987,6 +15987,14 @@ function z3At(s,cam,B,f,X,Y,cv){const o=s.dist,n=Math.max(.4,Math.min(80,o*f));i
   if(W){const k=n/o;s.tx=W.x+(s.tx-W.x)*k;s.ty=W.y+(s.ty-W.y)*k;s.tz=W.z+(s.tz-W.z)*k}s.dist=n}
 
 /*<</mod:pantallas>>*/
+/*<<mod:pjvacios>>*/
+/* ===== proyectos vacíos: no salen en la lista y se borran solos al crear otro ===== */
+const pjVacio=q=>!q||!q.data||!Array.isArray(q.data.items)||!q.data.items.length;
+{const _iniOpenVA=iniOpen;iniOpen=function(step){const r=_iniOpenVA.apply(this,arguments);try{if(!step){let n=0,v=0;document.querySelectorAll('[data-inio]').forEach(b=>{n++;if(pjVacio(PJ.p[b.dataset.inio])){v++;const row=b.closest('.row');if(row)row.remove()}});
+  if(n&&n===v){const h=[...document.querySelectorAll('#ini h2')].find(e=>e.textContent==='Elegir proyecto');if(h)h.outerHTML='<p class="hint" style="margin:14px 0 0">No tienes ningún proyecto guardado. Empieza uno nuevo con el botón de arriba.</p>'}}}catch(e){console.warn(e)}return r}}
+document.addEventListener('click',e=>{if(!(e.target&&e.target.closest&&e.target.closest('#iniNew')))return;setTimeout(()=>{try{let k=0;Object.keys(PJ.p).forEach(id=>{if(id!==PJ.cur&&pjVacio(PJ.p[id])){delete PJ.p[id];k++}});if(k)save()}catch(er){}},400)},true);
+
+/*<</mod:pjvacios>>*/
 </script>
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
