@@ -1005,7 +1005,10 @@ function repeatItem(it){const D=distInfo(it),bb=bboxOf(it);if(!D||!bb){note='Pon
 /* ---------- medidor automático a las paredes ---------- */
 const DIST_T=['obj','esc','plaza','rampa','tonel','pilar','aljibe','pneg','pozo','pujador','label','farol','chim','baj','deco','door','window','arco'];
 function hostRoom(cx,cy,f,ex){let best=null;items.forEach(r=>{if(r.t!=='room'||r.f!==f||r.id===ex)return;if(cx>=r.x&&cx<=r.x+r.w&&cy>=r.y&&cy<=r.y+r.h&&(!best||r.w*r.h<best.w*best.h))best=r});if(best)return best;const c=contOf(f);return c&&cx>=c.x&&cx<=c.x+c.w&&cy>=c.y&&cy<=c.y+c.h?{...c,th:c.muro?SD().ext:.3,_c:1}:null}
-
+function inner(R0){const c=contOf(R0.f),ext=SD().ext||.6,t0=R0.th??.3;
+  const nb=(ax,v,a0,a1)=>{let m=t0;if(!R0._c)items.forEach(r=>{if(r===R0||r.id===R0.id||r.t!=='room'||r.f!==R0.f||r.th===0)return;const t=r.th??.3;if(ax==='x'){if((Math.abs(r.x-v)<.02||Math.abs(r.x+r.w-v)<.02)&&Math.min(a1,r.y+r.h)-Math.max(a0,r.y)>.05)m=Math.max(m,t)}else if((Math.abs(r.y-v)<.02||Math.abs(r.y+r.h-v)<.02)&&Math.min(a1,r.x+r.w)-Math.max(a0,r.x)>.05)m=Math.max(m,t)});return m/2};
+  const o=(v,cv,ax,a0,a1)=>(c&&c.muro&&Math.abs(v-cv)<.02)?Math.max(ext/2,t0/2):nb(ax,v,a0,a1);
+  return{x0:R0.x+o(R0.x,c?c.x:-1e9,'x',R0.y,R0.y+R0.h),x1:R0.x+R0.w-o(R0.x+R0.w,c?c.x+c.w:-1e9,'x',R0.y,R0.y+R0.h),y0:R0.y+o(R0.y,c?c.y:-1e9,'y',R0.x,R0.x+R0.w),y1:R0.y+R0.h-o(R0.y+R0.h,c?c.y+c.h:-1e9,'y',R0.x,R0.x+R0.w)}}
 function distInfo(it){if(!it||!DIST_T.includes(it.t))return null;let b;
   if(['door','window','arco'].includes(it.t)){b=distBase(it);if(!b)return null}
   else{const q=typeof bboxOf==='function'?bboxOf(it):null;if(q)b={...q};else if(typeof it.x==='number')b={x:it.x,y:it.y,w:it.w||0,h:it.h||0};else return null}
@@ -1414,11 +1417,13 @@ const bad=it=>isB(it)&&items.some(c=>isV(c)&&reach(c,it.f)&&hits(it,c));
 const badV=c=>items.some(i=>isB(i)&&reach(c,i.f)&&hits(i,c));
 /* huecos de escalera en la planta de arriba y zonas reservadas */
 
-
+function holesOn(f){const b=below(f);if(b===null||f<0)return[];return items.filter(i=>i.t==='esc'&&i.f===b).map(i=>({e:i,b:escBox(i)}))}
 const FOOT_T=['obj','tonel','esc','pujador','aljibe','deco','chim','pilar','pneg','pozo'];
 function footOf(it){if(it.t==='esc')return escBox(it);if(it.t==='chim')return{x:it.x-.45,y:it.y-.3,w:.9,h:.6};if(it.t==='deco')return{x:it.x-.3,y:it.y-.3,w:.6,h:.6};return bboxOf(it)}
 const ovR=(a,b,t)=>a.x<b.x+b.w-t&&a.x+a.w>b.x+t&&a.y<b.y+b.h-t&&a.y+a.h>b.y+t;
-
+function inHole(it){const H=holesOn(it.f);if(!H.length)return null;const T=.03;
+  for(const h of H){const B=h.b;if(it.t==='esc')continue;if(FOOT_T.includes(it.t)){const q=footOf(it);if(q&&ovR(q,B,T))return h}
+    else if(isB(it)){const{p}=pts(it);if(p.some(q=>q.x>B.x+T&&q.x<B.x+B.w-T&&q.y>B.y+T&&q.y<B.y+B.h-T))return h}}return null}
 /* tiros y bajantes: tampoco muebles ni objetos encima */
 const shaftR=c=>({x:c.x-ZS/2,y:c.y-ZS/2,w:ZS,h:ZS});
 function inShaft(it){if(!FOOT_T.includes(it.t)||isV(it))return null;const q=footOf(it);if(!q)return null;return items.find(c=>isV(c)&&reach(c,it.f)&&ovR(q,shaftR(c),.02))||null}
@@ -1760,7 +1765,13 @@ function pasCorner(L,q){return Math.abs(q.x-L[0])>=Math.abs(q.y-L[1])?[q.x,L[1]]
 const pasWs=it=>it.pts.slice(1).map((p,i)=>(it.ws&&it.ws[i])||it.w||1.2);
 const pasTs=it=>it.pts.slice(1).map((p,i)=>(it.ths&&it.ths[i])||it.th||.3);
 function pasRects(it){const W=pasWs(it),R=[];for(let i=0;i<it.pts.length-1;i++){const a=it.pts[i],b=it.pts[i+1],h=W[i]/2;R.push({x:Math.min(a[0],b[0])-h,y:Math.min(a[1],b[1])-h,w:Math.abs(b[0]-a[0])+2*h,h:Math.abs(b[1]-a[1])+2*h})}return R}
-
+function drawPas(it,g,pv){const S=view.s,d=g?'':` data-id="${it.id}"`,sc=it.id===sel?' class="sel"':'',op=pv?' opacity=".6"':'',W=pasWs(it),T=pasTs(it);
+  let walls='',rooms='',L=0;
+  for(let i=0;i<it.pts.length-1;i++){const a=it.pts[i],b=it.pts[i+1],dd=`M${a[0]*S} ${a[1]*S}L${b[0]*S} ${b[1]*S}`;L+=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    walls+=`<path d="${dd}" fill="none" stroke="var(--wall)" stroke-width="${W[i]*S+2*T[i]*S}" stroke-linejoin="miter" stroke-linecap="square" pointer-events="none"/>`;
+    rooms+=`<path d="${dd}" fill="none" stroke="var(--room)" stroke-width="${W[i]*S}" stroke-linejoin="miter" stroke-linecap="square" pointer-events="none"/>`}
+  const path='M'+it.pts.map(p=>`${p[0]*S} ${p[1]*S}`).join('L'),m=it.pts[0],n=it.pts[1]||m,mx=(m[0]+n[0])/2*S,my=(m[1]+n[1])/2*S,wm=(W[0]||1)*S/2+(T[0]||.3)*S;
+  return `<g${d}${sc}${op}><path d="${path}" fill="none" stroke="transparent" stroke-width="${Math.max(...W.map((w,k)=>w+2*T[k]))*S+20}" stroke-linejoin="miter" stroke-linecap="square" pointer-events="stroke"/>${walls}${rooms}${pv?'':`<text class="nm" x="${mx}" y="${my-wm-6}" text-anchor="middle" style="paint-order:stroke;stroke:var(--bg);stroke-width:3px">${esc(it.name||'Pasillo')} · ${fmt(L)} m</text>`}</g>`}
 function pasPanel(){const b=$('#sp'),t=pas;
   b.innerHTML=`<p class="hint">Pasillo en trazado: ${t.pts.length} punto${t.pts.length===1?'':'s'}. Toca el recorrido: cada tramo sale en horizontal o vertical, y las esquinas se hacen solas hacia donde te mueves.</p><div class="g2">${f('pw','Ancho del tramo (m)',pasW).replace('data-k="pw"','data-pa="w"')}${f('pt','Grosor de sus muros (m)',pasT).replace('data-k="pt"','data-pa="t"')}</div><p class="hint">Lo que elijas se aplica al tramo que termina en el siguiente punto que toques. Después puedes cambiar cada tramo en su panel.</p><div class="row"><button id="paok">Terminar pasillo</button><button id="paun">Quitar último punto</button><button id="pano" class="dng">Cancelar</button></div>`;
   b.querySelectorAll('[data-pa]').forEach(i=>i.onchange=()=>{const n=parseFloat(String(i.value).replace(',','.'));if(n>0){if(i.dataset.pa==='w')pasW=n;else pasT=n;render()}});
@@ -2203,7 +2214,7 @@ function objCap(it){const w=it.w,h=it.h,k=it.ok;
   if(k==='pila')return Math.round(w*h*1*1000);
   return 0}
 const catOpts=(sel)=>Object.values(CAT).map(([g,o])=>`<optgroup label="${g}">${Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${v[0]}</option>`).join('')}</optgroup>`).join('');
-
+function catChooser(){$('#sp').innerHTML=`<p class="hint">Elige la pieza y toca el plano donde quieras ponerla. Puedes seguir tocando para poner más iguales; usa Editar para moverlas o cambiarlas.</p><label>Pieza<select id="catSel">${catOpts(catK)}</select></label>`;$('#catSel').onchange=e=>{catK=e.target.value}}
 function drawObj(it,g){const S=view.s,d=g?'':` data-id="${it.id}"`,sc=(it.id===sel||(it.g&&curGrp()===it.g))?' class="sel"':'',x=it.x*S,y=it.y*S,w=it.w*S,h=it.h*S,cx=x+w/2,cy=y+h/2,k=it.ok,R=Math.min(w,h)/2;let o='';
   const C=(cx2,cy2,r,f,st,ex)=>`<circle cx="${cx2}" cy="${cy2}" r="${r}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`,Rt=(x2,y2,w2,h2,f,st,ex)=>`<rect x="${x2}" y="${y2}" width="${w2}" height="${h2}" fill="${f}" stroke="${st}" stroke-width="1.5" ${ex||''}/>`;
   if(ANIM[k])o=animSvg(k,x,y,w,h);
@@ -3102,7 +3113,8 @@ function zov1(){const F=FN(),zs=F.it.filter(i=>(i.t==='zona'&&(i.alt!=null||i.pe
     const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);return{z,P,H:z.holes||[],d,dmin,D,A,drop,nb:Math.max(0,Math.round(z.nb||0)),bb:[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]}});
   const M=ms.map(m=>{const[w,h]=mkSize(m);return{m,R:Math.max(w,h)/2+4}});return _zo={k:key,F,Z,M}}
 function zH(o,x,y){const t=Math.max(0,Math.min(1,(x*o.d[0]+y*o.d[1]-o.dmin)/o.D));if(o.nb>0){const k=Math.min(o.nb-1,Math.floor(t*o.nb));return o.A-o.drop*k/o.nb}return o.A-o.drop*t}
-
+function Hf(x,y){const O=zov();for(let i=O.Z.length-1;i>=0;i--){const o=O.Z[i],b=o.bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;if(pip(x,y,o.P)&&!o.H.some(hh=>pip(x,y,hh)))return zH(o,x,y)}
+  let h=Hf0(x,y);for(const q of O.M){const dd=Math.hypot(x-q.m.x,y-q.m.y);if(dd<q.R)return q.m.palt;if(dd<q.R+30){const t=(dd-q.R)/30,sm=t*t*(3-2*t);h=q.m.palt*(1-sm)+h*sm}}return h}
 function Hf0(x,y){const F=FN();let h=F.b0+(typeof fTiltProj==='function'?fTiltProj(F,x,y):(F.h-y))*F.tilt;
   if(F.sierra&&F.sierra.h>0){const d=Math.max(0,(F.sierra.w-y)/F.sierra.w);if(d>0)h+=F.sierra.h*Math.pow(d,1.7)*Math.max(.35,1+.3*Math.sin(x/260)*Math.sin(y/190+1)+.2*Math.sin(x/97+y/130))}
   F.it.forEach(i=>{if(i.t==='hill')h+=i.h*Math.exp(-((x-i.x)*(x-i.x)+(y-i.y)*(y-i.y))/(i.r*i.r))});return h}
@@ -3212,7 +3224,7 @@ const FH={pn:'Toca un camino donde cruce la vía del tren para poner el paso a n
 const fwld=e=>{const r=$('#fsv2').getBoundingClientRect();return{x:Math.round((e.clientX-r.left-fm.ox)/fm.s),y:Math.round((e.clientY-r.top-fm.oy)/fm.s)}};
 const fpush=()=>{fm.und.push(JSON.stringify(PJ.fn||null));if(fm.und.length>40)fm.und.shift()};
 let _fd=0;const fdone=()=>{if(_fd)return;_fd=1;try{save();fpanel();frender()}finally{_fd=0}};
-
+function fitMap(){const sv=$('#fsv2'),F=FN(),c=F.it.find(i=>i.t==='cont'),b=c?[Math.min(...c.pts.map(p=>p[0])),Math.min(...c.pts.map(p=>p[1])),Math.max(...c.pts.map(p=>p[0])),Math.max(...c.pts.map(p=>p[1]))]:[0,0,F.w,F.h],w=sv.clientWidth,h=sv.clientHeight,k=Math.min((w-60)/(b[2]-b[0]),(h-60)/(b[3]-b[1]));fm.s=Math.max(.02,Math.min(16,k));fm.ox=(w-(b[2]-b[0])*fm.s)/2-b[0]*fm.s;fm.oy=(h-(b[3]-b[1])*fm.s)/2-b[1]*fm.s}
 function fzoom(k,cx,cy){const n=Math.max(.02,Math.min(16,fm.s*k)),r=n/fm.s;fm.ox=cx-(cx-fm.ox)*r;fm.oy=cy-(cy-fm.oy)*r;fm.s=n;frender()}
 function presetCont(cu){const F=FN(),sh=[[-1,-.62],[-.2,-.7],[.55,-.58],[1,-.4],[1.05,.1],[.85,.6],[.1,.7],[-.6,.62],[-1.05,.15]],a=parea(sh),k=Math.sqrt(cu*CU/a),cx=F.w/2,cy=Math.max(F.sierra&&F.sierra.w||0,F.h*.55);
   return sh.map(p=>[Math.round(cx+p[0]*k),Math.round(cy+p[1]*k)])}
@@ -3632,7 +3644,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(PLC||GA)){PLC=null
 
 /* suelos primero y muros encima: lo que se ve coincide con la cara interior que usan las piezas */
 function roomFill(it,S){return `<rect x="${it.x*S}" y="${it.y*S}" width="${it.w*S}" height="${it.h*S}" fill="${it.suelo?'url(#su-'+it.suelo+')':'var(--room)'}"/>`}
-
+function roomWalls(f){const S=view.s;let h='<g pointer-events="none">';
+  items.filter(i=>i.t==='cont'&&i.f===f&&i.muro).forEach(c=>{h+=`<rect x="${c.x*S}" y="${c.y*S}" width="${c.w*S}" height="${c.h*S}" fill="none" stroke="var(--wall)" stroke-width="${Math.max(3,(SD().ext||.6)*S)}"/>`});
+  items.filter(i=>i.t==='room'&&i.f===f).forEach(it=>{h+=`<rect x="${it.x*S}" y="${it.y*S}" width="${it.w*S}" height="${it.h*S}" fill="none" ${it.th===0?'stroke="var(--wall)" stroke-opacity=".35" stroke-width="1" stroke-dasharray="6 5"':`stroke="var(--wall)" stroke-width="${Math.max(2,(it.th||.3)*S)}"`} stroke-linejoin="miter"/>`});
+  return h+'</g>'}
 
 /* barrido de las puertas: cuarto de círculo (o dos medios en las de dos hojas) */
 const DOUBLE_D=['dos','portal','cochera','vidriera'];
@@ -3886,7 +3901,11 @@ const _drawEsc2=drawEsc;drawEsc=function(it,S,d,sc,mode){const out=_drawEsc2(it,
   const i=out.lastIndexOf('</g><text class="dm"');return i<0?out:out.slice(0,i)+`<g pointer-events="none">${r}</g>`+out.slice(i)};
 const _escFields2=escFields;escFields=function(it){return _escFields2(it)+`<label>Alfombra en la escalera<select data-sk="alf"><option value="">Sin alfombra</option>${Object.entries(ALFC).map(([k,v])=>`<option value="${k}"${it.alf===k?' selected':''}>${v[1]}, con varillas de latón</option>`).join('')}</select></label>`};
 /* 3D: escaleras de la estancia */
-
+function stairs3(R,T3,sc,M){items.filter(o=>o.t==='esc'&&o.f===R.f).forEach(o=>{const b=escBox(o),cx=b.x+b.w/2,cy=b.y+b.h/2;if(cx<R.x||cx>R.x+R.w||cy<R.y||cy>R.y+R.h)return;let D;try{D=escTreads(o)}catch(e){return}
+  const stone=M('#e6dcc4'),run=o.alf&&ALFC[o.alf]?M(ALFC[o.alf][0]):null,brass=M('#c8a040');
+  const ext=(P,z0,dz,mat)=>{const sh=new T3.Shape(P.map(p=>{const q=escW(o,p);return new T3.Vector2(q[0],-q[1])}));const m=new T3.Mesh(new T3.ExtrudeGeometry(sh,{depth:dz,bevelEnabled:false}),mat);m.rotation.x=-Math.PI/2;m.position.y=z0;sc.add(m)};
+  D.T.forEach(t=>{const z=t.k*D.rise;ext(trPoly(t),0,z,stone);if(run){ext(runPoly(t),z,.012,run);const P=runPoly(t),a=escW(o,P[0]),c=escW(o,P[1]),rod=new T3.Mesh(new T3.CylinderGeometry(.008,.008,Math.hypot(c[0]-a[0],c[1]-a[1]),6),brass);rod.rotation.z=Math.PI/2;rod.rotation.y=-Math.atan2(c[1]-a[1],c[0]-a[0]);rod.position.set((a[0]+c[0])/2,z+.015,(a[1]+c[1])/2);sc.add(rod)}});
+  D.Ld.forEach(l=>{const z=l.k*D.rise;ext(l.P,0,z,stone)});try{rails3(o,D,T3,sc,M)}catch(e){}})}
 /* sección: perfil de las escaleras que corta la línea A–A′ */
 function clipT(P,A,B,L){const ts=[];const ins=(x,y)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++)if((P[i][1]>y)!==(P[j][1]>y)&&x<(P[j][0]-P[i][0])*(y-P[i][1])/(P[j][1]-P[i][1])+P[i][0])c=!c;return c};
   for(let i=0;i<P.length;i++){const q=segX(A,B,P[i],P[(i+1)%P.length]);if(q)ts.push(q.t*L)}if(ins(A[0],A[1]))ts.push(0);if(ins(B[0],B[1]))ts.push(L);if(ts.length<2)return null;return[Math.min(...ts),Math.max(...ts)]}
@@ -3902,7 +3921,12 @@ const _drawEsc3=drawEsc;drawEsc=function(it,S,d,sc,mode){const out=_drawEsc3(it,
   const K=v=>v*S,col=it.bar==='balaustrada'?'var(--mute)':it.bar==='madera'?'#6b4423':'#1c1c1c';let r='';
   escRails(it,D).forEach(L=>{if(!L.length)return;const pts=[L[0].p].concat(L.map(s=>s.q));r+=`<path d="M${pts.map(p=>K(p[0])+' '+K(p[1])).join('L')}" fill="none" stroke="${col}" stroke-width="${Math.max(2,.05*S)}"/>`+pts.map(p=>`<circle cx="${K(p[0])}" cy="${K(p[1])}" r="${Math.max(1.5,.03*S)}" fill="${col}"/>`).join('')});
   const i=out.lastIndexOf('</g><text class="dm"');return i<0?out:out.slice(0,i)+`<g pointer-events="none">${r}</g>`+out.slice(i)};
-
+function rails3(o,D,T3,sc,M){const bar=escBar(o);if(!bar)return;const H=.9,mat=M(bar==='balaustrada'?'#e6dcc4':bar==='madera'?'#6b4423':'#1c1c1c'),rad=bar==='balaustrada'?.035:bar==='madera'?.022:.012;
+  const up=new T3.Vector3(0,1,0);const rod=(a,b,r)=>{const v=new T3.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]),L=v.length();if(L<1e-3)return;const m=new T3.Mesh(new T3.CylinderGeometry(r,r,L,8),mat);m.quaternion.setFromUnitVectors(up,v.clone().normalize());m.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);sc.add(m)};
+  escRails(o,D).forEach(L=>{let prev=null;L.forEach(s=>{const z=s.k*D.rise;[s.p,s.q].forEach((p,j)=>{if(j===0&&prev)return;const w=escW(o,p);rod([w[0],z,w[1]],[w[0],z+H,w[1]],rad)});
+      const a=escW(o,s.p),b=escW(o,s.q),top=[a[0],z+H,a[1]],top2=[b[0],z+H,b[1]];if(prev)rod(prev,top,.03);rod(top,top2,.03);prev=top2})});
+  if((o.ty||'recta')==='senorial'){const g=senG(o);g.newels.forEach(np=>{const w=escW(o,np),p=new T3.Mesh(new T3.BoxGeometry(.3,1.1,.3),M('#e6dcc4'));p.position.set(w[0],.55,w[1]);sc.add(p);
+    if(o.pf??1){const l=new T3.Mesh(new T3.SphereGeometry(.13,12,8),new T3.MeshBasicMaterial({color:'#f2d27a'}));l.position.set(w[0],1.3,w[1]);sc.add(l)}})}}
 /* recorridos de barandilla con altura: tramos, rellanos y descansillos */
 function escRailPaths(it,D){const ty=it.ty||'recta',R=D.rise,tr=.28,T=D.T,P=(p,k)=>({p,z:k*R});
   const side=(ts,sd)=>{const o=ts.map(t=>P(t.L0[sd],t.k));if(ts.length){const l=ts[ts.length-1];o.push(P(l.L1[sd],l.k))}return o};
@@ -3957,7 +3981,10 @@ function innerWalls3(R,I,H,T,sc,M,wallM,wood,glass){const S=SD(),segs=innerSegs(
       const ci=typeof doorCie==='function'?doorCie(o):'puerta';if(ci==='abierto')return;if(ci==='cortina'){const cl=new T.Mesh(new T.BoxGeometry(wd+.06,hgt-.05,.025),new T.MeshLambertMaterial({color:'#b5a27a'}));at(p.s+wd/2,(hgt-.05)/2+.04,sd*(t/2+.03),cl);const rod=new T.Mesh(new T.BoxGeometry(wd+.16,.03,.03),wood);at(p.s+wd/2,hgt,sd*(t/2+.03),rod);for(let k=1;k<6;k++){const fo=new T.Mesh(new T.BoxGeometry(.012,hgt-.1,.04),new T.MeshLambertMaterial({color:'#9a8660'}));at(p.s+wd*k/6,(hgt-.1)/2+.06,sd*(t/2+.045),fo)}return}
       hinges.forEach(([u,lw])=>{const leaf=new T.Mesh(new T.BoxGeometry(.05,hgt,lw),wood);at(u,hgt/2,sd*(t/2+lw/2),leaf)})})})}
 /* huella de las escaleras de la estancia (polígonos en el plano) */
-
+function stairFoot(R){const P=[];items.filter(o=>o.t==='esc'&&o.f===R.f).forEach(o=>{const b=escBox(o),cx=b.x+b.w/2,cy=b.y+b.h/2;if(cx<R.x||cx>R.x+R.w||cy<R.y||cy>R.y+R.h)return;let D;try{D=escTreads(o)}catch(e){return}
+  const last=new Set();const tops={};D.T.forEach(t=>{const k=t.L1.map(p=>escW(o,p));tops[t.k]=tops[t.k]||[];tops[t.k].push(k)});
+  D.T.forEach(t=>P.push({o,P:trPoly(t).map(p=>escW(o,p)),top:false}));D.Ld.forEach(l=>P.push({o,P:l.P.map(p=>escW(o,p))}));
+  /* llegadas: borde final de cada tramo que acaba en la planta de arriba */const kmax=Math.max(...D.T.map(t=>t.k));D.T.filter(t=>t.k===kmax).forEach(t=>P.arr=(P.arr||[]).concat([t.L1.map(p=>escW(o,p))]))});return P}
 const pip2=(x,y,P)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++)if((P[i][1]>y)!==(P[j][1]>y)&&x<(P[j][0]-P[i][0])*(y-P[i][1])/(P[j][1]-P[i][1])+P[i][0])c=!c;return c};
 function cutRoof(roof,R,I,H,T,M){const F=stairFoot(R);if(!F.length)return;const inHole=(x,y)=>F.some(q=>pip2(x,y,q.P)),fw=I.x1-I.x0,fd=I.y1-I.y0;
   const pxm=Math.min(40,2048/Math.max(fw,fd)),cv=document.createElement('canvas');cv.width=Math.max(2,Math.ceil(fw*pxm));cv.height=Math.max(2,Math.ceil(fd*pxm));const g=cv.getContext('2d');
@@ -5112,7 +5139,12 @@ const rzDowns=R=>allSteps().filter(d=>!d.pit&&d.room&&d.room.id===R.id);
 const rzPits=R=>allSteps().filter(d=>d.pit&&d.room&&d.room.id===R.id);
 /* rampa exterior pegada a una puerta o arco */
 const RXMAT={empedrado:['Empedrado de cantos','#cbbfa5','cobbled','empedrada'],losas:['Losas de marés','#ddd3bf','paved with marés slabs','de losas de marés'],tierra:['Tierra apisonada','#cdb98f','of packed earth','de tierra apisonada']};
-
+function rampGeo(o){if(!o||!o.rx||o.f!==0)return null;const S=opSides(o);if(!S)return null;const ko=S.findIndex(isOut);if(ko<0)return null;const D=doorDeep(o);
+  const lev=D&&isOut(D.O)&&doorNiv(o)==='abajo'?-D.dz:0,g=opGeo(o),d={...g,sg:ko===1?1:-1};const toPatio=!!S[ko];
+  const zEnd=L=>{if(toPatio)return 0;const p=rzPt(d,g.w/2,g.T/2+L+.3);return tzAt(p[0],p[1])};
+  const dirB=(o.rx.d||'baja')==='baja';let L=o.rx.L||0,des=0;
+  if(L)des=dirB?zEnd(L)-lev:lev-zEnd(L);else{L=3;for(let i=0;i<4;i++){des=dirB?zEnd(L)-lev:lev-zEnd(L);L=Math.max(1.5,Math.round(Math.abs(des)/.15*10)/10)}}
+  return{...d,o,L:r2(L),des:r2(des),slope:L>0?des/L:0,lev,dirB,mat:o.rx.mat||'empedrado',pre:o.rx.pre!==0,muros:dirB,deep:D&&D.R,toPatio}}
 /* pozos, aljibes y pozos negros debajo de una zona */
 function pozosUnder(P){const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),b={x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)};
   return items.filter(q=>SUBT.includes(q.t)&&typeof q.x==='number').filter(q=>{const z=subSize(q);return q.x<b.x+b.w&&q.x+z.w>b.x&&q.y<b.y+b.h&&q.y+z.h>b.y}).map(q=>q.t==='aljibe'?'un aljibe':q.t==='pneg'?'un pozo negro':'un pozo')}
@@ -5125,7 +5157,14 @@ function stepsSvg(d){const S=view.s,P=rzFoot(d);let h=`<path d="M${P.map(p=>`${p
   h+=`<path d="M${m0[0]*S} ${m0[1]*S}L${hx} ${hy}M${hx-ah*Math.cos(an-.5)} ${hy-ah*Math.sin(an-.5)}L${hx} ${hy}L${hx-ah*Math.cos(an+.5)} ${hy-ah*Math.sin(an+.5)}" stroke="#4a2a10" stroke-width="1.2" fill="none"/>`;
   if(d.pit){const P2=rzFoot(d,.04);h+=`<path d="M${P2[1][0]*S} ${P2[1][1]*S}L${P2[2][0]*S} ${P2[2][1]*S}L${P2[3][0]*S} ${P2[3][1]*S}L${P2[0][0]*S} ${P2[0][1]*S}" fill="none" stroke="#3a2a1a" stroke-width="2"/>`}
   return `<g pointer-events="none">${h}</g>`}
-
+function rampSvgLocal(G){const S=view.s,w=G.w*S,sg=G.sg,y0=G.T/2*S,y1=(G.T/2+G.L)*S,ya=Math.min(sg*y0,sg*y1),yb=Math.max(sg*y0,sg*y1),m=.3*S,mt=.35*S,c=RXMAT[G.mat]||RXMAT.empedrado;
+  let h=`<rect x="${-m}" y="${ya}" width="${w+2*m}" height="${yb-ya}" fill="${c[1]}" stroke="#6b5a3a" stroke-width="1"/>`;
+  for(let v=G.T/2+.5;v<G.T/2+G.L;v+=.5)h+=`<path d="M${-m} ${sg*v*S}H${w+m}" stroke="#8a7a5a" stroke-width=".7" opacity=".7"/>`;
+  if(G.muros||G.pre)[[-m-mt,mt],[w+m,mt]].forEach(([x,ww])=>{h+=`<rect x="${x}" y="${ya}" width="${ww}" height="${yb-ya}" fill="${G.muros?'#9c9283':'#b9ab8c'}" stroke="#4a3f33" stroke-width="1"/>`});
+  const near=sg*(y0+6),far=sg*(y1-6),[p0,p1]=G.dirB?[far,near]:[near,far],ah=6,dn=p1>p0?1:-1;
+  h+=`<path d="M${w/2} ${p0}V${p1}M${w/2-ah} ${p1-dn*ah}L${w/2} ${p1}L${w/2+ah} ${p1-dn*ah}" stroke="#4a2a10" stroke-width="1.4" fill="none"/>`;
+  const ty=sg*(y0+(y1-y0)/2);h+=`<text class="dm" x="${w+m+mt+4}" y="${ty}" style="fill:#4a2a10;paint-order:stroke;stroke:#fff;stroke-width:3px">Rampa ${G.dirB?'↓':'↑'} ${fmt(Math.abs(G.des))} m · ${fmt(Math.round(Math.abs(G.slope)*100))} %</text>`;
+  return `<g pointer-events="none">${h}</g>`}
 const _drawRZ=draw;draw=function(it,g){let o=_drawRZ.apply(this,arguments);if(!it||g||typeof o!=='string')return o;
   if(it.t==='room'&&rzOf(it)&&it.f===fl){const S=view.s;o+=`<text class="dm" x="${(it.x+it.w/2)*S}" y="${it.y*S+20}" text-anchor="middle" style="fill:#7a3b12;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none">suelo a ${it.rz>0?'−':'+'}${fmt(Math.abs(it.rz))} m</text>`;return o}
   if((it.t==='door'||it.t==='arco')&&it.f===0&&fl===0){const G=rampGeo(it);if(G){const i=o.lastIndexOf('</g>');if(i>=0)o=o.slice(0,i)+rampSvgLocal(G)+o.slice(i)}const d=stepDesc(it);if(d)o+=stepsSvg(d)}return o};
@@ -5372,7 +5411,8 @@ function gemShot(R,mode,W,H){const T=THREE;if(!GEMRD)GEMRD=new T.WebGLRenderer({
   cam.updateProjectionMatrix();rd.render(B.sc,cam);
   return new Promise((ok,ko)=>rd.domElement.toBlob(b=>b?b.arrayBuffer().then(ab=>ok(new Uint8Array(ab))):ko(new Error('png')),'image/png'))}
 /* planta de la estancia, como el botón de referencia */
-
+async function gemPlan(R){const r=svg.getBoundingClientRect(),W=Math.round(r.width),Hh=Math.round(r.height),m=1.5,sc=Math.min((W-40)/(R.w+2*m),(Hh-40)/(R.h+2*m));
+  sel=null;fl=R.f;view.s=sc;view.ox=(W-R.w*sc)/2-R.x*sc;view.oy=(Hh-R.h*sc)/2-R.y*sc;render();return await svgToPng(svgStr(svg,W,Hh),W,Hh,2)}
 function gemPrompt(R,cam){const c=$('#imgCam'),keep={h:c.innerHTML,v:c.value,m:c.dataset.m};if(c.dataset.m==='fac'){c.innerHTML=IMGCAM_ROOM;c.dataset.m=''}c.value=cam;let P;try{P=imgPrompt(R)}finally{c.innerHTML=keep.h;c.value=keep.v;if(keep.m)c.dataset.m=keep.m;else delete c.dataset.m}return P}
 function gemFacPrompt(cam){const c=$('#imgCam'),keep={h:c.innerHTML,v:c.value,m:c.dataset.m};c.innerHTML=IMGCAM_FAC;c.dataset.m='fac';c.value=cam;let P;try{P=facPrompt()}finally{c.innerHTML=keep.h;c.value=keep.v;if(keep.m)c.dataset.m=keep.m;else delete c.dataset.m}return P}
 async function gemFacPng(){facade();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const v=$('#fsv'),rc=v.getBoundingClientRect(),W=Math.round(rc.width),Hh=Math.round(rc.height);if(!W||!Hh)return null;return await svgToPng(svgStr(v,W,Hh),W,Hh,2)}
@@ -5647,7 +5687,16 @@ gemPlan=async function(R){const m=2,s=Math.max(6,Math.min(90,Math.min(1500/(R.w+
   return await svgToPng(str,W,Hh,1.5)};
 
 /* ---- revisión antes de exportar ---- */
-
+function gemCheck(){const W=[],nm=r=>'«'+(r.name||(DEST[r.dest]||['Estancia'])[0])+'»',fn=f=>fname(f).toLowerCase(),R=items.filter(realRoom);
+  const otro=R.filter(r=>!r.patio&&(r.dest==='otro'||!r.dest)&&(!r.name||/^(otro|sin uso|habitaci[oó]n)$/i.test(r.name.trim())));if(otro.length)W.push(`${otro.length>1?'Estancias':'Estancia'} sin uso ni nombre: ${otro.map(r=>nm(r)+' en '+fn(r.f)).join(', ')}. Saldrían como «Otro» sin saber qué son.`);
+  for(let f=0;f<F();f++){if(!contOf(f))continue;if(!R.some(r=>r.f===f&&!r.patio))W.push(`${fname(f)} no tiene habitaciones: solo es el ala. No sale ninguna estancia y su fachada queda ciega.`)}
+  ['bottom','top','left','right'].forEach(sd=>{const blind=[];for(let f=0;f<F();f++){if(!contOf(f)||!R.some(r=>r.f===f&&!r.patio))continue;if(!items.some(o=>(o.t==='window'||o.t==='door'||o.t==='arco')&&o.f===f&&facadeSide(o)===sd))blind.push(fn(f))}if(blind.length)W.push(`Fachada ${SIDES[sd].toLowerCase()}: sin ventanas en ${blind.join(', ')} (saldrá muro ciego).`)});
+  items.filter(e=>e.t==='esc'&&e.f>=0).forEach(e=>{const up=e.f+1;if(up>=F()||!R.some(r=>r.f===up&&!r.patio))return;const b=escBox(e);if(!b)return;if(!items.some(q=>q.t==='esc'&&q.f===up&&(()=>{const c=escBox(q);return c&&c.x<b.x+b.w+1&&c.x+c.w>b.x-1&&c.y<b.y+b.h+1&&c.y+c.h>b.y-1})()))W.push(`La escalera de ${fn(e.f)} llega a ${fn(up)}, pero allí no sigue ninguna escalera: si debe subir más, ponla también en ${fn(up)}.`)});
+  const P=f=>items.find(p=>p.t==='room'&&p.f===f&&p.patio&&p.ala==='c');const cl=R.filter(r=>!r.patio&&P(r.f)&&rOv(r,P(r.f),.6));if(cl.length)W.push(`Se meten en la clastra: ${cl.map(r=>nm(r)+' ('+fn(r.f)+')').join(', ')}.`);
+  const wing=[];R.forEach(r=>{if(r.patio)return;const c=contOf(r.f);if(c&&(r.x<c.x-.06||r.y<c.y-.06||r.x+r.w>c.x+c.w+.06||r.y+r.h>c.y+c.h+.06))wing.push(nm(r)+' ('+fn(r.f)+')')});if(wing.length)W.push(`Se salen de la casa: ${wing.join(', ')}.`);
+  const loose=items.filter(i=>FURNT.includes(i.t)&&i.t!=='label'&&i.f>=0&&!i.wait&&(()=>{const b=bboxOf(i);if(!b)return false;const h=hostRoom(b.x+b.w/2,b.y+b.h/2,i.f);return !h||h._c||isWing(h)||isVoid(h)})());if(loose.length)W.push(`${loose.length} ${loose.length>1?'piezas están':'pieza está'} fuera de las habitaciones: no saldrán en ninguna estancia.`);
+  const cg=R.filter(r=>cargaWarn(r));if(cg.length)W.push(`Muros de carga sin apoyo abajo: ${cg.map(r=>nm(r)+' ('+fn(r.f)+')').join(', ')}.`);
+  return W}
 const _gemOpenV2=gemOpen;gemOpen=function(){const r=_gemOpenV2.apply(this,arguments);try{if($('#gemdlg').hidden)return r;let h='',lf=null;
   gemRooms().forEach(rr=>{if(rr.f!==lf){lf=rr.f;h+=`<div class="gf">${fname(rr.f)}</div>`}const off=['pasillo','escalera','pasoc'].includes(rr.dest)||(rr.patio&&rr.ala==='c'),D=iDim(rr);h+=`<label class="gk"><input type="checkbox" data-gr="${rr.id}"${off?'':' checked'}> ${esc(rr.name||(DEST[rr.dest]||['Estancia'])[0])} <span class="hint" style="margin:0">· ${fmt(D.w)} × ${fmt(D.h)} m${rr.patio&&rr.ala==='c'?' · mejor con «Clastra en 4 imágenes»':''}</span></label>`});
   $('#gemList').innerHTML=h||'<p class="hint">No hay estancias: solo alas. Crea las habitaciones dentro de las alas.</p>';
@@ -5672,7 +5721,7 @@ const EXT_H={cam:'Toca los puntos del camino, de un extremo al otro, y pulsa «T
 let EX={tool:'select',sel:null,draft:null,vb:null,und:[],ver:0,prof:null,msg:''};
 const exS=()=>{if(!st.ex)st.ex={nid:1,w:150,cot:[],zon:[],lom:[],ban:[],exp:[],tor:[],cam:[],pz:[],lin:[],ar:[]};['cot','zon','lom','ban','exp','tor','cam','pz','lin','ar'].forEach(k=>{if(!Array.isArray(st.ex[k]))st.ex[k]=[]});if(!st.ex.w)st.ex.w=150;if(!st.ex.nid)st.ex.nid=1;return st.ex};
 const exHas=()=>!!st.ex&&['cot','zon','lom','ban','exp','tor','cam','pz','lin','ar'].some(k=>st.ex[k]&&st.ex[k].length);
-
+function exBox(){const c=contOf(0),an=st.ex&&st.ex.ax!=null;if(!c&&!an)return null;const W=(st.ex&&st.ex.w)||150,cx=an?st.ex.ax:c.x+c.w/2,cy=an?st.ex.ay:c.y+c.h/2;return{x0:cx-W/2,y0:cy-W/2,x1:cx+W/2,y1:cy+W/2,W,cx,cy,c}}
 /* ---- geometría ---- */
 const exPip=(x,y,P)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++)if((P[i][1]>y)!==(P[j][1]>y)&&x<(P[j][0]-P[i][0])*(y-P[i][1])/(P[j][1]-P[i][1])+P[i][0])c=!c;return c};
 const exDseg=(x,y,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/l));return Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy)};
@@ -5737,7 +5786,7 @@ function exImg(G){const{N,Z,mn,mx}=G,cv=document.createElement('canvas');cv.widt
 #expanel{background:var(--panel);border-top:1px solid var(--line);max-height:40%;overflow:auto;padding:10px}#expanel .g2{max-width:640px}
 #extools button.on{background:var(--acc);color:#fff;border-color:var(--acc)}`;document.head.appendChild(css)})();
 function exOpen(){exS();if(!contOf(0)&&st.ex.ax==null){const c=center();st.ex.ax=r2(c.x);st.ex.ay=r2(c.y);EX.wiz=1}$('#exw').hidden=false;EX.tool='select';EX.sel=null;EX.draft=null;EX.und=[];EX.ver++;exFit();exUI();exRender()}
-
+function exFit(){const B=exBox();if(!B)return;const sv=$('#exsv'),r=sv.getBoundingClientRect(),asp=(r.width||1)/(r.height||1);let w=B.W+8,h=B.W+8;if(asp>1)w=h*asp;else h=w/asp;EX.vb={x:B.cx-w/2,y:B.cy-h/2,w,h}}
 function exUI(){document.querySelectorAll('#extools [data-et]').forEach(b=>b.classList.toggle('on',b.dataset.et===EX.tool));exPanel()}
 const exFind=id=>{const e=st.ex;if(!e)return null;for(const k of ['cot','zon','lom','ban','exp','tor','cam','pz','lin','ar']){const o=e[k].find(q=>q.id===id);if(o)return{k,o}}return null};
 function exPush(){EX.und.push(JSON.stringify(st.ex));if(EX.und.length>60)EX.und.shift()}
@@ -6144,7 +6193,10 @@ const _exFinishCAT=exFinish;exFinish=function(){const D=EX.draft;if(D&&(D.k==='l
     if(D.k==='lin'){if(D.ck==='hilera'){o.esp='olivo';o.sep=6}else{o.w=C[3];o.al=C[5]}e.lin.push(o)}else e.ar.push(o);EX.draft=null;EX.sel=o.id;EX.tool='select';exUI();return exDone(C[0]+' creado')}return _exFinishCAT.apply(this,arguments)};
 Object.assign(EXT_H,{lin:'Toca los puntos de la línea y pulsa «Terminar».',ar:'Toca los vértices de la zona y pulsa «Terminar».'});
 /* en las fachadas con su entorno */
-
+function exPzFac(Xa,dr){const e=st.ex;if(!e)return;const add=(o,C,P,z0,al,x,y,extra)=>{const d=Xa.dep(x,y);if(d<=.4||d>Xa.dOut)return;const us=P.map(p=>Xa.along(p[0],p[1]));dr.push({d,k:'p',o,C,u0:Math.min(...us),u1:Math.max(...us),z0,al,...(extra||{})})};
+  (e.pz||[]).forEach(o=>{const C=EXC[o.k];if(!C)return;add(o,C,pzPoly(o),C[7]&&o.flat!==0?(o.z??0):tzAt(o.x,o.y),o.al||C[5],o.x,o.y)});
+  (e.lin||[]).forEach(o=>{const C=EXC[o.k];if(!C)return;if(o.k==='hilera'){const S=EXC[o.esp||'olivo'];hilPts(o).forEach(p=>{const r=S[3]/2;add(o,S,[[p[0]-r,p[1]-r],[p[0]+r,p[1]+r],[p[0]-r,p[1]+r],[p[0]+r,p[1]-r]],tzAt(p[0],p[1]),S[5],p[0],p[1])});return}
+    const P=o.pts;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=0;t<L;t+=2){const t1=Math.min(L,t+2),pa=[a[0]+(b[0]-a[0])*t/L,a[1]+(b[1]-a[1])*t/L],pb=[a[0]+(b[0]-a[0])*t1/L,a[1]+(b[1]-a[1])*t1/L],mx=(pa[0]+pb[0])/2,my=(pa[1]+pb[1])/2;add(o,C,[pa,pb],tzAt(mx,my),o.al||C[5],mx,my,{lin:1})}}})}
 function exPzDraw(q,X,Y,s){const C=q.C,sh=C[2],u0=q.u0,u1=q.u1,z0=q.z0,al=q.al,o=q.o,R=(a,b,m0,m1,f,ex)=>`<rect x="${X(a)}" y="${Y(m1)}" width="${Math.max(1,(b-a)*s)}" height="${Math.max(1,(m1-m0)*s)}" fill="${f}" ${ex||'stroke="#4a3f33" stroke-width="1"'}/>`;
   if(sh==='a'){const cu=(u0+u1)/2,r=(u1-u0)/2;return R(cu-.15,cu+.15,z0,z0+al*.45,'#5a3a22','stroke="none"')+`<ellipse cx="${X(cu)}" cy="${Y(z0+al*.66)}" rx="${r*s}" ry="${al*.36*s}" fill="${C[6]}" stroke="#2f4a1f" stroke-width="1"/>`}
   if(sh==='e'){const wf={mares:'#e3d6b8',piedra:'url(#p-piedra)',encalado:'#f4f0e6'}[o.mt||'mares'],rh=(o.tej||'dos')==='plana'?.3:Math.min(2.2,(u1-u0)*.22);let h=R(u0,u1,z0,z0+al,wf);
@@ -6592,7 +6644,7 @@ const _escxTxtSTX=escxTxt;escxTxt=function(side,en){let t=_escxTxtSTX.apply(this
    ESCALERAS QUE SUBEN DEL PISO DE ABAJO: hueco, peldaños y barandilla en el 3D
    ===================================================================== */
 function escBelowIn(R){if(!(R.f>0))return[];return items.filter(o=>o.t==='esc'&&o.f===R.f-1).filter(o=>{let b;try{b=escBox(o)}catch(e){return false}if(!b)return false;const cx=b.x+b.w/2,cy=b.y+b.h/2;return cx>=R.x&&cx<=R.x+R.w&&cy>=R.y&&cy<=R.y+R.h})}
-
+function escFootP(o){let D;try{D=escTreads(o)}catch(e){return null}const P=[];D.T.forEach(t=>P.push(trPoly(t).map(p=>escW(o,p))));D.Ld.forEach(l=>P.push(l.P.map(p=>escW(o,p))));const kmax=Math.max(...D.T.map(t=>t.k));return{D,P,arr:D.T.filter(t=>t.k===kmax).map(t=>t.L1.map(p=>escW(o,p)))}}
 const _build3STX=build3;build3=function(R){const B=_build3STX.apply(this,arguments);try{if(!B||!window.THREE||!B.sc)return B;const L=escBelowIn(R);if(!L.length)return B;const T=THREE,M=c=>new T.MeshLambertMaterial({color:c,side:T.DoubleSide});
   const all=[];L.forEach(o=>{const F=escFootP(o);if(F)all.push({o,...F})});if(!all.length)return B;const polys=all.flatMap(a=>a.P),inHole=(x,y)=>polys.some(P=>pip2(x,y,P));
   /* 1. agujero en el suelo */
@@ -7580,7 +7632,8 @@ const PSZ={baja:['Baja · 0,8 m de alto, 0,5 m de grueso (linde)',.8,.5],media:[
 function psUI(o){const p=o.ps||{},t=p.t||'media';return `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><h2 style="font-size:15px">Pared seca a los lados</h2><div class="g2"><label>Dónde<select data-pw="sd">${[['','Sin pared'],['izq','A la izquierda'],['der','A la derecha'],['ambos','A los dos lados']].map(([a,b])=>`<option value="${a}"${(p.sd||'')===a?' selected':''}>${b}</option>`).join('')}</select></label><label>Tamaño<select data-pw="t">${Object.entries(PSZ).map(([a,b])=>`<option value="${a}"${t===a?' selected':''}>${b[0]}</option>`).join('')}</select></label>${t==='medida'?`<label>Alto (m)<input data-pw="h" type="number" min="0.3" max="4" step="0.1" inputmode="decimal" value="${p.h||1.2}"></label><label>Grueso (m)<input data-pw="g" type="number" min="0.3" max="1.5" step="0.05" inputmode="decimal" value="${p.g||.6}"></label>`:''}</div><p class="hint">Izquierda y derecha, mirando desde el principio del camino hacia el final. La pared va pegada al borde del camino, sigue sus giros y se mueve con él.</p></div>`}
 const psHG=p=>{const S=PSZ[p.t||'media']||PSZ.media;return p.t==='medida'?[p.h||1.2,p.g||.6]:[S[1],S[2]]};
 function psWant(cams,wf){const W=[];cams.forEach(c=>{const p=c.ps;if(!p||!p.sd||!c.pts||c.pts.length<2)return;const[h,g]=psHG(p),off=wf(c)/2+g/2;(p.sd==='ambos'?[1,-1]:[p.sd==='izq'?1:-1]).forEach(s=>W.push({cb:c.id,s,pts:offPL(c.pts,off*s),g,h}))});return W}
-
+function exParSync(){const e=st.ex;if(!e||!Array.isArray(e.cam)||!Array.isArray(e.lin))return;const W=psWant(e.cam,c=>c.w||(CAMT[c.ty||'carro']||CAMT.carro)[1]);
+  e.lin=e.lin.filter(l=>l.cb==null||W.some(q=>q.cb===l.cb&&q.s===l.s));W.forEach(q=>{let l=e.lin.find(l=>l.cb===q.cb&&l.s===q.s);if(!l){l={id:e.nid++,k:'paret',cb:q.cb,s:q.s};e.lin.push(l)}l.pts=q.pts;l.w=r2(q.g);l.al=r2(q.h)})}
 function fParSync(){const F=PJ.fn;if(!F||!F.it)return;const W=psWant(F.it.filter(i=>i.t==='cam'),c=>c.w||3);
   F.it=F.it.filter(l=>l.cb==null||l.t!=='linde'||W.some(q=>q.cb===l.cb&&q.s===l.s));W.forEach(q=>{let l=F.it.find(l=>l.t==='linde'&&l.cb===q.cb&&l.s===q.s);if(!l){l={id:F.n++,t:'linde',lt:'pared',cb:q.cb,s:q.s,name:''};F.it.push(l)}l.pts=q.pts;l.pw=r2(q.g);l.ph=r2(q.h)})}
 const _exRenderPS=exRender;exRender=function(){try{exParSync()}catch(e){}return _exRenderPS.apply(this,arguments)};
@@ -7740,7 +7793,9 @@ function onSegIt(f,x,y,pred){const tol=.08;let res=[];const c=contOf(f);
 function onCont(f,x,y){const c=contOf(f),tol=.1;if(!c)return false;return (Math.abs(y-c.y)<tol||Math.abs(y-c.y-c.h)<tol)&&x>=c.x-tol&&x<=c.x+c.w+tol||(Math.abs(x-c.x)<tol||Math.abs(x-c.x-c.w)<tol)&&y>=c.y-tol&&y<=c.y+c.h+tol}
 function tabHAt(f,x,y,H){if(onCont(f,x,y))return H;let h=H;onSegIt(f,x,y,o=>(o.t==='room'&&!o.patio||o.t==='wall')&&o.ht>0).forEach(o=>{h=Math.min(h,o.ht)});return Math.max(.3,h)}
 const psAt=(f,x,y)=>onSegIt(f,x,y,o=>o.t==='wall'&&o.ps).length>0;
-let _stoneTx=null;
+let _stoneTx=null;function stoneM3(){const T=THREE;if(!_stoneTx){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#7a6e5c';g.fillRect(0,0,256,256);let r=11;const rn=()=>(r=(r*9301+49297)%233280)/233280;
+  for(let y=0;y<256;y+=22+rn()*6)for(let x=-10;x<256;){const w=22+rn()*30,h=16+rn()*8;g.fillStyle=['#b9ad94','#a99c82','#c4b89e','#9e917a'][Math.floor(rn()*4)];g.beginPath();g.ellipse(x+w/2,y+h/2,w/2-1.5,h/2-1.5,(rn()-.5)*.3,0,Math.PI*2);g.fill();x+=w+2}
+  _stoneTx=new T.CanvasTexture(c);_stoneTx.wrapS=_stoneTx.wrapT=T.RepeatWrapping;_stoneTx.repeat.set(.6,.6)}return new T.MeshLambertMaterial({map:_stoneTx,side:T.DoubleSide})}
 /* plano: rayado de tabiques bajos, rótulo de altura y pared seca */
 const _renderTAB=render;render=function(){const r=_renderTAB.apply(this,arguments);try{if(fl<-1)return r;const g=svg.querySelector('g[transform^="translate"]');if(!g)return r;const S=view.s;let h='';
   items.filter(o=>o.f===fl&&o.t==='wall'&&o.ps).forEach(o=>{h+=(typeof stonesPL==='function'?stonesPL([[o.x1,o.y1],[o.x2,o.y2]],o.th||.6,S,o.id*13+3):'')});
@@ -7830,7 +7885,8 @@ function cisSvg(m,px){const e=st.ex;if(!e||!e.pz)return '';let h='';e.pz.filter(
 const _exRenderCIS=exRender;exRender=function(){try{exAqSync()}catch(e){}const r=_exRenderCIS.apply(this,arguments);try{const sv=$('#exsv');if(sv&&!$('#exw').hidden){const px=EX.vb.w/Math.max(1,sv.getBoundingClientRect().width||1),h=cisSvg(1,px);if(h)sv.insertAdjacentHTML('beforeend',h)}}catch(e){console.warn(e)}return r};
 const _renderCIS=render;render=function(){const r=_renderCIS.apply(this,arguments);try{if(fl===0&&st.ex&&!st.plxOff){const g=svg.querySelector('g[transform^="translate"]');const h=cisSvg(view.s,1);if(g&&h)g.insertAdjacentHTML('beforeend',h)}}catch(e){}return r};
 /* acequia junto al camino */
-
+function exAqSync(){const e=st.ex;if(!e||!Array.isArray(e.cam)||!Array.isArray(e.lin))return;const W=[];e.cam.forEach(c=>{if(!c.aq||!c.pts||c.pts.length<2)return;const s=c.aq==='izq'?1:-1,p=c.ps||{},hasP=p.sd&&(p.sd==='ambos'||(p.sd==='izq')===(s===1)),g=hasP?psHG(p)[1]:0,off=(c.w||(CAMT[c.ty||'carro']||CAMT.carro)[1])/2+g+.35;W.push({cq:c.id,pts:offPL(c.pts,off*s)})});
+  e.lin=e.lin.filter(l=>l.cq==null||W.some(q=>q.cq===l.cq));W.forEach(q=>{let l=e.lin.find(l=>l.cq===q.cq);if(!l){l={id:e.nid++,k:'siquia',cq:q.cq,w:EXC.siquia?EXC.siquia[3]:.6,al:EXC.siquia?EXC.siquia[5]:.35};e.lin.push(l)}l.pts=q.pts})}
 const _exPanelCIS=exPanel;exPanel=function(){const r=_exPanelCIS.apply(this,arguments);try{const F=EX.sel!=null&&!EX.draft&&exFind(EX.sel),b=$('#expanel');if(!F||!b)return r;const sec=b.querySelector('section')||b;
   if(F.k==='cam'){const v=F.o.aq||'';sec.insertAdjacentHTML('beforeend',`<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><h2 style="font-size:15px">Acequia junto al camino</h2><label>Acequia (síquia)<select data-caq="1">${[['','Sin acequia'],['izq','A la izquierda'],['der','A la derecha']].map(([a,l])=>`<option value="${a}"${a===v?' selected':''}>${l}</option>`).join('')}</select></label><p class="hint">Canal de piedra pegado al borde (por fuera de la pared seca si la hay). Si su final queda cerca del coll de una cisterna, la llena.</p></div>`)}
   else if(F.k==='pz'&&isColl(F.o)){const o=F.o,C=cisCalc(o),rf=o.rf||[],L=v=>Math.round(v).toLocaleString('es');
